@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Colossians — Textual Division Heatmap</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;1,300;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --vellum:    #1c180f;
+    --vellum2:   #241e12;
+    --vellum3:   #2e2716;
+    --ink:       #e8dfc8;
+    --ink-dim:   #8a8068;
+    --ink-faint: #4a4232;
+    --gold:      #c8a050;
+    --gold2:     #e8c070;
+    --rust:      #8b2e00;
+    --border:    #3a3220;
+
+    /* heat scale: cool → warm → hot */
+    --h0: #1c180f;
+    --h1: #2a2418;
+    --h2: #3d3420;
+    --h3: #5a4a1e;
+    --h4: #7a5e1a;
+    --h5: #9a6e14;
+    --h6: #b87c10;
+    --h7: #d08818;
+    --h8: #c86020;
+    --h9: #b03818;
+    --h10: #8b1c08;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--vellum);
+    color: var(--ink);
+    font-family: 'Crimson Pro', serif;
+    min-height: 100vh;
+    padding: 2.5rem 2rem 4rem;
+  }
+
+  /* Subtle parchment texture overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.6;
+  }
+
+  .page { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; }
+
+  /* ── Header ── */
+  .masthead {
+    text-align: center;
+    margin-bottom: 2.8rem;
+    padding-bottom: 1.6rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .masthead-sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 0.7rem;
+  }
+
+  .masthead h1 {
+    font-family: 'Cinzel', serif;
+    font-size: 2.1rem;
+    font-weight: 700;
+    color: var(--gold2);
+    letter-spacing: 0.04em;
+    line-height: 1.15;
+    margin-bottom: 0.5rem;
+  }
+
+  .masthead p {
+    font-size: 0.95rem;
+    color: var(--ink-dim);
+    font-style: italic;
+    max-width: 540px;
+    margin: 0 auto;
+    line-height: 1.55;
+  }
+
+  /* ── Score legend ── */
+  .legend-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin-bottom: 2.4rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--ink-dim);
+  }
+
+  .legend-gradient {
+    flex: 1;
+    height: 10px;
+    border-radius: 2px;
+    background: linear-gradient(to right,
+      #2a2418, #5a4a1e, #9a6e14, #d08818, #c86020, #8b1c08);
+    border: 1px solid var(--border);
+  }
+
+  .legend-label { white-space: nowrap; }
+
+  /* ── Chapter grid ── */
+  .chapters { display: flex; flex-direction: column; gap: 2rem; }
+
+  .chapter-block { }
+
+  .chapter-header {
+    font-family: 'Cinzel', serif;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 0.7rem;
+    padding-bottom: 0.35rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+
+  .chapter-header span {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--ink-faint);
+    font-weight: 400;
+    letter-spacing: 0.05em;
+    text-transform: none;
+  }
+
+  .verse-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+
+  /* ── Verse cell ── */
+  .verse-cell {
+    width: 46px;
+    height: 46px;
+    border-radius: 3px;
+    border: 1px solid rgba(0,0,0,0.3);
+    cursor: pointer;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .verse-cell:hover {
+    transform: scale(1.18);
+    z-index: 10;
+    border-color: var(--gold) !important;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.6), 0 0 0 1px var(--gold);
+  }
+
+  .verse-cell .v-num {
+    font-size: 0.68rem;
+    font-weight: 500;
+    color: rgba(255,255,255,0.85);
+    line-height: 1;
+  }
+
+  .verse-cell .v-score {
+    font-size: 0.52rem;
+    color: rgba(255,255,255,0.5);
+    margin-top: 2px;
+    line-height: 1;
+  }
+
+  /* heat classes */
+  .heat-0  { background: #1c180f; }
+  .heat-1  { background: #282212; }
+  .heat-2  { background: #3a2e18; }
+  .heat-3  { background: #4e3c1a; }
+  .heat-4  { background: #664c18; }
+  .heat-5  { background: #885e14; }
+  .heat-6  { background: #a87010; }
+  .heat-7  { background: #c88016; }
+  .heat-8  { background: #c06020; }
+  .heat-9  { background: #a03818; }
+  .heat-10 { background: #7c1808; }
+
+  /* ── Tooltip ── */
+  #tooltip {
+    position: fixed;
+    background: #100e08;
+    border: 1px solid var(--gold);
+    padding: 0.9rem 1.1rem;
+    font-family: 'Crimson Pro', serif;
+    font-size: 0.92rem;
+    line-height: 1.6;
+    pointer-events: none;
+    z-index: 9999;
+    display: none;
+    max-width: 290px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.8);
+  }
+
+  #tooltip .tt-verse {
+    font-family: 'Cinzel', serif;
+    font-size: 1rem;
+    color: var(--gold2);
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+    letter-spacing: 0.04em;
+  }
+
+  #tooltip .tt-score {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--gold);
+    margin-bottom: 0.6rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  #tooltip .tt-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    font-size: 0.85rem;
+  }
+
+  #tooltip .tt-label { color: var(--ink-dim); }
+  #tooltip .tt-val   { color: var(--ink); font-weight: 400; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; }
+
+  #tooltip .tt-bar-wrap {
+    margin-top: 0.55rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--border);
+  }
+
+  #tooltip .tt-bar-label {
+    font-size: 0.72rem;
+    color: var(--ink-dim);
+    margin-bottom: 0.25rem;
+    font-style: italic;
+  }
+
+  #tooltip .tt-bar {
+    height: 6px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 3px;
+  }
+
+  #tooltip .tt-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    background: linear-gradient(to right, #9a6e14, #c86020);
+  }
+
+  /* ── Footer stats ── */
+  .footer-stats {
+    margin-top: 2.5rem;
+    padding-top: 1.2rem;
+    border-top: 1px solid var(--border);
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+  }
+
+  .stat-block { text-align: center; }
+  .stat-num {
+    font-family: 'Cinzel', serif;
+    font-size: 1.4rem;
+    color: var(--gold);
+    display: block;
+    line-height: 1.1;
+  }
+  .stat-label { color: var(--ink-dim); font-size: 0.62rem; margin-top: 0.2rem; }
+
+  /* ── Methodology note ── */
+  .method-note {
+    margin-top: 1.5rem;
+    font-size: 0.78rem;
+    color: var(--ink-faint);
+    font-style: italic;
+    line-height: 1.65;
+    border-left: 2px solid var(--border);
+    padding-left: 0.9rem;
+  }
+
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="masthead">
+    <div class="masthead-sub">Textual Criticism · ITSEE Transcriptions</div>
+    <h1>Colossians — Depth of Textual Division</h1>
+    <p>Where does the manuscript tradition genuinely divide? Each cell represents a verse; intensity encodes the proportion of variant units where ≥30% of witnesses carry a minority reading, weighted by average witness dispersion.</p>
+  </div>
+
+  <div class="legend-bar">
+    <span class="legend-label">Less divided</span>
+    <div class="legend-gradient"></div>
+    <span class="legend-label">More divided</span>
+  </div>
+
+  <div class="chapters" id="chapters"></div>
+
+  <div class="footer-stats" id="footer-stats"></div>
+
+  <div class="method-note" id="method-note"></div>
+
+</div>
+
+<div id="tooltip"></div>
+
+<script>
+const DATA = [{"verse": "1:1", "chapter": 1, "verse_num": 1, "n_variant_units": 4, "avg_division": 0.2077, "avg_minority_pct": 0.1211, "max_division": 0.4956, "contested_30pct": 1, "highly_contested_45pct": 0, "deep_division_score": 5.1925, "contested_density": 0.25}, {"verse": "1:2", "chapter": 1, "verse_num": 2, "n_variant_units": 8, "avg_division": 0.2964, "avg_minority_pct": 0.2037, "max_division": 0.6328, "contested_30pct": 2, "highly_contested_45pct": 2, "deep_division_score": 7.41, "contested_density": 0.25}, {"verse": "1:3", "chapter": 1, "verse_num": 3, "n_variant_units": 8, "avg_division": 0.2433, "avg_minority_pct": 0.1368, "max_division": 0.3942, "contested_30pct": 0, "highly_contested_45pct": 0, "deep_division_score": 0.0, "contested_density": 0.0}, {"verse": "1:4", "chapter": 1, "verse_num": 4, "n_variant_units": 7, "avg_division": 0.1681, "avg_minority_pct": 0.0975, "max_division": 0.3944, "contested_30pct": 0, "highly_contested_45pct": 0, "deep_division_score": 0.0, "contested_density": 0.0}, {"verse": "1:5", "chapter": 1, "verse_num": 5, "n_variant_units": 6, "avg_division": 0.1303, "avg_minority_pct": 0.0756, "max_division": 0.3736, "contested_30pct": 0, "highly_contested_45pct": 0, "deep_division_score": 0.0, "contested_density": 0.0}, {"verse": "1:6", "chapter": 1, "verse_num": 6, "n_variant_units": 13, "avg_division": 0.1829, "avg_minority_pct": 0.1309, "max_division": 0.5069, "contested_30pct": 3, "highly_contested_45pct": 0, "deep_division_score": 4.2208, "contested_density": 0.2308}, {"verse": "1:7", "chapter": 1, "verse_num": 7, "n_variant_units": 10, "avg_division": 0.2214, "avg_minority_pct": 0.1488, "max_division": 0.4874, "contested_30pct": 3, "highly_contested_45pct": 0, "deep_division_score": 6.642, "contested_density": 0.3}, {"verse": "1:8", "chapter": 1, "verse_num": 8, "n_variant_units": 6, "avg_division": 0.08, "avg_minority_pct": 0.0423, "max_division": 0.1769, "contested_30pct": 0, "highly_contested_45pct": 0, "deep_division_score": 0.0, "contested_density": 0.0}, {"verse": "1:9", "chapter": 1, "verse_num": 9, "n_variant_units": 13, "avg_division": 0.0809, "avg_minority_pct": 0.0434, "max_division": 0.233, "contested_30pct": 0, "highly_contested_45pct": 0, "deep_division_score": 0.0, "contested_density": 0.0}, {"verse": "1:10", "chapter": 1, "verse_num": 10, "n_variant_units": 8, "avg_division": 0.1908, "avg_minority_pct": 0.1183, "max_division": 0.524, "contested_30pct": 1, "highly_contested_45pct": 0, "deep_division_score": 2.385, "contested_density": 0.125}, {"verse": "1:11", "chapter": 1, "verse_num": 11, "n_variant_units": 7, "avg_division": 0.0537, "avg_minority_pct": 0.0276, "max_division": 0.0761, "contested_30pct": 0, "highly_contested_45pct": 0, "deep_division_score": 0.0, "contested_density": 0.0}, {"verse": "1:12", "chapter": 1, "verse_num": 12, "n_variant_units": 8, "avg_division": 0.1809, "avg_minority_pct": 0.1173, "max_division": 0.6764, "contested_30pct": 1, "highly_contested_45pct": 1, "deep_division_score": 2.2612, "contested_density": 0.125}, {"verse": "1:13", "chapter": 1, "verse_num": 13, "n_variant_units": 6, "avg_division": 0.1314, "avg_minority_pct": 0.0712, "max_division": 0.2453, "contested_30pct": 0, "highly_contested_45pct": 0, "deep_division_score": 0.0, "contested_density": 0.0}, {"verse": "1:14", "chapter": 1, "verse_num": 14, "n_variant_units": 4, "avg_division": 0.2322, "avg_minority_pct": 0.1553, "max_division": 0.5679, "contested_30pct": 1, "highly_contested_45pct": 0, "deep_division_score": 5.805, "contested_density": 0.25}, {"verse": "1:15", "chapter": 1, "verse_num": 15, "n_variant_units": 5, "avg_division": 0.1533, "avg_minority_pct": 0.0824, "max_division": 0.2507, "contested_30pct": 0, "highly_contested_45pct": 0, "deep_division_score": 0.0, "contested_density": 0.0}, {"verse": "1:16", "chapter": 1, "verse_num": 16, "n_variant_units": 12, "avg_division": 0.1851, "avg_minority_pct": 0.1077, "max_division": 0.4305, "contested_30pct": 0, "highly_contested_45pct": 0, "deep_division_score": 0.0, "contested_density": 0.0}, {"verse": "1:17", "chapter": 1, "verse_num": 17, "n_variant_units": 6, "avg_division": 0.2895, "avg_minority_pct": 0.212, "max_division": 0.5631, "contested_30pct": 2, "highly_contested_45pct": 1, "deep_division_score": 9.65, "contested_density": 0.3333}, {"verse": "1:18", "chapter": 1, "verse_num": 18, "n_variant_units": 10, "avg_division": 0.1316, "avg_minority_pct": 0.0712, "max_division": 0.3365, "contested_30pct": 0, "highly_contested_45pct": 0, "deep_division_score": 0.0, "contested_density": 0.0}, {"verse": "1:19", "chapter": 1, "verse_num": 19, "n_variant_units": 4, "avg_division": 0.2184, "avg_minority_pct": 0.162, "max_division": 0.6813, "contested_30pct": 1, "highly_contested_45pct": 1, "deep_division_score": 5.46, "contested_density": 0.25}, {"verse": "1:20", "chapter": 1, "verse_num": 20, "n_variant_units": 14, "avg_division": 0.1778, "avg_minority_pct": 0.1133, "max_division": 0.6942, "contested_30pct": 1, "highly_contested_45pct": 1, "deep_division_score": 1.27, "contested_density": 0.0714}, {"verse": "1:21", "chapter": 1, "verse_num": 21, "n_variant_units": 8, "avg_division": 0.1127, "avg_minority_pct": 0.0609, "max_division": 0.3055, "contested_30pct": 0, "highly_contested_45pct": 0, "deep_division_score": 0.0, "contested_density": 0.0}, {"verse": "1:22", "chapter": 1, "verse_num": 22, "n_variant_units": 11, "avg_division": 0.1594, "avg_minority_pct": 0.0914, "max_division": 0.4329, "contested_30pct": 0, "highly_contested_45pct": 0, "deep_division_score": 0.0, "contested_density": 0.0}, {"verse": "1:23", "chapter": 1, "verse_num": 23, "n_variant_units": 19, "avg_division": 0.1793, "avg_minority_pct": 0.1094, "max_division": 0.5679, "contested_30pct": 2, "highly_contested_45pct": 0, "deep_division_score": 1.8874, "contested_density": 0.1053}, {"verse": "1:24", "chapter": 1, "verse_num": 24, "n_variant_units": 13, "avg_division": 0.227, "avg_minority_pct": 0.1365, "max_division": 0.5304, "contested_30pct": 2, "highly_contested_45pct": 0, "deep_division_score": 3.4923, "contested_density": 0.1538}, {"verse": "1:25", "chapter": 1, "verse_num": 25, "n_variant_units": 6, "avg_division": 0.1283, "avg_minority_pct": 0.0693, "max_division": 0.2191, "contested_30pct": 0, "highly_contested_45pct": 0, "deep_division_score": 0.0, "contested_density": 0.0}, {"verse": "1:26", "chapter": 1, "verse_num": 26, "n_variant_units": 7, "avg_division": 0.2563, "avg_minority_pct": 0.1598, "max_division": 0.5229, "contested_30pct": 1, "highly_contested_45pct": 0, "deep_division_score": 3.6614, "contested_density": 0.1429}, {"verse": "1:27", "chapter": 1, "verse_num": 27, "n_variant_units": 12, "avg_division": 0.2149, "avg_minority_pct": 0.1473, "max_division": 0.5838, "contested_30pct": 2, "highly_contested_45pct": 1, "deep_division_score": 3.5817, "contested_density": 0.1667}, {"verse": "1:28", "chapter": 1, "verse_num": 28, "n_variant_units": 11, "avg_division": 0.2227, "avg_minority_pct": 0.1372, "max_division": 0.6202, "contested_30pct": 2, "highly_contested_45pct": 0, "deep_division_score": 4.0491, "contested_density": 0.1818}, {"verse": "1:29", "chapter": 1, "verse_num": 29, "n_variant_units": 8, "avg_division": 0.1369, "avg_minority_pct": 0.0737, "max_division": 0.2488, "contested_30pct": 0, "highly_contested_45pct": 0, "deep_division_score": 0.0, "contested_density": 0.0}, {"verse": "2:1", "chapter": 2, "verse_num": 1, "n_variant_units": 12, "avg_division": 0.2141, "avg_minority_pct": 0.1306, "max_division": 0.6251, "contested_30pct": 2, "highly_contested_45pct": 0, "deep_division_score": 3.5683, "contested_density": 0.1667}, {"verse": "2:2", "chapter": 2, "verse_num": 2, "n_variant_units": 10, "avg_division": 0.2616, "avg_minority_pct": 0.1597, "max_division": 0.5802, "contested_30pct": 4, "highly_contested_45pct": 0, "deep_division_score": 10.464, "contested_density": 0.4}, {"verse": "2:3", "chapter": 2, "verse_num": 3, "n_variant_units": 4, "avg_division": 0.3204, "avg_minority_pct": 0.2074, "max_division": 0.4444, "contested_30pct": 1, "highly_contested_45pct": 0, "deep_division_score": 8.01, "contested_density": 0.25}, {"verse": "2:4", "chapter": 2, "verse_num": 4, "n_variant_units": 8, "avg_division": 0.296, "avg_minority_pct": 0.1818, "max_division": 0.5385, "contested_30pct": 2, "highly_contested_45pct": 0, "deep_division_score": 7.4, "contested_density": 0.25}, {"verse": "2:5", "chapter": 2, "verse_num": 5, "n_variant_units": 14, "avg_division": 0.0723, "avg_minority_pct": 0.038, "max_division": 0.1768, "contested_30pct": 0, "highly_contested_45pct": 0, "deep_division_score": 0.0, "contested_density": 0.0}, {"verse": "2:6", "chapter": 2, "verse_num": 6, "n_variant_units": 5, "avg_division": 0.1466, "avg_minority_pct": 0.0812, "max_division": 0.3937, "contested_30pct": 0, "highly_contested_45pct": 0, "deep_division_score": 0.0, "contested_density": 0.0}, {"verse": "2:7", "chapter": 2, "verse_num": 7, "n_variant_units": 9, "avg_division": 0.2766, "avg_minority_pct": 0.1773, "max_division": 0.7473, "contested_30pct": 2, "highly_contested_45pct": 1, "deep_division_score": 6.1467, "contested_density": 0.2222}, {"verse": "2:8", "chapter": 2, "verse_num": 8, "n_variant_units": 13, "avg_division": 0.2047, "avg_minority_pct": 0.1185, "max_division": 0.4349, "contested_30pct": 0, "highly_contested_45pct": 0, "deep_division_score": 0.0, "contested_density": 0.0}, {"verse": "2:9", "chapter": 2, "verse_num": 9, "n_variant_units": 3, "avg_division": 0.0762, "avg_minority_pct": 0.0395, "max_division": 0.1102, "contested_30pct": 0, "highly_contested_45pct": 0, "deep_division_score": 0.0, "contested_density": 0.0}, {"verse": "2:10", "chapter": 2, "verse_num": 10, "n_variant_units": 7, "avg_division": 0.1372, "avg_minority_pct": 0.0766, "max_division": 0.3272, "contested_30pct": 0, "highly_contested_45pct": 0, "deep_division_score": 0.0, "contested_density": 0.0}, {"verse": "2:11", "chapter": 2, "verse_num": 11, "n_variant_units": 7, "avg_division": 0.1681, "avg_minority_pct": 0.0973, "max_division": 0.4329, "contested_30pct": 0, "highly_contested_45pct": 0, "deep_division_score": 0.0, "contested_density": 0.0}, {"verse": "2:12", "chapter": 2, "verse_num": 12, "n_variant_units": 8, "avg_division": 0.2127, "avg_minority_pct": 0.14, "max_division": 0.5468, "contested_30pct": 1, "highly_contested_45pct": 1, "deep_division_score": 2.6587, "contested_density": 0.125}, {"verse": "2:13", "chapter": 2, "verse_num": 13, "n_variant_units": 11, "avg_division": 0.2689, "avg_minority_pct": 0.178, "max_division": 0.7297, "contested_30pct": 2, "highly_contested_45pct": 2, "deep_division_score": 4.8891, "contested_density": 0.1818}, {"verse": "2:14", "chapter": 2, "verse_num": 14, "n_variant_units": 14, "avg_division": 0.1707, "avg_minority_pct": 0.102, "max_division": 0.4978, "contested_30pct": 1, "highly_contested_45pct": 0, "deep_division_score": 1.2193, "contested_density": 0.0714}, {"verse": "2:15", "chapter": 2, "verse_num": 15, "n_variant_units": 7, "avg_division": 0.1294, "avg_minority_pct": 0.0726, "max_division": 0.4252, "contested_30pct": 0, "highly_contested_45pct": 0, "deep_division_score": 0.0, "contested_density": 0.0}, {"verse": "2:16", "chapter": 2, "verse_num": 16, "n_variant_units": 11, "avg_division": 0.1929, "avg_minority_pct": 0.1103, "max_division": 0.4329, "contested_30pct": 0, "highly_contested_45pct": 0, "deep_division_score": 0.0, "contested_density": 0.0}, {"verse": "2:17", "chapter": 2, "verse_num": 17, "n_variant_units": 6, "avg_division": 0.2121, "avg_minority_pct": 0.1361, "max_division": 0.4571, "contested_30pct": 1, "highly_contested_45pct": 0, "deep_division_score": 3.535, "contested_density": 0.1667}, {"verse": "2:18", "chapter": 2, "verse_num": 18, "n_variant_units": 12, "avg_division": 0.1576, "avg_minority_pct": 0.0903, "max_division": 0.5775, "contested_30pct": 1, "highly_contested_45pct": 0, "deep_division_score": 1.3133, "contested_density": 0.0833}, {"verse": "2:19", "chapter": 2, "verse_num": 19, "n_variant_units": 10, "avg_division": 0.1429, "avg_minority_pct": 0.0774, "max_division": 0.2408, "contested_30pct": 0, "highly_contested_45pct": 0, "deep_division_score": 0.0, "contested_density": 0.0}, {"verse": "2:20", "chapter": 2, "verse_num": 20, "n_variant_units": 8, "avg_division": 0.2583, "avg_minority_pct": 0.1724, "max_division": 0.6269, "contested_30pct": 1, "highly_contested_45pct": 1, "deep_division_score": 3.2287, "contested_density": 0.125}, {"verse": "2:21", "chapter": 2, "verse_num": 21, "n_variant_units": 6, "avg_division": 0.2236, "avg_minority_pct": 0.1341, "max_division": 0.4712, "contested_30pct": 1, "highly_contested_45pct": 0, "deep_division_score": 3.7267, "contested_density": 0.1667}, {"verse": "2:22", "chapter": 2, "verse_num": 22, "n_variant_units": 8, "avg_division": 0.1935, "avg_minority_pct": 0.1189, "max_division": 0.4744, "contested_30pct": 1, "highly_contested_45pct": 0, "deep_division_score": 2.4188, "contested_density": 0.125}, {"verse": "2:23", "chapter": 2, "verse_num": 23, "n_variant_units": 8, "avg_division": 0.2959, "avg_minority_pct": 0.1957, "max_division": 0.6415, "contested_30pct": 3, "highly_contested_45pct": 1, "deep_division_score": 11.0962, "contested_density": 0.375}, {"verse": "3:1", "chapter": 3, "verse_num": 1, "n_variant_units": 9, "avg_division": 0.1464, "avg_minority_pct": 0.0796, "max_division": 0.3868, "contested_30pct": 0, "highly_contested_45pct": 0, "deep_division_score": 0.0, "contested_density": 0.0}, {"verse": "3:2", "chapter": 3, "verse_num": 2, "n_variant_units": 5, "avg_division": 0.1545, "avg_minority_pct": 0.085, "max_division": 0.3225, "contested_30pct": 0, "highly_contested_45pct": 0, "deep_division_score": 0.0, "contested_density": 0.0}, {"verse": "3:3", "chapter": 3, "verse_num": 3, "n_variant_units": 6, "avg_division": 0.1845, "avg_minority_pct": 0.1127, "max_division": 0.5461, "contested_30pct": 1, "highly_contested_45pct": 0, "deep_division_score": 3.075, "contested_density": 0.1667}, {"verse": "3:4", "chapter": 3, "verse_num": 4, "n_variant_units": 10, "avg_division": 0.1521, "avg_minority_pct": 0.0873, "max_division": 0.3944, "contested_30pct": 0, "highly_contested_45pct": 0, "deep_division_score": 0.0, "contested_density": 0.0}, {"verse": "3:5", "chapter": 3, "verse_num": 5, "n_variant_units": 11, "avg_division": 0.1904, "avg_minority_pct": 0.1203, "max_division": 0.5784, "contested_30pct": 1, "highly_contested_45pct": 1, "deep_division_score": 1.7309, "contested_density": 0.0909}, {"verse": "3:6", "chapter": 3, "verse_num": 6, "n_variant_units": 6, "avg_division": 0.1967, "avg_minority_pct": 0.1096, "max_division": 0.3617, "contested_30pct": 0, "highly_contested_45pct": 0, "deep_division_score": 0.0, "contested_density": 0.0}, {"verse": "3:7", "chapter": 3, "verse_num": 7, "n_variant_units": 5, "avg_division": 0.1414, "avg_minority_pct": 0.0854, "max_division": 0.4386, "contested_30pct": 0, "highly_contested_45pct": 0, "deep_division_score": 0.0, "contested_density": 0.0}, {"verse": "3:8", "chapter": 3, "verse_num": 8, "n_variant_units": 6, "avg_division": 0.1394, "avg_minority_pct": 0.0756, "max_division": 0.2408, "contested_30pct": 0, "highly_contested_45pct": 0, "deep_division_score": 0.0, "contested_density": 0.0}, {"verse": "3:9", "chapter": 3, "verse_num": 9, "n_variant_units": 6, "avg_division": 0.1415, "avg_minority_pct": 0.0785, "max_division": 0.2774, "contested_30pct": 0, "highly_contested_45pct": 0, "deep_division_score": 0.0, "contested_density": 0.0}, {"verse": "3:10", "chapter": 3, "verse_num": 10, "n_variant_units": 9, "avg_division": 0.0993, "avg_minority_pct": 0.0526, "max_division": 0.2463, "contested_30pct": 0, "highly_contested_45pct": 0, "deep_division_score": 0.0, "contested_density": 0.0}, {"verse": "3:11", "chapter": 3, "verse_num": 11, "n_variant_units": 10, "avg_division": 0.1998, "avg_minority_pct": 0.1169, "max_division": 0.4248, "contested_30pct": 1, "highly_contested_45pct": 0, "deep_division_score": 1.998, "contested_density": 0.1}, {"verse": "3:12", "chapter": 3, "verse_num": 12, "n_variant_units": 12, "avg_division": 0.2059, "avg_minority_pct": 0.1225, "max_division": 0.605, "contested_30pct": 1, "highly_contested_45pct": 0, "deep_division_score": 1.7158, "contested_density": 0.0833}, {"verse": "3:13", "chapter": 3, "verse_num": 13, "n_variant_units": 13, "avg_division": 0.1739, "avg_minority_pct": 0.1044, "max_division": 0.6201, "contested_30pct": 1, "highly_contested_45pct": 0, "deep_division_score": 1.3377, "contested_density": 0.0769}, {"verse": "3:14", "chapter": 3, "verse_num": 14, "n_variant_units": 5, "avg_division": 0.3414, "avg_minority_pct": 0.2449, "max_division": 0.4898, "contested_30pct": 3, "highly_contested_45pct": 0, "deep_division_score": 20.484, "contested_density": 0.6}, {"verse": "3:15", "chapter": 3, "verse_num": 15, "n_variant_units": 10, "avg_division": 0.2175, "avg_minority_pct": 0.125, "max_division": 0.497, "contested_30pct": 1, "highly_contested_45pct": 0, "deep_division_score": 2.175, "contested_density": 0.1}, {"verse": "3:16", "chapter": 3, "verse_num": 16, "n_variant_units": 15, "avg_division": 0.2904, "avg_minority_pct": 0.1844, "max_division": 0.6679, "contested_30pct": 5, "highly_contested_45pct": 1, "deep_division_score": 9.68, "contested_density": 0.3333}, {"verse": "3:17", "chapter": 3, "verse_num": 17, "n_variant_units": 13, "avg_division": 0.2181, "avg_minority_pct": 0.143, "max_division": 0.5518, "contested_30pct": 2, "highly_contested_45pct": 1, "deep_division_score": 3.3554, "contested_density": 0.1538}, {"verse": "3:18", "chapter": 3, "verse_num": 18, "n_variant_units": 7, "avg_division": 0.2029, "avg_minority_pct": 0.1429, "max_division": 0.5983, "contested_30pct": 1, "highly_contested_45pct": 1, "deep_division_score": 2.8986, "contested_density": 0.1429}, {"verse": "3:19", "chapter": 3, "verse_num": 19, "n_variant_units": 7, "avg_division": 0.2275, "avg_minority_pct": 0.1343, "max_division": 0.6091, "contested_30pct": 1, "highly_contested_45pct": 0, "deep_division_score": 3.25, "contested_density": 0.1429}, {"verse": "3:20", "chapter": 3, "verse_num": 20, "n_variant_units": 6, "avg_division": 0.3455, "avg_minority_pct": 0.2218, "max_division": 0.5237, "contested_30pct": 3, "highly_contested_45pct": 0, "deep_division_score": 17.275, "contested_density": 0.5}, {"verse": "3:21", "chapter": 3, "verse_num": 21, "n_variant_units": 4, "avg_division": 0.2975, "avg_minority_pct": 0.1889, "max_division": 0.5464, "contested_30pct": 1, "highly_contested_45pct": 0, "deep_division_score": 7.4375, "contested_density": 0.25}, {"verse": "3:22", "chapter": 3, "verse_num": 22, "n_variant_units": 11, "avg_division": 0.2119, "avg_minority_pct": 0.1384, "max_division": 0.7445, "contested_30pct": 2, "highly_contested_45pct": 1, "deep_division_score": 3.8527, "contested_density": 0.1818}, {"verse": "3:23", "chapter": 3, "verse_num": 23, "n_variant_units": 9, "avg_division": 0.2608, "avg_minority_pct": 0.1614, "max_division": 0.5624, "contested_30pct": 1, "highly_contested_45pct": 0, "deep_division_score": 2.8978, "contested_density": 0.1111}, {"verse": "3:24", "chapter": 3, "verse_num": 24, "n_variant_units": 8, "avg_division": 0.2914, "avg_minority_pct": 0.1828, "max_division": 0.679, "contested_30pct": 2, "highly_contested_45pct": 1, "deep_division_score": 7.285, "contested_density": 0.25}, {"verse": "3:25", "chapter": 3, "verse_num": 25, "n_variant_units": 9, "avg_division": 0.3199, "avg_minority_pct": 0.2356, "max_division": 0.7382, "contested_30pct": 4, "highly_contested_45pct": 2, "deep_division_score": 14.2178, "contested_density": 0.4444}, {"verse": "4:1", "chapter": 4, "verse_num": 1, "n_variant_units": 10, "avg_division": 0.1917, "avg_minority_pct": 0.1183, "max_division": 0.6714, "contested_30pct": 2, "highly_contested_45pct": 1, "deep_division_score": 3.834, "contested_density": 0.2}, {"verse": "4:2", "chapter": 4, "verse_num": 2, "n_variant_units": 5, "avg_division": 0.2428, "avg_minority_pct": 0.1407, "max_division": 0.4643, "contested_30pct": 0, "highly_contested_45pct": 0, "deep_division_score": 0.0, "contested_density": 0.0}, {"verse": "4:3", "chapter": 4, "verse_num": 3, "n_variant_units": 11, "avg_division": 0.1524, "avg_minority_pct": 0.0838, "max_division": 0.2734, "contested_30pct": 0, "highly_contested_45pct": 0, "deep_division_score": 0.0, "contested_density": 0.0}, {"verse": "4:4", "chapter": 4, "verse_num": 4, "n_variant_units": 7, "avg_division": 0.1171, "avg_minority_pct": 0.0627, "max_division": 0.18, "contested_30pct": 0, "highly_contested_45pct": 0, "deep_division_score": 0.0, "contested_density": 0.0}, {"verse": "4:5", "chapter": 4, "verse_num": 5, "n_variant_units": 5, "avg_division": 0.076, "avg_minority_pct": 0.0396, "max_division": 0.1512, "contested_30pct": 0, "highly_contested_45pct": 0, "deep_division_score": 0.0, "contested_density": 0.0}, {"verse": "4:6", "chapter": 4, "verse_num": 6, "n_variant_units": 11, "avg_division": 0.113, "avg_minority_pct": 0.0609, "max_division": 0.2824, "contested_30pct": 0, "highly_contested_45pct": 0, "deep_division_score": 0.0, "contested_density": 0.0}, {"verse": "4:7", "chapter": 4, "verse_num": 7, "n_variant_units": 9, "avg_division": 0.0876, "avg_minority_pct": 0.0459, "max_division": 0.1864, "contested_30pct": 0, "highly_contested_45pct": 0, "deep_division_score": 0.0, "contested_density": 0.0}, {"verse": "4:8", "chapter": 4, "verse_num": 8, "n_variant_units": 7, "avg_division": 0.1897, "avg_minority_pct": 0.114, "max_division": 0.3994, "contested_30pct": 0, "highly_contested_45pct": 0, "deep_division_score": 0.0, "contested_density": 0.0}, {"verse": "4:9", "chapter": 4, "verse_num": 9, "n_variant_units": 8, "avg_division": 0.1717, "avg_minority_pct": 0.1047, "max_division": 0.6266, "contested_30pct": 1, "highly_contested_45pct": 0, "deep_division_score": 2.1462, "contested_density": 0.125}, {"verse": "4:10", "chapter": 4, "verse_num": 10, "n_variant_units": 7, "avg_division": 0.129, "avg_minority_pct": 0.0732, "max_division": 0.3068, "contested_30pct": 0, "highly_contested_45pct": 0, "deep_division_score": 0.0, "contested_density": 0.0}, {"verse": "4:11", "chapter": 4, "verse_num": 11, "n_variant_units": 10, "avg_division": 0.1318, "avg_minority_pct": 0.076, "max_division": 0.4985, "contested_30pct": 1, "highly_contested_45pct": 0, "deep_division_score": 1.318, "contested_density": 0.1}, {"verse": "4:12", "chapter": 4, "verse_num": 12, "n_variant_units": 16, "avg_division": 0.1966, "avg_minority_pct": 0.1231, "max_division": 0.5682, "contested_30pct": 1, "highly_contested_45pct": 1, "deep_division_score": 1.2288, "contested_density": 0.0625}, {"verse": "4:13", "chapter": 4, "verse_num": 13, "n_variant_units": 7, "avg_division": 0.2097, "avg_minority_pct": 0.1199, "max_division": 0.5247, "contested_30pct": 1, "highly_contested_45pct": 0, "deep_division_score": 2.9957, "contested_density": 0.1429}, {"verse": "4:14", "chapter": 4, "verse_num": 14, "n_variant_units": 3, "avg_division": 0.2007, "avg_minority_pct": 0.1109, "max_division": 0.2499, "contested_30pct": 0, "highly_contested_45pct": 0, "deep_division_score": 0.0, "contested_density": 0.0}, {"verse": "4:15", "chapter": 4, "verse_num": 15, "n_variant_units": 8, "avg_division": 0.2193, "avg_minority_pct": 0.1347, "max_division": 0.6301, "contested_30pct": 1, "highly_contested_45pct": 1, "deep_division_score": 2.7412, "contested_density": 0.125}, {"verse": "4:16", "chapter": 4, "verse_num": 16, "n_variant_units": 12, "avg_division": 0.2109, "avg_minority_pct": 0.1281, "max_division": 0.5643, "contested_30pct": 2, "highly_contested_45pct": 0, "deep_division_score": 3.515, "contested_density": 0.1667}, {"verse": "4:17", "chapter": 4, "verse_num": 17, "n_variant_units": 8, "avg_division": 0.0966, "avg_minority_pct": 0.0519, "max_division": 0.307, "contested_30pct": 0, "highly_contested_45pct": 0, "deep_division_score": 0.0, "contested_density": 0.0}, {"verse": "4:18", "chapter": 4, "verse_num": 18, "n_variant_units": 8, "avg_division": 0.2813, "avg_minority_pct": 0.1986, "max_division": 0.9147, "contested_30pct": 1, "highly_contested_45pct": 1, "deep_division_score": 3.5162, "contested_density": 0.125}];
+
+// ── Scoring & normalization ─────────────────────────────────────────────────
+const scores = DATA.map(v => v.deep_division_score);
+const maxScore = Math.max(...scores);
+const minScore = Math.min(...scores.filter(s => s > 0));
+
+function heatClass(score) {
+  if (score === 0) return 'heat-0';
+  const t = score / maxScore;
+  const idx = Math.ceil(t * 10);
+  return `heat-${Math.min(idx, 10)}`;
+}
+
+// ── Group by chapter ────────────────────────────────────────────────────────
+const chapters = {};
+DATA.forEach(v => {
+  if (!chapters[v.chapter]) chapters[v.chapter] = [];
+  chapters[v.chapter].push(v);
+});
+
+// ── Render chapters ─────────────────────────────────────────────────────────
+const chapContainer = document.getElementById('chapters');
+
+[1,2,3,4].forEach(ch => {
+  if (!chapters[ch]) return;
+  const verses = chapters[ch].sort((a,b) => a.verse_num - b.verse_num);
+
+  const block = document.createElement('div');
+  block.className = 'chapter-block';
+
+  const totalVU = verses.reduce((s,v) => s + v.n_variant_units, 0);
+  const totalContested = verses.reduce((s,v) => s + v.contested_30pct, 0);
+  const avgDiv = (verses.reduce((s,v) => s + v.avg_division, 0) / verses.length * 100).toFixed(1);
+
+  block.innerHTML = `
+    <div class="chapter-header">
+      Chapter ${ch}
+      <span>${verses.length} verses · ${totalVU} variant units · ${totalContested} contested (≥30%)</span>
+    </div>
+    <div class="verse-row" id="ch${ch}-row"></div>
+  `;
+  chapContainer.appendChild(block);
+
+  const row = block.querySelector(`#ch${ch}-row`);
+
+  verses.forEach(v => {
+    const cell = document.createElement('div');
+    cell.className = `verse-cell ${heatClass(v.deep_division_score)}`;
+    cell.innerHTML = `
+      <span class="v-num">${v.verse_num}</span>
+      <span class="v-score">${v.deep_division_score > 0 ? v.deep_division_score.toFixed(1) : '—'}</span>
+    `;
+
+    cell.addEventListener('mouseenter', (e) => showTooltip(e, v));
+    cell.addEventListener('mousemove', (e) => moveTooltip(e));
+    cell.addEventListener('mouseleave', hideTooltip);
+    row.appendChild(cell);
+  });
+});
+
+// ── Tooltip ─────────────────────────────────────────────────────────────────
+const tt = document.getElementById('tooltip');
+
+function showTooltip(e, v) {
+  const contestedFrac = v.n_variant_units > 0 ? v.contested_30pct / v.n_variant_units : 0;
+  const highlyFrac    = v.n_variant_units > 0 ? v.highly_contested_45pct / v.n_variant_units : 0;
+  const normScore = maxScore > 0 ? (v.deep_division_score / maxScore * 100) : 0;
+
+  tt.innerHTML = `
+    <div class="tt-verse">Colossians ${v.verse}</div>
+    <div class="tt-score">Deep Division Score: ${v.deep_division_score.toFixed(2)} / ${maxScore.toFixed(2)}</div>
+    <div class="tt-row"><span class="tt-label">Variant units</span><span class="tt-val">${v.n_variant_units}</span></div>
+    <div class="tt-row"><span class="tt-label">Avg witness dispersion</span><span class="tt-val">${(v.avg_division*100).toFixed(1)}%</span></div>
+    <div class="tt-row"><span class="tt-label">Contested VUs (≥30% minority)</span><span class="tt-val">${v.contested_30pct} of ${v.n_variant_units} (${(contestedFrac*100).toFixed(0)}%)</span></div>
+    <div class="tt-row"><span class="tt-label">Highly contested (≥45% minority)</span><span class="tt-val">${v.highly_contested_45pct} of ${v.n_variant_units} (${(highlyFrac*100).toFixed(0)}%)</span></div>
+    <div class="tt-row"><span class="tt-label">Max single-unit division</span><span class="tt-val">${(v.max_division*100).toFixed(1)}%</span></div>
+    <div class="tt-bar-wrap">
+      <div class="tt-bar-label">Relative division intensity</div>
+      <div class="tt-bar"><div class="tt-bar-fill" style="width:${normScore.toFixed(1)}%"></div></div>
+    </div>
+  `;
+  tt.style.display = 'block';
+  moveTooltip(e);
+}
+
+function moveTooltip(e) {
+  const x = e.clientX, y = e.clientY;
+  const w = tt.offsetWidth, h = tt.offsetHeight;
+  const vw = window.innerWidth, vh = window.innerHeight;
+  let left = x + 16, top = y - 10;
+  if (left + w > vw - 10) left = x - w - 16;
+  if (top + h > vh - 10) top = vh - h - 10;
+  tt.style.left = left + 'px';
+  tt.style.top  = top  + 'px';
+}
+
+function hideTooltip() { tt.style.display = 'none'; }
+
+// ── Footer stats ─────────────────────────────────────────────────────────────
+const totalVU  = DATA.reduce((s,v) => s + v.n_variant_units, 0);
+const totalC30 = DATA.reduce((s,v) => s + v.contested_30pct, 0);
+const totalC45 = DATA.reduce((s,v) => s + v.highly_contested_45pct, 0);
+const topVerse = DATA.reduce((a,b) => a.deep_division_score > b.deep_division_score ? a : b);
+
+document.getElementById('footer-stats').innerHTML = `
+  <div class="stat-block">
+    <span class="stat-num">${DATA.length}</span>
+    <div class="stat-label">Verses analyzed</div>
+  </div>
+  <div class="stat-block">
+    <span class="stat-num">${totalVU}</span>
+    <div class="stat-label">Total variant units</div>
+  </div>
+  <div class="stat-block">
+    <span class="stat-num">${totalC30}</span>
+    <div class="stat-label">Contested VUs ≥30% minority</div>
+  </div>
+  <div class="stat-block">
+    <span class="stat-num">${topVerse.verse}</span>
+    <div class="stat-label">Most divided verse</div>
+  </div>
+`;
+
+document.getElementById('method-note').innerHTML = `
+  <strong>Scoring methodology.</strong> Each variant unit receives a minority-witness fraction 
+  (witnesses not in the majority reading ÷ total witnesses). A unit is "contested" when this 
+  fraction ≥ 30%. The per-verse <em>deep division score</em> = (contested VUs ÷ total VUs) × 
+  average Herfindahl dispersion across all VUs × 100. This rewards verses where a large proportion 
+  of their variants are genuinely split — not just verses with many readings dominated by one tradition. 
+  Data: ${DATA.reduce((s,v)=>s+v.n_variant_units,0)} variant units across 
+  ${DATA.length} verses of Colossians (ITSEE transcriptions, 212 manuscripts).
+`;
+</script>
+</body>
+</html>
