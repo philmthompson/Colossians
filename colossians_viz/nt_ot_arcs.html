@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NT → OT Cross-References</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/open-sans@5/index.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#000;font-family:'Open Sans',sans-serif;display:flex;flex-direction:column;align-items:center;padding:12px}
+h1{color:rgba(255,255,255,0.55);font-size:13px;font-weight:400;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:10px}
+#wrap{position:relative;width:100%;max-width:1400px;background:#000;border:0.5px solid rgba(255,255,255,0.1);border-radius:8px;overflow:hidden}
+#loading{color:rgba(255,255,255,0.4);font-size:13px;text-align:center;padding:40px 20px}
+canvas{display:block;width:100%}
+#tip{display:none;position:absolute;pointer-events:none;background:rgba(8,8,8,0.96);color:#ccc;padding:11px 14px;border-radius:6px;border:0.5px solid rgba(255,255,255,0.16);font-size:11px;line-height:1.75;max-width:310px;white-space:normal;z-index:10}
+#bar{display:flex;justify-content:center;gap:8px;padding:10px 16px 12px;border-top:0.5px solid rgba(255,255,255,0.1)}
+#bar button{font-family:'Open Sans',sans-serif;font-size:11px;padding:5px 16px;border-radius:20px;border:0.5px solid rgba(255,255,255,0.25);background:transparent;color:rgba(255,255,255,0.45);cursor:pointer;transition:all 0.15s}
+#bar button:hover{border-color:rgba(255,255,255,0.5);color:rgba(255,255,255,0.7)}
+#bar button.active{background:rgba(255,255,255,0.12);border-color:rgba(255,255,255,0.6);color:#fff}
+</style>
+</head>
+<body>
+<h1>NT → OT Cross-References</h1>
+<div id="wrap">
+  <div id="loading">Loading data…</div>
+  <canvas id="cv" style="display:none"></canvas>
+  <div id="tip"></div>
+  <div id="bar">
+    <button id="btn-all"      class="active" onclick="setMode('all')">All</button>
+    <button id="btn-cite"                    onclick="setMode('cite')">Citations</button>
+    <button id="btn-allusion"                onclick="setMode('allusion')">Allusions</button>
+  </div>
+</div>
+
+<script>
+// ── Static lookup tables ─────────────────────────────────────────────────
+const CC={1:50,2:40,3:27,4:36,5:34,6:24,7:21,8:4,9:31,10:24,11:22,12:25,13:29,14:36,15:10,16:13,17:10,18:42,19:150,20:31,21:12,22:8,23:66,24:52,25:5,26:48,27:12,28:14,29:3,30:9,31:1,32:4,33:7,34:3,35:3,36:3,37:2,38:14,39:4,40:28,41:16,42:24,43:21,44:28,45:16,46:16,47:13,48:6,49:6,50:4,51:4,52:5,53:3,54:6,55:4,56:3,57:1,58:13,59:5,60:5,61:3,62:5,63:1,64:1,65:1,66:22};
+const ON_U={1:"Genesis",2:"Exodus",3:"Leviticus",4:"Numbers",5:"Deuteronomy",6:"Joshua",7:"Judges",8:"Ruth",9:"1+Samuel",10:"2+Samuel",11:"1+Kings",12:"2+Kings",13:"1+Chronicles",14:"2+Chronicles",15:"Ezra",16:"Nehemiah",17:"Esther",18:"Job",19:"Psalm",20:"Proverbs",21:"Ecclesiastes",22:"Song+of+Solomon",23:"Isaiah",24:"Jeremiah",25:"Lamentations",26:"Ezekiel",27:"Daniel",28:"Hosea",29:"Joel",30:"Amos",31:"Obadiah",32:"Jonah",33:"Micah",34:"Nahum",35:"Habakkuk",36:"Zephaniah",37:"Haggai",38:"Zechariah",39:"Malachi"};
+const ON_L={1:"Genesis",2:"Exodus",3:"Leviticus",4:"Numbers",5:"Deuteronomy",6:"Joshua",7:"Judges",8:"Ruth",9:"1 Samuel",10:"2 Samuel",11:"1 Kings",12:"2 Kings",13:"1 Chr",14:"2 Chr",15:"Ezra",16:"Nehemiah",17:"Esther",18:"Job",19:"Psalms",20:"Proverbs",21:"Ecclesiastes",22:"Song",23:"Isaiah",24:"Jeremiah",25:"Lamentations",26:"Ezekiel",27:"Daniel",28:"Hosea",29:"Joel",30:"Amos",31:"Obadiah",32:"Jonah",33:"Micah",34:"Nahum",35:"Habakkuk",36:"Zephaniah",37:"Haggai",38:"Zechariah",39:"Malachi"};
+const OS=["","Gn","Ex","Lv","Nu","Dt","Jos","Jg","Ru","1S","2S","1K","2K","1Ch","2Ch","Ezr","Ne","Es","Jb","Ps","Pr","Ec","So","Is","Jr","Lm","Ek","Dn","Ho","Jl","Am","Ob","Jon","Mi","Na","Hab","Zph","Hg","Zch","Ml"];
+const NN_U={40:"Matthew",41:"Mark",42:"Luke",43:"John",44:"Acts",45:"Romans",46:"1+Corinthians",47:"2+Corinthians",48:"Galatians",49:"Ephesians",50:"Philippians",51:"Colossians",52:"1+Thessalonians",53:"2+Thessalonians",54:"1+Timothy",55:"2+Timothy",56:"Titus",57:"Philemon",58:"Hebrews",59:"James",60:"1+Peter",61:"2+Peter",62:"1+John",63:"2+John",64:"3+John",65:"Jude",66:"Revelation"};
+const NN_L={40:"Matthew",41:"Mark",42:"Luke",43:"John",44:"Acts",45:"Romans",46:"1 Cor",47:"2 Cor",48:"Galatians",49:"Ephesians",50:"Philippians",51:"Colossians",52:"1 Thess",53:"2 Thess",54:"1 Tim",55:"2 Tim",56:"Titus",57:"Philemon",58:"Hebrews",59:"James",60:"1 Peter",61:"2 Peter",62:"1 John",63:"2 John",64:"3 John",65:"Jude",66:"Revelation"};
+const NS=["","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","Mt","Mk","Lk","Jn","Ac","Ro","1Co","2Co","Ga","Ep","Ph","Co","1Th","2Th","1Ti","2Ti","Ti","Phm","He","Ja","1Pe","2Pe","1Jn","2Jn","3Jn","Jd","Re"];
+const NB=66;
+
+function esvUrl(bu,ref){
+  const c=(ref||'').replace(/[a-z]+$/i,'').replace(/\u2013/g,'-').replace(/:00$/,'').trim();
+  return`https://www.esv.org/${bu}+${c}/`;
+}
+function frac(b,c){return(b-1+(Math.max(0,(c||1)-1)/(CC[b]||1)))/NB;}
+function pxC(b,VW,PL){return PL+(b-0.5)/NB*VW;}
+function pxAt(b,c,VW,PL){return PL+frac(b,c)*VW;}
+
+// ── Layout constants ──────────────────────────────────────────────────────
+const PL=48, PR=24;   // left padding (extra room for depth legend labels)
+const LEVELS=3, LSTEP=14;
+const LEGEND_PAD=18;  // gap between section color legend and book pill top
+const LABEL_H=LEGEND_PAD+LEVELS*LSTEP+16;
+const DEPTH_H=80, DEPTH_GAP=4;
+
+// ── State ─────────────────────────────────────────────────────────────────
+let CITE=[], ALLUSION=[];
+let OTC={}, NTC={}, MAXC=1;
+let arcs=[], lay={}, hoveredArc=null, selectedBook=null, mode='all', labelHits=[];
+
+// ── Data loading ──────────────────────────────────────────────────────────
+async function init(){
+  const el=document.getElementById('loading');
+  try{
+    [CITE,ALLUSION]=await Promise.all([
+      fetch('data/citations.json').then(r=>{if(!r.ok)throw r;return r.json();}),
+      fetch('data/allusions.json').then(r=>{if(!r.ok)throw r;return r.json();})
+    ]);
+  }catch(e){
+    el.textContent='⚠ Could not load data. Serve this file via a web server (e.g. python -m http.server), or enable GitHub Pages.';
+    return;
+  }
+  el.style.display='none';
+  const cv=document.getElementById('cv');
+  cv.style.display='block';
+
+  // Build citation-count lookup tables
+  for(const[ntN,ntC,otN,otC] of CITE){
+    const ok=`${otN}:${otC}`,nk=`${ntN}:${ntC}`;
+    OTC[ok]=(OTC[ok]||0)+1;  NTC[nk]=(NTC[nk]||0)+1;
+  }
+  for(const[ntN,ntC,otN,otC] of ALLUSION){
+    const ok=`${otN}:${otC}`,nk=`${ntN}:${ntC}`;
+    OTC[ok]=(OTC[ok]||0)+1;  NTC[nk]=(NTC[nk]||0)+1;
+  }
+  MAXC=Math.max(...Object.values(OTC),...Object.values(NTC));
+
+  buildArcs();
+  draw();
+  setupEvents();
+}
+
+// ── Mode toggle ───────────────────────────────────────────────────────────
+function setMode(m){
+  mode=m;
+  ['all','cite','allusion'].forEach(x=>
+    document.getElementById('btn-'+x).classList.toggle('active',x===m));
+  hoveredArc=null;
+  document.getElementById('tip').style.display='none';
+  buildArcs();draw();
+}
+
+// ── Arc construction ──────────────────────────────────────────────────────
+function buildArcs(){
+  const useC=(mode==='all'||mode==='cite'),useA=(mode==='all'||mode==='allusion');
+  const VW=lay.VW||600;
+  const raw=[];
+  if(useC)for(const[ntN,ntC,otN,otC,lxx,ntR,otR] of CITE){
+    const x1=pxAt(otN,otC,VW,PL),x2=pxAt(ntN,ntC,VW,PL);
+    raw.push({x1,x2,span:x2-x1,ntN,ntC,otN,otC,lxx:!!lxx,ntR:ntR||'',otR:otR||'',isCite:true});
+  }
+  if(useA)for(const[ntN,ntC,otN,otC,lxx,ntR,otR] of ALLUSION){
+    const x1=pxAt(otN,otC,VW,PL),x2=pxAt(ntN,ntC,VW,PL);
+    raw.push({x1,x2,span:x2-x1,ntN,ntC,otN,otC,lxx:!!lxx,ntR:ntR||'',otR:otR||'',isCite:false});
+  }
+  arcs=raw.sort((a,b)=>b.span-a.span);
+}
+
+function arcVisible(arc){return !selectedBook||(arc.ntN===selectedBook||arc.otN===selectedBook);}
+
+// ── Pill helper ───────────────────────────────────────────────────────────
+function pillPath(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.lineTo(x+w-r,y);
+  ctx.arcTo(x+w,y,x+w,y+r,r);
+  ctx.lineTo(x+w,y+h-r);
+  ctx.arcTo(x+w,y+h,x+w-r,y+h,r);
+  ctx.lineTo(x+r,y+h);
+  ctx.arcTo(x,y+h,x,y+h-r,r);
+  ctx.lineTo(x,y+r);
+  ctx.arcTo(x,y,x+r,y,r);
+  ctx.closePath();
+}
+
+// ── Draw ──────────────────────────────────────────────────────────────────
+function draw(){
+  const cv=document.getElementById('cv');
+  const dpr=window.devicePixelRatio||1;
+  const CW=cv.parentElement.clientWidth||800;
+  const PT=LABEL_H+2;
+  const CH=Math.round(CW*0.72);
+  cv.width=CW*dpr; cv.height=CH*dpr;
+  cv.style.height=CH+'px';
+
+  const ctx=cv.getContext('2d'); ctx.scale(dpr,dpr);
+  const W=CW,H=CH,VW=W-PL-PR,VH=H-(PT+DEPTH_H+DEPTH_GAP+8),base=PT+VH;
+  const pxB=(b,c)=>pxAt(b,c,VW,PL);
+  const pxCtr=(b)=>pxC(b,VW,PL);
+  lay={pxB,pxCtr,base,VH,VW,W,H,PT};
+  buildArcs();
+
+  // Background
+  ctx.fillStyle='#000'; ctx.fillRect(0,0,W,H);
+
+  // Section color bands
+  const SEC=[
+    [1,5,'rgba(255,190,0,0.05)'],[6,17,'rgba(0,175,80,0.04)'],
+    [18,22,'rgba(0,195,215,0.045)'],[23,39,'rgba(120,65,255,0.045)'],
+    [40,66,'rgba(255,255,255,0.02)']
+  ];
+  for(const[s,e,col] of SEC){
+    const x1=pxCtr(s)-VW/NB/2, x2=e===66?W-PR:pxCtr(e)+VW/NB/2;
+    ctx.fillStyle=col; ctx.fillRect(x1,PT,x2-x1,VH+DEPTH_H+DEPTH_GAP);
+  }
+
+  // OT/NT divider
+  const divX=pxCtr(40)-VW/NB/2;
+  ctx.strokeStyle='rgba(255,255,255,0.18)'; ctx.lineWidth=0.5; ctx.setLineDash([3,4]);
+  ctx.beginPath(); ctx.moveTo(divX,PT); ctx.lineTo(divX,base+DEPTH_H+DEPTH_GAP); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Selected book highlight
+  if(selectedBook){
+    const sx=pxCtr(selectedBook)-VW/NB/2,sw=VW/NB;
+    ctx.fillStyle='rgba(255,255,255,0.05)'; ctx.fillRect(sx,0,sw,H);
+    ctx.strokeStyle='rgba(255,255,255,0.18)'; ctx.lineWidth=0.5;
+    ctx.strokeRect(sx,PT,sw,VH+DEPTH_H+DEPTH_GAP);
+  }
+
+  // Arcs
+  for(const arc of arcs){
+    const{x1,x2,span,otN,lxx,isCite}=arc;
+    const xm=(x1+x2)/2, h=Math.min(span/2,VH*0.97), cpy=base-2*h;
+    const t=(otN-1)/38, hue=55+t*248, sat=80+(lxx?14:0), lit=55+(lxx?14:0);
+    const isH=(arc===hoveredArc), vis=arcVisible(arc);
+    let alpha,lw;
+    if(isCite){
+      alpha=!selectedBook?(isH?0.95:lxx?0.42:0.28):(vis?(isH?0.98:lxx?0.72:0.55):0.04);
+      lw=isH?2.2:lxx?1.0:0.7;
+    }else{
+      alpha=!selectedBook?(isH?0.7:0.10):(vis?(isH?0.75:0.22):0.03);
+      lw=isH?1.4:0.45;
+    }
+    ctx.beginPath(); ctx.moveTo(x1,base); ctx.quadraticCurveTo(xm,cpy,x2,base);
+    ctx.strokeStyle=`hsla(${hue},${sat}%,${lit}%,${alpha})`;
+    ctx.lineWidth=lw; ctx.stroke();
+  }
+
+  // Baseline
+  ctx.strokeStyle='rgba(255,255,255,0.25)'; ctx.lineWidth=0.8;
+  ctx.beginPath(); ctx.moveTo(PL,base); ctx.lineTo(W-PR,base); ctx.stroke();
+
+  // ── Depth chart ──────────────────────────────────────────────────────────
+  const depthBase=base+DEPTH_GAP, sqrtMax=Math.sqrt(MAXC);
+  const allData=[
+    ...CITE.map(r=>({ntN:r[0],ntC:r[1],otN:r[2],otC:r[3]})),
+    ...ALLUSION.map(r=>({ntN:r[0],ntC:r[1],otN:r[2],otC:r[3]}))
+  ];
+  const drawn=new Set();
+  for(const{ntN,ntC,otN,otC} of allData){
+    const vis=!selectedBook||(otN===selectedBook||ntN===selectedBook);
+    const ok=`${otN}:${otC}`;
+    if(!drawn.has('o'+ok)){
+      drawn.add('o'+ok);
+      const cnt=OTC[ok]||0,bh=Math.sqrt(cnt)/sqrtMax*DEPTH_H;
+      const xb=pxB(otN,otC), bw=Math.max(2,VW/NB/Math.max(1,CC[otN])*0.8);
+      ctx.fillStyle=`rgba(255,255,255,${vis?0.15+cnt/MAXC*0.55:0.04})`;
+      ctx.fillRect(xb-bw/2,depthBase,bw,bh);
+    }
+    const nk=`${ntN}:${ntC}`;
+    if(!drawn.has('n'+nk)){
+      drawn.add('n'+nk);
+      const cnt=NTC[nk]||0,bh=Math.sqrt(cnt)/sqrtMax*DEPTH_H;
+      const xb=pxB(ntN,ntC), bw=Math.max(2,VW/NB/Math.max(1,CC[ntN])*0.8);
+      ctx.fillStyle=`rgba(255,255,255,${vis?0.15+cnt/MAXC*0.55:0.04})`;
+      ctx.fillRect(xb-bw/2,depthBase,bw,bh);
+    }
+  }
+
+  // Depth chart gridlines + LEFT-SIDE legend (bright)
+  const marks=[1,5,20,50,MAXC];
+  ctx.font='9px "Open Sans",sans-serif'; ctx.textAlign='right';
+  for(const m of marks){
+    const yy=depthBase+Math.sqrt(m)/sqrtMax*DEPTH_H;
+    ctx.strokeStyle='rgba(255,255,255,0.1)'; ctx.lineWidth=0.4; ctx.setLineDash([2,4]);
+    ctx.beginPath(); ctx.moveTo(PL,yy); ctx.lineTo(W-PR,yy); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle='rgba(255,255,255,0.65)';
+    ctx.fillText(String(m), PL-5, yy+3);
+  }
+  ctx.strokeStyle='rgba(255,255,255,0.1)'; ctx.lineWidth=0.5;
+  ctx.beginPath(); ctx.moveTo(PL,depthBase+DEPTH_H); ctx.lineTo(W-PR,depthBase+DEPTH_H); ctx.stroke();
+
+  // ── Book label pills ──────────────────────────────────────────────────────
+  labelHits=[];
+  ctx.font='9px "Open Sans",sans-serif';
+  for(let b=1;b<=66;b++){
+    const xb=pxCtr(b), lb=b<=39?OS[b]:NS[b];
+    if(!lb) continue;
+    const lv=(b-1)%LEVELS;
+    // yText: baseline of text in screen space, before rotation
+    const yText=PT-(lv+1)*LSTEP-4;
+    const isSel=(b===selectedBook);
+
+    // Leader line from baseline up to pill
+    ctx.strokeStyle=isSel?'rgba(255,255,255,0.35)':`rgba(255,255,255,${0.05+lv*0.03})`;
+    ctx.lineWidth=isSel?0.8:0.4;
+    ctx.beginPath(); ctx.moveTo(xb,base); ctx.lineTo(xb,base+3); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(xb,PT-4); ctx.lineTo(xb,yText+4); ctx.stroke();
+
+    // Draw pill in rotated context
+    ctx.save();
+    ctx.translate(xb, yText);
+    ctx.rotate(-Math.PI/2);
+    const tw=ctx.measureText(lb).width;
+    const PW=tw+10, PH=13, R=5;
+    const px=-PW/2, py=-PH/2;
+    pillPath(ctx,px,py,PW,PH,R);
+    // Fill
+    ctx.fillStyle=isSel?'rgba(255,255,255,0.12)':'rgba(255,255,255,0.05)';
+    ctx.fill();
+    // Border
+    ctx.strokeStyle=isSel?'rgba(255,255,255,0.65)':`rgba(255,255,255,${b<=39?0.22:0.28})`;
+    ctx.lineWidth=isSel?0.8:0.5;
+    ctx.stroke();
+    // Text
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillStyle=isSel?'#fff':(b<=39?'rgba(255,255,255,0.60)':'rgba(255,255,255,0.75)');
+    ctx.fillText(lb,0,0.5);
+    ctx.restore();
+
+    // Hit area (pill is PH wide × PW tall in screen space after rotation)
+    labelHits.push({b,x:xb,yTop:yText-PW/2-2,yBot:yText+PW/2+2});
+  }
+
+  // Section color legend (top)
+  const SL=[
+    [1,5,'Law','rgba(255,195,0,0.75)'],[6,17,'History','rgba(0,180,80,0.7)'],
+    [18,22,'Poetry','rgba(0,200,225,0.72)'],[23,39,'Prophets','rgba(155,90,255,0.75)'],
+    [40,66,'New Testament','rgba(255,255,255,0.45)']
+  ];
+  ctx.textBaseline='alphabetic'; ctx.textAlign='center';
+  for(const[s,e,lbl,col] of SL){
+    const x1=pxCtr(s)-VW/NB/2, x2=e===66?W-PR:pxCtr(e)+VW/NB/2;
+    ctx.fillStyle=col; ctx.font='600 10px "Open Sans",sans-serif';
+    ctx.fillText(lbl,(x1+x2)/2,11);
+  }
+
+  // Status line
+  const cnt=selectedBook?arcs.filter(arcVisible).length:arcs.length;
+  const bkL=selectedBook?(ON_L[selectedBook]||NN_L[selectedBook]||''):'';
+  const mL=mode==='all'?'':(mode==='cite'?' (citations)':' (allusions)');
+  ctx.textAlign='right'; ctx.fillStyle='rgba(255,255,255,0.22)';
+  ctx.font='10px "Open Sans",sans-serif';
+  ctx.fillText(
+    selectedBook
+      ?`${bkL} — ${cnt} connection${cnt!==1?'s':''}${mL}  ·  click label to clear`
+      :`${cnt.toLocaleString()} connections${mL}  ·  click book to filter  ·  click arc to open ESV`,
+    W-PR-4, 11
+  );
+
+  // Hover label at bottom
+  if(hoveredArc){
+    const{x1,x2,ntN,ntR,otN,otR,isCite}=hoveredArc;
+    const lbl=isCite
+      ?`${NN_L[ntN]} ${ntR}  →  ${ON_L[otN]} ${otR}`
+      :`${NN_L[ntN]} ${ntR}  ≈  ${ON_L[otN]} ${otR} (allusion)`;
+    ctx.textAlign='center'; ctx.font='10px "Open Sans",sans-serif';
+    ctx.fillStyle='rgba(255,255,255,0.5)';
+    ctx.fillText(lbl,
+      Math.min(W-PR-80,Math.max(PL+80,(x1+x2)/2)),
+      base+DEPTH_H+DEPTH_GAP+6
+    );
+  }
+}
+
+// ── Hit detection ─────────────────────────────────────────────────────────
+function hitLabel(mx,my){
+  for(const{b,x,yTop,yBot} of labelHits){
+    if(Math.abs(mx-x)<=8&&my>=yTop&&my<=yBot) return b;
+  }
+  return null;
+}
+
+function findArc(mx,my){
+  const{base,VH}=lay; let best=null,bd=10;
+  for(const arc of arcs){
+    if(!arcVisible(arc)) continue;
+    const{x1,x2}=arc;
+    if(mx<Math.min(x1,x2)-12||mx>Math.max(x1,x2)+12) continue;
+    const xm=(x1+x2)/2,sp=x2-x1,h=Math.min(sp/2,VH*0.97),cp=base-2*h;
+    for(let i=0;i<=32;i++){
+      const t=i/32;
+      const bx=(1-t)*(1-t)*x1+2*(1-t)*t*xm+t*t*x2;
+      const by=(1-t)*(1-t)*base+2*(1-t)*t*cp+t*t*base;
+      const d=Math.hypot(mx-bx,my-by);
+      if(d<bd){bd=d;best=arc;}
+    }
+  }
+  return best;
+}
+
+// ── Events ────────────────────────────────────────────────────────────────
+function setupEvents(){
+  const cv=document.getElementById('cv');
+  const tip=document.getElementById('tip');
+  const dpr=window.devicePixelRatio||1;
+
+  cv.addEventListener('mousemove',e=>{
+    const rect=cv.getBoundingClientRect();
+    const mx=(e.clientX-rect.left)*(cv.width/rect.width)/dpr;
+    const my=(e.clientY-rect.top)*(cv.height/rect.height)/dpr;
+    const lbk=hitLabel(mx,my), arc=lbk?null:findArc(mx,my);
+    const changed=arc!==hoveredArc; hoveredArc=arc;
+    cv.style.cursor=(lbk||arc)?'pointer':'default';
+    if(changed) draw();
+    if(arc){
+      const{ntN,ntR,otN,otR,lxx,isCite,ntC,otC}=arc;
+      const oc=OTC[`${otN}:${otC}`]||0, nc=NTC[`${ntN}:${ntC}`]||0;
+      tip.innerHTML=
+        `<span style="color:${isCite?'#fff':'#aad0ff'};font-weight:600;font-size:12px">${NN_L[ntN]} ${ntR}</span>`+
+        `<span style="color:#555;margin:0 5px">${isCite?'→':'≈'}</span>`+
+        `<span style="color:#aac0d0;font-size:11px">${ON_L[otN]} ${otR}</span>`+
+        (lxx?`<span style="color:#7ab;font-size:10px;margin-left:6px">LXX</span>`:'')+
+        `<div style="margin-top:4px;font-size:10px;color:#666">${isCite?'Direct citation':'Verbal allusion'} &nbsp;·&nbsp; `+
+        `${NN_L[ntN]} ch.${ntC}: ${nc} ref${nc!==1?'s':''} &nbsp;·&nbsp; `+
+        `${ON_L[otN]} ch.${otC}: ${oc} ref${oc!==1?'s':''}</div>`+
+        (isCite?`<div style="margin-top:3px;font-size:10px;color:#555">click to open both passages in ESV.org</div>`:'');
+      tip.style.display='block';
+      const ex=e.clientX-rect.left, ey=e.clientY-rect.top;
+      tip.style.left=(ex>rect.width*0.55?ex-270:ex+14)+'px';
+      tip.style.top=Math.max(4,ey-20)+'px';
+    }else{
+      tip.style.display='none';
+    }
+  });
+
+  cv.addEventListener('mouseleave',()=>{
+    tip.style.display='none';
+    if(hoveredArc){hoveredArc=null;draw();}
+  });
+
+  cv.addEventListener('click',e=>{
+    const rect=cv.getBoundingClientRect();
+    const mx=(e.clientX-rect.left)*(cv.width/rect.width)/dpr;
+    const my=(e.clientY-rect.top)*(cv.height/rect.height)/dpr;
+    const lbk=hitLabel(mx,my);
+    if(lbk!==null){
+      selectedBook=(selectedBook===lbk)?null:lbk;
+      hoveredArc=null; tip.style.display='none'; draw(); return;
+    }
+    const arc=findArc(mx,my);
+    if(!arc||!arc.isCite) return;
+    window.open(esvUrl(NN_U[arc.ntN],arc.ntR),'_blank');
+    window.open(esvUrl(ON_U[arc.otN],arc.otR),'_blank');
+  });
+
+  window.addEventListener('resize',()=>{hoveredArc=null;buildArcs();draw();});
+}
+
+init();
+</script>
+</body>
+</html>
