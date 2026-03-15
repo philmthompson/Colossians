@@ -47,18 +47,12 @@ canvas{display:block;width:100%}
 <script>
 // ── Static lookup tables ─────────────────────────────────────────────────
 const CC={1:50,2:40,3:27,4:36,5:34,6:24,7:21,8:4,9:31,10:24,11:22,12:25,13:29,14:36,15:10,16:13,17:10,18:42,19:150,20:31,21:12,22:8,23:66,24:52,25:5,26:48,27:12,28:14,29:3,30:9,31:1,32:4,33:7,34:3,35:3,36:3,37:2,38:14,39:4,40:28,41:16,42:24,43:21,44:28,45:16,46:16,47:13,48:6,49:6,50:4,51:4,52:5,53:3,54:6,55:4,56:3,57:1,58:13,59:5,60:5,61:3,62:5,63:1,64:1,65:1,66:22};
-const ON_U={1:"Genesis",2:"Exodus",3:"Leviticus",4:"Numbers",5:"Deuteronomy",6:"Joshua",7:"Judges",8:"Ruth",9:"1+Samuel",10:"2+Samuel",11:"1+Kings",12:"2+Kings",13:"1+Chronicles",14:"2+Chronicles",15:"Ezra",16:"Nehemiah",17:"Esther",18:"Job",19:"Psalm",20:"Proverbs",21:"Ecclesiastes",22:"Song+of+Solomon",23:"Isaiah",24:"Jeremiah",25:"Lamentations",26:"Ezekiel",27:"Daniel",28:"Hosea",29:"Joel",30:"Amos",31:"Obadiah",32:"Jonah",33:"Micah",34:"Nahum",35:"Habakkuk",36:"Zephaniah",37:"Haggai",38:"Zechariah",39:"Malachi"};
 const ON_L={1:"Genesis",2:"Exodus",3:"Leviticus",4:"Numbers",5:"Deuteronomy",6:"Joshua",7:"Judges",8:"Ruth",9:"1 Samuel",10:"2 Samuel",11:"1 Kings",12:"2 Kings",13:"1 Chr",14:"2 Chr",15:"Ezra",16:"Nehemiah",17:"Esther",18:"Job",19:"Psalms",20:"Proverbs",21:"Ecclesiastes",22:"Song",23:"Isaiah",24:"Jeremiah",25:"Lamentations",26:"Ezekiel",27:"Daniel",28:"Hosea",29:"Joel",30:"Amos",31:"Obadiah",32:"Jonah",33:"Micah",34:"Nahum",35:"Habakkuk",36:"Zephaniah",37:"Haggai",38:"Zechariah",39:"Malachi"};
 const OS=["","Gn","Ex","Lv","Nu","Dt","Jos","Jg","Ru","1S","2S","1K","2K","1Ch","2Ch","Ezr","Ne","Es","Jb","Ps","Pr","Ec","So","Is","Jr","Lm","Ek","Dn","Ho","Jl","Am","Ob","Jon","Mi","Na","Hab","Zph","Hg","Zch","Ml"];
-const NN_U={40:"Matthew",41:"Mark",42:"Luke",43:"John",44:"Acts",45:"Romans",46:"1+Corinthians",47:"2+Corinthians",48:"Galatians",49:"Ephesians",50:"Philippians",51:"Colossians",52:"1+Thessalonians",53:"2+Thessalonians",54:"1+Timothy",55:"2+Timothy",56:"Titus",57:"Philemon",58:"Hebrews",59:"James",60:"1+Peter",61:"2+Peter",62:"1+John",63:"2+John",64:"3+John",65:"Jude",66:"Revelation"};
 const NN_L={40:"Matthew",41:"Mark",42:"Luke",43:"John",44:"Acts",45:"Romans",46:"1 Cor",47:"2 Cor",48:"Galatians",49:"Ephesians",50:"Philippians",51:"Colossians",52:"1 Thess",53:"2 Thess",54:"1 Tim",55:"2 Tim",56:"Titus",57:"Philemon",58:"Hebrews",59:"James",60:"1 Peter",61:"2 Peter",62:"1 John",63:"2 John",64:"3 John",65:"Jude",66:"Revelation"};
 const NS=["","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","Mt","Mk","Lk","Jn","Ac","Ro","1Co","2Co","Ga","Ep","Ph","Co","1Th","2Th","1Ti","2Ti","Ti","Phm","He","Ja","1Pe","2Pe","1Jn","2Jn","3Jn","Jd","Re"];
 const NB=66;
 
-function esvUrl(bu,ref){
-  const c=(ref||'').replace(/[a-z]+$/i,'').replace(/\u2013/g,'-').replace(/:00$/,'').trim();
-  return`https://www.esv.org/${bu}+${c}/`;
-}
 function frac(b,c){const cc=CC[b]||1;return(b-1+(Math.min(Math.max(0,(c||1)-1),cc-1)/cc))/NB;}
 function pxC(b,VW,PL){return PL+(b-0.5)/NB*VW;}
 function pxAt(b,c,VW,PL){return PL+frac(b,c)*VW;}
@@ -606,7 +600,6 @@ function setupEvents(){
         `<div style="margin-top:4px;font-size:10px;color:#666">${isCite?'Direct citation':'Verbal allusion'} &nbsp;·&nbsp; `+
         `${NN_L[ntN]} ch.${ntC}: ${nc} ref${nc!==1?'s':''} &nbsp;·&nbsp; `+
         `${ON_L[otN]} ch.${otC}: ${oc} ref${oc!==1?'s':''}</div>`+
-        (isCite?`<div style="margin-top:3px;font-size:10px;color:#555">click to open both passages in ESV.org</div>`:'')+
         '<div id="tip-scripture"></div>';
       tip.style.display='block';
       const ex=e.clientX-rect.left, ey=e.clientY-rect.top;
@@ -652,10 +645,6 @@ function setupEvents(){
       pinnedDepthBar=(pinnedDepthBar&&pinnedDepthBar.key===depthBar.key)?null:depthBar;
       draw(); return;
     }
-    const arc=findArc(mx,my);
-    if(!arc||!arc.isCite) return;
-    window.open(esvUrl(NN_U[arc.ntN],arc.ntR),'_blank');
-    window.open(esvUrl(ON_U[arc.otN],arc.otR),'_blank');
   });
 
   window.addEventListener('resize',()=>{hoveredArc=null;hoveredDepthBar=null;pinnedDepthBar=null;buildArcs();draw();});
