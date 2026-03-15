@@ -13,10 +13,11 @@ h1{color:rgba(255,255,255,0.55);font-size:13px;font-weight:400;letter-spacing:0.
 #loading{color:rgba(255,255,255,0.4);font-size:13px;text-align:center;padding:40px 20px}
 canvas{display:block;width:100%}
 #tip{display:none;position:absolute;pointer-events:none;background:rgba(8,8,8,0.96);color:#ccc;padding:11px 14px;border-radius:6px;border:0.5px solid rgba(255,255,255,0.16);font-size:11px;line-height:1.75;max-width:400px;max-height:400px;overflow-y:auto;white-space:normal;z-index:10}
-#bar{display:flex;justify-content:center;gap:8px;padding:10px 16px 12px;border-top:0.5px solid rgba(255,255,255,0.1)}
-#bar button{font-family:'Open Sans',sans-serif;font-size:11px;padding:5px 16px;border-radius:20px;border:0.5px solid rgba(255,255,255,0.25);background:transparent;color:rgba(255,255,255,0.45);cursor:pointer;transition:all 0.15s}
-#bar button:hover{border-color:rgba(255,255,255,0.5);color:rgba(255,255,255,0.7)}
-#bar button.active{background:rgba(255,255,255,0.12);border-color:rgba(255,255,255,0.6);color:#fff}
+.btn-bar{display:flex;justify-content:center;gap:8px;padding:10px 16px 4px;border-top:0.5px solid rgba(255,255,255,0.1)}
+.btn-bar:last-child{padding-bottom:12px}
+.btn-bar button{font-family:'Open Sans',sans-serif;font-size:11px;padding:5px 16px;border-radius:20px;border:0.5px solid rgba(255,255,255,0.25);background:transparent;color:rgba(255,255,255,0.45);cursor:pointer;transition:all 0.15s}
+.btn-bar button:hover{border-color:rgba(255,255,255,0.5);color:rgba(255,255,255,0.7)}
+.btn-bar button.active{background:rgba(255,255,255,0.12);border-color:rgba(255,255,255,0.6);color:#fff}
 </style>
 </head>
 <body>
@@ -25,10 +26,16 @@ canvas{display:block;width:100%}
   <div id="loading">Loading data…</div>
   <canvas id="cv" style="display:none"></canvas>
   <div id="tip"></div>
-  <div id="bar">
+  <div class="btn-bar">
     <button id="btn-all"      class="active" onclick="setMode('all')">All</button>
     <button id="btn-cite"                    onclick="setMode('cite')">Citations</button>
     <button id="btn-allusion"                onclick="setMode('allusion')">Allusions</button>
+  </div>
+  <div class="btn-bar">
+    <button id="btn-ver-ESV"   class="active" onclick="setVersion('ESV')">ESV</button>
+    <button id="btn-ver-CSB"                  onclick="setVersion('CSB')">CSB</button>
+    <button id="btn-ver-NIV"                  onclick="setVersion('NIV')">NIV</button>
+    <button id="btn-ver-Greek"                onclick="setVersion('Greek')">Greek</button>
   </div>
 </div>
 <div id="esv-copyright" style="display:none;color:rgba(255,255,255,0.18);font-size:9px;text-align:center;padding:8px 16px;line-height:1.5">
@@ -52,24 +59,32 @@ function esvUrl(bu,ref){
   const c=(ref||'').replace(/[a-z]+$/i,'').replace(/\u2013/g,'-').replace(/:00$/,'').trim();
   return`https://www.esv.org/${bu}+${c}/`;
 }
-function frac(b,c){return(b-1+(Math.max(0,(c||1)-1)/(CC[b]||1)))/NB;}
+function frac(b,c){const cc=CC[b]||1;return(b-1+(Math.min(Math.max(0,(c||1)-1),cc-1)/cc))/NB;}
 function pxC(b,VW,PL){return PL+(b-0.5)/NB*VW;}
 function pxAt(b,c,VW,PL){return PL+frac(b,c)*VW;}
 
 // ── Layout constants ──────────────────────────────────────────────────────
 const PL=48, PR=24;   // left padding (extra room for depth legend labels)
 const LEVELS=3, LSTEP=14;
-const LEGEND_PAD=18;  // gap between section color legend and book pill top
+const LEGEND_PAD=32;  // gap between section color legend and book pill top
 const LABEL_H=LEGEND_PAD+LEVELS*LSTEP+16;
-const DEPTH_H=80, DEPTH_GAP=4;
+const DEPTH_H=80, DEPTH_GAP=4, DEPTH_INFO_H=70;
 
 // ── State ─────────────────────────────────────────────────────────────────
 let CITE=[], ALLUSION=[];
 let OTC={}, NTC={}, MAXC=1;
 let arcs=[], lay={}, hoveredArc=null, selectedBook=null, mode='all', labelHits=[];
+let depthIndex={}, depthBarHits=[], hoveredDepthBar=null, pinnedDepthBar=null;
 
 // ── Scripture text (Bolls.life API — no key required) ────────────────────
-const BIBLE_VER='ESV';
+const VERSIONS={
+  ESV:  {ot:'ESV',  nt:'ESV',  label:'ESV'},
+  CSB:  {ot:'CSB17',nt:'CSB17',label:'CSB'},
+  NIV:  {ot:'NIV',  nt:'NIV',  label:'NIV'},
+  Greek:{ot:'LXX',  nt:'NTGT', label:'Greek'}
+};
+let bibleVer='ESV';
+function apiCode(book){const v=VERSIONS[bibleVer];return book<=39?v.ot:v.nt;}
 const chapterCache=new Map();
 const resolvedCache=new Map();
 let fetchTimer=null, lastFetchedArc=null;
@@ -77,26 +92,28 @@ let fetchTimer=null, lastFetchedArc=null;
 function parseRef(ref){
   const r=(ref||'').replace(/^\d+\s*day,\s*/i,'').replace(/[a-z]+$/i,'').trim();
   const m=r.match(/^(\d+):(.+)$/);
-  if(!m) return null;
-  const ch=parseInt(m[1],10);
-  // Parse verse numbers from ranges like "1:27", "3:10-12", "7:27-28; 7:35"
+  // Single-chapter books have refs like "11" with no colon
+  const ch=m?parseInt(m[1],10):1;
+  const vsPart=m?m[2]:r;
+  // Parse verse numbers from ranges like "27", "10-12", "27-28; 35"
   const vs=new Set();
-  for(const part of m[2].split(/[;,]/)){
+  for(const part of vsPart.split(/[;,]/)){
     const rm=part.trim().match(/(?:\d+:)?(\d+)(?:\s*[-–]\s*(\d+))?/);
     if(rm){
       const lo=parseInt(rm[1],10), hi=rm[2]?parseInt(rm[2],10):lo;
       for(let v=lo;v<=hi;v++) vs.add(v);
     }
   }
+  if(!vs.size) return null;
   return{ch,vs:[...vs].sort((a,b)=>a-b)};
 }
 
-function cacheKey(book,ch){return`${book}:${ch}`;}
+function cacheKey(book,ch){return`${apiCode(book)}:${book}:${ch}`;}
 
 function fetchChapter(book,ch){
   const k=cacheKey(book,ch);
   if(chapterCache.has(k))return chapterCache.get(k);
-  const p=fetch(`https://bolls.life/get-text/${BIBLE_VER}/${book}/${ch}/`)
+  const p=fetch(`https://bolls.life/get-text/${apiCode(book)}/${book}/${ch}/`)
     .then(r=>{if(!r.ok)throw new Error(`Bolls API ${r.status}`);return r.json();})
     .then(verses=>{
       const map={};
@@ -124,11 +141,11 @@ function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(
 
 function cancelPendingFetch(){if(fetchTimer){clearTimeout(fetchTimer);fetchTimer=null;}}
 
-function resolvedKey(book,ref){return`${book}|${ref}`;}
+function resolvedKey(book,ref){return`${bibleVer}:${book}|${ref}`;}
 
 async function fetchAndShowScripture(arc){
   const el=document.getElementById('tip-scripture');
-  if(el) el.innerHTML='<div style="margin-top:8px;font-size:10px;color:#555;font-style:italic">Loading ESV text\u2026</div>';
+  if(el) el.innerHTML=`<div style="margin-top:8px;font-size:10px;color:#555;font-style:italic">Loading ${VERSIONS[bibleVer].label} text\u2026</div>`;
   const[ntTxt,otTxt]=await Promise.all([
     getPassageText(arc.ntN,arc.ntR),
     getPassageText(arc.otN,arc.otR)
@@ -142,7 +159,7 @@ function updateScriptureInTooltip(ntTxt,otTxt,arc){
   const el=document.getElementById('tip-scripture');
   if(!el||hoveredArc!==arc)return;
   if(!ntTxt&&!otTxt){el.innerHTML='<div style="margin-top:8px;font-size:10px;color:#555;font-style:italic">Scripture text unavailable</div>';return;}
-  let h='<div style="margin-top:8px;border-top:1px solid rgba(255,255,255,0.08);padding-top:8px">';
+  let h=`<div style="margin-top:8px;border-top:1px solid rgba(255,255,255,0.08);padding-top:6px"><span style="font-size:8px;color:#555;letter-spacing:0.06em">${VERSIONS[bibleVer].label}</span>`;
   if(ntTxt) h+=`<div style="margin-bottom:6px"><span style="font-size:9px;color:#888;text-transform:uppercase;letter-spacing:0.05em">${NN_L[arc.ntN]} ${arc.ntR}</span>`+
     `<div style="font-size:10px;color:#bbb;line-height:1.6;margin-top:2px">${escHtml(ntTxt)}</div></div>`;
   if(otTxt) h+=`<div><span style="font-size:9px;color:#888;text-transform:uppercase;letter-spacing:0.05em">${ON_L[arc.otN]} ${arc.otR}</span>`+
@@ -153,7 +170,9 @@ function updateScriptureInTooltip(ntTxt,otTxt,arc){
 
 // ── Data loading ──────────────────────────────────────────────────────────
 async function init(){
-  document.getElementById('esv-copyright').style.display='block';
+  const cr=document.getElementById('esv-copyright');
+  cr.textContent=COPYRIGHTS[bibleVer];
+  cr.style.display=COPYRIGHTS[bibleVer]?'block':'none';
   const el=document.getElementById('loading');
   try{
     [CITE,ALLUSION]=await Promise.all([
@@ -179,6 +198,18 @@ async function init(){
   }
   MAXC=Math.max(...Object.values(OTC),...Object.values(NTC));
 
+  // Build depth chart reference index (chapter → connected references)
+  depthIndex={};
+  function dix(k){return depthIndex[k]||(depthIndex[k]={cites:[],allusions:[]});}
+  for(const[ntN,ntC,otN,otC,lxx,ntR,otR] of CITE){
+    dix(`${otN}:${otC}`).cites.push({book:ntN,ref:ntR});
+    dix(`${ntN}:${ntC}`).cites.push({book:otN,ref:otR});
+  }
+  for(const[ntN,ntC,otN,otC,lxx,ntR,otR] of ALLUSION){
+    dix(`${otN}:${otC}`).allusions.push({book:ntN,ref:ntR});
+    dix(`${ntN}:${ntC}`).allusions.push({book:otN,ref:otR});
+  }
+
   buildArcs();
   draw();
   setupEvents();
@@ -189,9 +220,27 @@ function setMode(m){
   mode=m;
   ['all','cite','allusion'].forEach(x=>
     document.getElementById('btn-'+x).classList.toggle('active',x===m));
-  hoveredArc=null;
+  hoveredArc=null; hoveredDepthBar=null; pinnedDepthBar=null;
   document.getElementById('tip').style.display='none';
   buildArcs();draw();
+}
+
+// ── Version toggle ───────────────────────────────────────────────────────
+const COPYRIGHTS={
+  ESV:'Scripture quotations are from the ESV\u00ae Bible (The Holy Bible, English Standard Version\u00ae), copyright \u00a9 2001 by Crossway, a publishing ministry of Good News Publishers. Used by permission. All rights reserved.',
+  CSB:'Scripture quotations marked CSB have been taken from the Christian Standard Bible\u00ae, Copyright \u00a9 2017 by Holman Bible Publishers. Used by permission.',
+  NIV:'Scripture quotations marked NIV are taken from the Holy Bible, New International Version\u00ae, NIV\u00ae. Copyright \u00a9 1973, 1978, 1984, 2011 by Biblica, Inc.\u2122 Used by permission. All rights reserved worldwide.',
+  Greek:''
+};
+function setVersion(v){
+  bibleVer=v;
+  Object.keys(VERSIONS).forEach(x=>
+    document.getElementById('btn-ver-'+x).classList.toggle('active',x===v));
+  hoveredArc=null; hoveredDepthBar=null; pinnedDepthBar=null;
+  document.getElementById('tip').style.display='none';
+  const cr=document.getElementById('esv-copyright');
+  cr.textContent=COPYRIGHTS[v]||'';
+  cr.style.display=COPYRIGHTS[v]?'block':'none';
 }
 
 // ── Arc construction ──────────────────────────────────────────────────────
@@ -233,15 +282,15 @@ function draw(){
   const dpr=window.devicePixelRatio||1;
   const CW=cv.parentElement.clientWidth||800;
   const PT=LABEL_H+2;
-  const CH=Math.round(CW*0.72);
+  const CH=Math.round(CW*0.72)+DEPTH_INFO_H;
   cv.width=CW*dpr; cv.height=CH*dpr;
   cv.style.height=CH+'px';
 
   const ctx=cv.getContext('2d'); ctx.scale(dpr,dpr);
-  const W=CW,H=CH,VW=W-PL-PR,VH=H-(PT+DEPTH_H+DEPTH_GAP+8),base=PT+VH;
+  const W=CW,H=CH,VW=W-PL-PR,VH=H-(PT+DEPTH_H+DEPTH_GAP+DEPTH_INFO_H),base=PT+VH;
   const pxB=(b,c)=>pxAt(b,c,VW,PL);
   const pxCtr=(b)=>pxC(b,VW,PL);
-  lay={pxB,pxCtr,base,VH,VW,W,H,PT};
+  lay={pxB,pxCtr,base,VH,VW,W,H,PT,depthBase:0};
   buildArcs();
 
   // Background
@@ -279,11 +328,12 @@ function draw(){
     const t=(otN-1)/38, hue=55+t*248, sat=80+(lxx?14:0), lit=55+(lxx?14:0);
     const isH=(arc===hoveredArc), vis=arcVisible(arc);
     let alpha,lw;
+    if(!vis&&selectedBook) continue;
     if(isCite){
-      alpha=!selectedBook?(isH?0.95:lxx?0.42:0.28):(vis?(isH?0.98:lxx?0.72:0.55):0.04);
+      alpha=!selectedBook?(isH?0.95:lxx?0.42:0.28):(isH?0.98:lxx?0.72:0.55);
       lw=isH?2.2:lxx?1.0:0.7;
     }else{
-      alpha=!selectedBook?(isH?0.7:0.10):(vis?(isH?0.75:0.22):0.03);
+      alpha=!selectedBook?(isH?0.7:0.10):(isH?0.75:0.22);
       lw=isH?1.4:0.45;
     }
     ctx.beginPath(); ctx.moveTo(x1,base); ctx.quadraticCurveTo(xm,cpy,x2,base);
@@ -297,29 +347,46 @@ function draw(){
 
   // ── Depth chart ──────────────────────────────────────────────────────────
   const depthBase=base+DEPTH_GAP, sqrtMax=Math.sqrt(MAXC);
+  lay.depthBase=depthBase;
+  depthBarHits=[];
   const allData=[
     ...CITE.map(r=>({ntN:r[0],ntC:r[1],otN:r[2],otC:r[3]})),
     ...ALLUSION.map(r=>({ntN:r[0],ntC:r[1],otN:r[2],otC:r[3]}))
   ];
   const drawn=new Set();
+  const activeBar=pinnedDepthBar||hoveredDepthBar;
   for(const{ntN,ntC,otN,otC} of allData){
     const vis=!selectedBook||(otN===selectedBook||ntN===selectedBook);
     const ok=`${otN}:${otC}`;
     if(!drawn.has('o'+ok)){
       drawn.add('o'+ok);
       const cnt=OTC[ok]||0,bh=Math.sqrt(cnt)/sqrtMax*DEPTH_H;
-      const xb=pxB(otN,otC), bw=Math.max(2,VW/NB/Math.max(1,CC[otN])*0.8);
+      const xb=pxB(otN,otC), bw=Math.max(2,VW/NB/Math.max(8,CC[otN])*0.8);
       ctx.fillStyle=`rgba(255,255,255,${vis?0.15+cnt/MAXC*0.55:0.04})`;
       ctx.fillRect(xb-bw/2,depthBase,bw,bh);
+      depthBarHits.push({book:otN,ch:otC,key:ok,x:xb,hw:bw/2,bh});
     }
     const nk=`${ntN}:${ntC}`;
     if(!drawn.has('n'+nk)){
       drawn.add('n'+nk);
       const cnt=NTC[nk]||0,bh=Math.sqrt(cnt)/sqrtMax*DEPTH_H;
-      const xb=pxB(ntN,ntC), bw=Math.max(2,VW/NB/Math.max(1,CC[ntN])*0.8);
+      const xb=pxB(ntN,ntC), bw=Math.max(2,VW/NB/Math.max(8,CC[ntN])*0.8);
       ctx.fillStyle=`rgba(255,255,255,${vis?0.15+cnt/MAXC*0.55:0.04})`;
       ctx.fillRect(xb-bw/2,depthBase,bw,bh);
+      depthBarHits.push({book:ntN,ch:ntC,key:nk,x:xb,hw:bw/2,bh});
     }
+  }
+  // Highlight active depth bar
+  if(activeBar){
+    const cnt=(OTC[activeBar.key]||0)+(NTC[activeBar.key]||0)-(OTC[activeBar.key]&&NTC[activeBar.key]?0:0);
+    const rawCnt=OTC[activeBar.key]||NTC[activeBar.key]||0;
+    const bh=Math.sqrt(rawCnt)/sqrtMax*DEPTH_H;
+    const xb=pxB(activeBar.book,activeBar.ch);
+    const bw=Math.max(2,VW/NB/Math.max(8,CC[activeBar.book])*0.8);
+    ctx.fillStyle='rgba(255,255,255,0.45)';
+    ctx.fillRect(xb-bw/2,depthBase,bw,bh);
+    ctx.strokeStyle='rgba(255,255,255,0.6)'; ctx.lineWidth=0.8;
+    ctx.strokeRect(xb-bw/2,depthBase,bw,bh);
   }
 
   // Depth chart gridlines + LEFT-SIDE legend (bright)
@@ -340,7 +407,7 @@ function draw(){
   labelHits=[];
   ctx.font='9px "Open Sans",sans-serif';
   for(let b=1;b<=66;b++){
-    const xb=pxCtr(b), lb=b<=39?OS[b]:NS[b];
+    const xb=pxCtr(b), lb=ON_L[b]||NN_L[b]||'';
     if(!lb) continue;
     const lv=(b-1)%LEVELS;
     // yText: baseline of text in screen space, before rotation
@@ -399,13 +466,13 @@ function draw(){
   ctx.font='10px "Open Sans",sans-serif';
   ctx.fillText(
     selectedBook
-      ?`${bkL} — ${cnt} connection${cnt!==1?'s':''}${mL}  ·  click label to clear`
-      :`${cnt.toLocaleString()} connections${mL}  ·  click book to filter  ·  click arc to open ESV`,
+      ?`${bkL} — ${cnt} connection${cnt!==1?'s':''}${mL}`
+      :`${cnt.toLocaleString()} connections${mL}`,
     W-PR-4, 11
   );
 
-  // Hover label at bottom
-  if(hoveredArc){
+  // Hover label at bottom (for arcs)
+  if(hoveredArc&&!activeBar){
     const{x1,x2,ntN,ntR,otN,otR,isCite}=hoveredArc;
     const lbl=isCite
       ?`${NN_L[ntN]} ${ntR}  →  ${ON_L[otN]} ${otR}`
@@ -416,6 +483,58 @@ function draw(){
       Math.min(W-PR-80,Math.max(PL+80,(x1+x2)/2)),
       base+DEPTH_H+DEPTH_GAP+6
     );
+  }
+
+  // ── Depth chart info panel ──────────────────────────────────────────────
+  if(activeBar){
+    const info=depthIndex[activeBar.key];
+    if(info){
+      const infoY=depthBase+DEPTH_H+14;
+      const bookName=activeBar.book<=39?ON_L[activeBar.book]:NN_L[activeBar.book];
+      const cC=info.cites.length, aC=info.allusions.length;
+
+      // Header: "Isaiah 53 — 4 citations, 2 allusions"
+      ctx.textAlign='left';
+      ctx.font='600 11px "Open Sans",sans-serif';
+      ctx.fillStyle='rgba(255,255,255,0.8)';
+      const hdr=`${bookName} ${activeBar.ch}`;
+      ctx.fillText(hdr, PL, infoY);
+      const hw=ctx.measureText(hdr).width;
+      ctx.font='10px "Open Sans",sans-serif';
+      ctx.fillStyle='rgba(255,255,255,0.35)';
+      ctx.fillText(` — ${cC} citation${cC!==1?'s':''}, ${aC} allusion${aC!==1?'s':''}`, PL+hw, infoY);
+
+      // Pin indicator
+      if(pinnedDepthBar){
+        ctx.textAlign='right'; ctx.font='9px "Open Sans",sans-serif';
+        ctx.fillStyle='rgba(255,255,255,0.2)';
+        ctx.fillText('click to unpin', W-PR, infoY);
+        ctx.textAlign='left';
+      }
+
+      // Reference list
+      const refs=[
+        ...info.cites.map(r=>({...r,type:'cite'})),
+        ...info.allusions.map(r=>({...r,type:'allusion'}))
+      ];
+      ctx.font='9px "Open Sans",sans-serif';
+      let rx=PL, ry=infoY+15;
+      const maxX=W-PR;
+      for(const r of refs){
+        const bk=r.book<=39?OS[r.book]:NS[r.book];
+        const lbl=`${bk} ${r.ref}`;
+        const dot=r.type==='cite'?' \u25CF':' \u25CB';
+        const tw=ctx.measureText(lbl+dot).width+10;
+        if(rx+tw>maxX){rx=PL;ry+=13;}
+        if(ry>depthBase+DEPTH_H+DEPTH_INFO_H-4) break;
+        ctx.fillStyle=r.type==='cite'?'rgba(255,255,255,0.7)':'rgba(255,255,255,0.45)';
+        ctx.fillText(lbl, rx, ry);
+        const lw=ctx.measureText(lbl).width;
+        ctx.fillStyle=r.type==='cite'?'rgba(255,200,100,0.7)':'rgba(150,180,220,0.5)';
+        ctx.fillText(dot, rx+lw, ry);
+        rx+=tw;
+      }
+    }
   }
 }
 
@@ -445,6 +564,19 @@ function findArc(mx,my){
   return best;
 }
 
+function hitDepthBar(mx,my){
+  const{depthBase,VW}=lay;
+  if(my<depthBase||my>depthBase+DEPTH_H||mx<PL||mx>PL+VW) return null;
+  // Use proximity — find closest bar within a reasonable range
+  let best=null,bestD=Infinity;
+  const maxSnapDist=VW/NB/2+2;  // half a book-width + small buffer
+  for(const bar of depthBarHits){
+    const d=Math.abs(mx-bar.x);
+    if(d<maxSnapDist&&d<bestD){bestD=d;best=bar;}
+  }
+  return best;
+}
+
 // ── Events ────────────────────────────────────────────────────────────────
 function setupEvents(){
   const cv=document.getElementById('cv');
@@ -456,9 +588,13 @@ function setupEvents(){
     const mx=(e.clientX-rect.left)*(cv.width/rect.width)/dpr;
     const my=(e.clientY-rect.top)*(cv.height/rect.height)/dpr;
     const lbk=hitLabel(mx,my), arc=lbk?null:findArc(mx,my);
-    const changed=arc!==hoveredArc; hoveredArc=arc;
-    cv.style.cursor=(lbk||arc)?'pointer':'default';
-    if(changed) draw();
+    const depthBar=(lbk||arc)?null:hitDepthBar(mx,my);
+    const arcChanged=arc!==hoveredArc;
+    const depthChanged=(depthBar?.key)!==(hoveredDepthBar?.key);
+    hoveredArc=arc;
+    hoveredDepthBar=depthBar;
+    cv.style.cursor=(lbk||arc||depthBar)?'pointer':'default';
+    if(arcChanged||depthChanged) draw();
     if(arc){
       const{ntN,ntR,otN,otR,lxx,isCite,ntC,otC}=arc;
       const oc=OTC[`${otN}:${otC}`]||0, nc=NTC[`${ntN}:${ntC}`]||0;
@@ -478,7 +614,7 @@ function setupEvents(){
       tip.style.top=Math.max(4,ey-20)+'px';
 
       // Debounced scripture fetch
-      if(changed){
+      if(arcChanged){
         cancelPendingFetch();
         const ntK=resolvedKey(ntN,ntR), otK=resolvedKey(otN,otR);
         if(resolvedCache.has(ntK)&&resolvedCache.has(otK)){
@@ -496,7 +632,9 @@ function setupEvents(){
   cv.addEventListener('mouseleave',()=>{
     tip.style.display='none';
     cancelPendingFetch(); lastFetchedArc=null;
-    if(hoveredArc){hoveredArc=null;draw();}
+    const needDraw=hoveredArc||hoveredDepthBar;
+    hoveredArc=null; hoveredDepthBar=null;
+    if(needDraw) draw();
   });
 
   cv.addEventListener('click',e=>{
@@ -506,7 +644,13 @@ function setupEvents(){
     const lbk=hitLabel(mx,my);
     if(lbk!==null){
       selectedBook=(selectedBook===lbk)?null:lbk;
-      hoveredArc=null; tip.style.display='none'; draw(); return;
+      hoveredArc=null; pinnedDepthBar=null; tip.style.display='none'; draw(); return;
+    }
+    // Depth bar click: pin/unpin
+    const depthBar=findArc(mx,my)?null:hitDepthBar(mx,my);
+    if(depthBar){
+      pinnedDepthBar=(pinnedDepthBar&&pinnedDepthBar.key===depthBar.key)?null:depthBar;
+      draw(); return;
     }
     const arc=findArc(mx,my);
     if(!arc||!arc.isCite) return;
@@ -514,7 +658,7 @@ function setupEvents(){
     window.open(esvUrl(ON_U[arc.otN],arc.otR),'_blank');
   });
 
-  window.addEventListener('resize',()=>{hoveredArc=null;buildArcs();draw();});
+  window.addEventListener('resize',()=>{hoveredArc=null;hoveredDepthBar=null;pinnedDepthBar=null;buildArcs();draw();});
 }
 
 init();
