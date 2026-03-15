@@ -18,6 +18,10 @@ canvas{display:block;width:100%}
 .btn-bar button{font-family:'Open Sans',sans-serif;font-size:11px;padding:5px 16px;border-radius:20px;border:0.5px solid rgba(255,255,255,0.25);background:transparent;color:rgba(255,255,255,0.45);cursor:pointer;transition:all 0.15s}
 .btn-bar button:hover{border-color:rgba(255,255,255,0.5);color:rgba(255,255,255,0.7)}
 .btn-bar button.active{background:rgba(255,255,255,0.12);border-color:rgba(255,255,255,0.6);color:#fff}
+#book-filter{display:none;width:calc(100% - 32px);margin:10px 16px 0;padding:8px 12px;font-family:'Open Sans',sans-serif;font-size:13px;background:#111;color:rgba(255,255,255,0.8);border:0.5px solid rgba(255,255,255,0.25);border-radius:6px;appearance:auto;-webkit-appearance:auto}
+#book-filter optgroup{color:rgba(255,255,255,0.5);font-style:normal}
+#book-filter option{color:#fff;background:#111}
+@media(max-width:768px){#book-filter{display:block}}
 </style>
 </head>
 <body>
@@ -26,6 +30,24 @@ canvas{display:block;width:100%}
   <div id="loading">Loading data…</div>
   <canvas id="cv" style="display:none"></canvas>
   <div id="tip"></div>
+  <select id="book-filter">
+    <option value="">Filter by book…</option>
+    <optgroup label="Law">
+      <option value="1">Genesis</option><option value="2">Exodus</option><option value="3">Leviticus</option><option value="4">Numbers</option><option value="5">Deuteronomy</option>
+    </optgroup>
+    <optgroup label="History">
+      <option value="6">Joshua</option><option value="7">Judges</option><option value="8">Ruth</option><option value="9">1 Samuel</option><option value="10">2 Samuel</option><option value="11">1 Kings</option><option value="12">2 Kings</option><option value="13">1 Chronicles</option><option value="14">2 Chronicles</option><option value="15">Ezra</option><option value="16">Nehemiah</option><option value="17">Esther</option>
+    </optgroup>
+    <optgroup label="Poetry">
+      <option value="18">Job</option><option value="19">Psalms</option><option value="20">Proverbs</option><option value="21">Ecclesiastes</option><option value="22">Song of Solomon</option>
+    </optgroup>
+    <optgroup label="Prophets">
+      <option value="23">Isaiah</option><option value="24">Jeremiah</option><option value="25">Lamentations</option><option value="26">Ezekiel</option><option value="27">Daniel</option><option value="28">Hosea</option><option value="29">Joel</option><option value="30">Amos</option><option value="31">Obadiah</option><option value="32">Jonah</option><option value="33">Micah</option><option value="34">Nahum</option><option value="35">Habakkuk</option><option value="36">Zephaniah</option><option value="37">Haggai</option><option value="38">Zechariah</option><option value="39">Malachi</option>
+    </optgroup>
+    <optgroup label="New Testament">
+      <option value="40">Matthew</option><option value="41">Mark</option><option value="42">Luke</option><option value="43">John</option><option value="44">Acts</option><option value="45">Romans</option><option value="46">1 Corinthians</option><option value="47">2 Corinthians</option><option value="48">Galatians</option><option value="49">Ephesians</option><option value="50">Philippians</option><option value="51">Colossians</option><option value="52">1 Thessalonians</option><option value="53">2 Thessalonians</option><option value="54">1 Timothy</option><option value="55">2 Timothy</option><option value="56">Titus</option><option value="57">Philemon</option><option value="58">Hebrews</option><option value="59">James</option><option value="60">1 Peter</option><option value="61">2 Peter</option><option value="62">1 John</option><option value="63">2 John</option><option value="64">3 John</option><option value="65">Jude</option><option value="66">Revelation</option>
+    </optgroup>
+  </select>
   <div class="btn-bar">
     <button id="btn-all"      class="active" onclick="setMode('all')">All</button>
     <button id="btn-cite"                    onclick="setMode('cite')">Citations</button>
@@ -61,8 +83,11 @@ function pxAt(b,c,VW,PL){return PL+frac(b,c)*VW;}
 const PL=48, PR=24;   // left padding (extra room for depth legend labels)
 const LEVELS=3, LSTEP=14;
 const LEGEND_PAD=32;  // gap between section color legend and book pill top
-const LABEL_H=LEGEND_PAD+LEVELS*LSTEP+16;
+const LABEL_H_DESK=LEGEND_PAD+LEVELS*LSTEP+16;  // 90px desktop (3 rows of pills)
+const LABEL_H_MOB=16;                             // mobile (section legend only)
 const DEPTH_H=80, DEPTH_GAP=4, DEPTH_INFO_H=70;
+const MOBILE_BP=768;
+function isMobile(){return window.innerWidth<=MOBILE_BP;}
 
 // ── State ─────────────────────────────────────────────────────────────────
 let CITE=[], ALLUSION=[];
@@ -275,6 +300,8 @@ function draw(){
   const cv=document.getElementById('cv');
   const dpr=window.devicePixelRatio||1;
   const CW=cv.parentElement.clientWidth||800;
+  const mob=isMobile();
+  const LABEL_H=mob?LABEL_H_MOB:LABEL_H_DESK;
   const PT=LABEL_H+2;
   const CH=Math.round(CW*0.72)+DEPTH_INFO_H;
   cv.width=CW*dpr; cv.height=CH*dpr;
@@ -319,16 +346,16 @@ function draw(){
   for(const arc of arcs){
     const{x1,x2,span,otN,lxx,isCite}=arc;
     const xm=(x1+x2)/2, h=Math.min(span/2,VH*0.97), cpy=base-2*h;
-    const t=(otN-1)/38, hue=55+t*248, sat=80+(lxx?14:0), lit=55+(lxx?14:0);
+    const t=(otN-1)/38, hue=55+t*248, sat=80, lit=55;
     const isH=(arc===hoveredArc), vis=arcVisible(arc);
     let alpha,lw;
     if(!vis&&selectedBook) continue;
     if(isCite){
-      alpha=!selectedBook?(isH?0.95:lxx?0.42:0.28):(isH?0.98:lxx?0.72:0.55);
-      lw=isH?2.2:lxx?1.0:0.7;
+      alpha=isH?0.95:selectedBook?1.0:0.28;
+      lw=isH?2.2:selectedBook?1.0:0.7;
     }else{
-      alpha=!selectedBook?(isH?0.7:0.10):(isH?0.75:0.22);
-      lw=isH?1.4:0.45;
+      alpha=isH?0.7:selectedBook?1.0:0.10;
+      lw=isH?1.4:selectedBook?0.8:0.45;
     }
     ctx.beginPath(); ctx.moveTo(x1,base); ctx.quadraticCurveTo(xm,cpy,x2,base);
     ctx.strokeStyle=`hsla(${hue},${sat}%,${lit}%,${alpha})`;
@@ -397,46 +424,41 @@ function draw(){
   ctx.strokeStyle='rgba(255,255,255,0.1)'; ctx.lineWidth=0.5;
   ctx.beginPath(); ctx.moveTo(PL,depthBase+DEPTH_H); ctx.lineTo(W-PR,depthBase+DEPTH_H); ctx.stroke();
 
-  // ── Book label pills ──────────────────────────────────────────────────────
+  // ── Book label pills (desktop only) ──────────────────────────────────────
   labelHits=[];
-  ctx.font='9px "Open Sans",sans-serif';
-  for(let b=1;b<=66;b++){
-    const xb=pxCtr(b), lb=ON_L[b]||NN_L[b]||'';
-    if(!lb) continue;
-    const lv=(b-1)%LEVELS;
-    // yText: baseline of text in screen space, before rotation
-    const yText=PT-(lv+1)*LSTEP-4;
-    const isSel=(b===selectedBook);
+  if(!mob){
+    ctx.font='9px "Open Sans",sans-serif';
+    for(let b=1;b<=66;b++){
+      const xb=pxCtr(b), lb=ON_L[b]||NN_L[b]||'';
+      if(!lb) continue;
+      const lv=(b-1)%LEVELS;
+      const yText=PT-(lv+1)*LSTEP-4;
+      const isSel=(b===selectedBook);
 
-    // Leader line from baseline up to pill
-    ctx.strokeStyle=isSel?'rgba(255,255,255,0.35)':`rgba(255,255,255,${0.05+lv*0.03})`;
-    ctx.lineWidth=isSel?0.8:0.4;
-    ctx.beginPath(); ctx.moveTo(xb,base); ctx.lineTo(xb,base+3); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(xb,PT-4); ctx.lineTo(xb,yText+4); ctx.stroke();
+      ctx.strokeStyle=isSel?'rgba(255,255,255,0.35)':`rgba(255,255,255,${0.05+lv*0.03})`;
+      ctx.lineWidth=isSel?0.8:0.4;
+      ctx.beginPath(); ctx.moveTo(xb,base); ctx.lineTo(xb,base+3); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(xb,PT-4); ctx.lineTo(xb,yText+4); ctx.stroke();
 
-    // Draw pill in rotated context
-    ctx.save();
-    ctx.translate(xb, yText);
-    ctx.rotate(-Math.PI/2);
-    const tw=ctx.measureText(lb).width;
-    const PW=tw+10, PH=13, R=5;
-    const px=-PW/2, py=-PH/2;
-    pillPath(ctx,px,py,PW,PH,R);
-    // Fill
-    ctx.fillStyle=isSel?'rgba(255,255,255,0.12)':'rgba(255,255,255,0.05)';
-    ctx.fill();
-    // Border
-    ctx.strokeStyle=isSel?'rgba(255,255,255,0.65)':`rgba(255,255,255,${b<=39?0.22:0.28})`;
-    ctx.lineWidth=isSel?0.8:0.5;
-    ctx.stroke();
-    // Text
-    ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillStyle=isSel?'#fff':(b<=39?'rgba(255,255,255,0.60)':'rgba(255,255,255,0.75)');
-    ctx.fillText(lb,0,0.5);
-    ctx.restore();
+      ctx.save();
+      ctx.translate(xb, yText);
+      ctx.rotate(-Math.PI/2);
+      const tw=ctx.measureText(lb).width;
+      const PW=tw+10, PH=13, R=5;
+      const px=-PW/2, py=-PH/2;
+      pillPath(ctx,px,py,PW,PH,R);
+      ctx.fillStyle=isSel?'rgba(255,255,255,0.12)':'rgba(255,255,255,0.05)';
+      ctx.fill();
+      ctx.strokeStyle=isSel?'rgba(255,255,255,0.65)':`rgba(255,255,255,${b<=39?0.22:0.28})`;
+      ctx.lineWidth=isSel?0.8:0.5;
+      ctx.stroke();
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillStyle=isSel?'#fff':(b<=39?'rgba(255,255,255,0.60)':'rgba(255,255,255,0.75)');
+      ctx.fillText(lb,0,0.5);
+      ctx.restore();
 
-    // Hit area (pill is PH wide × PW tall in screen space after rotation)
-    labelHits.push({b,x:xb,yTop:yText-PW/2-2,yBot:yText+PW/2+2});
+      labelHits.push({b,x:xb,yTop:yText-PW/2-2,yBot:yText+PW/2+2});
+    }
   }
 
   // Section color legend (top)
@@ -571,11 +593,24 @@ function hitDepthBar(mx,my){
   return best;
 }
 
+function syncBookFilter(){
+  document.getElementById('book-filter').value=selectedBook||'';
+}
+
 // ── Events ────────────────────────────────────────────────────────────────
 function setupEvents(){
   const cv=document.getElementById('cv');
   const tip=document.getElementById('tip');
   const dpr=window.devicePixelRatio||1;
+
+  // Book filter dropdown (mobile)
+  document.getElementById('book-filter').addEventListener('change',e=>{
+    const v=parseInt(e.target.value,10);
+    selectedBook=v||null;
+    hoveredArc=null; pinnedDepthBar=null;
+    tip.style.display='none';
+    buildArcs(); draw();
+  });
 
   cv.addEventListener('mousemove',e=>{
     const rect=cv.getBoundingClientRect();
@@ -637,7 +672,7 @@ function setupEvents(){
     const lbk=hitLabel(mx,my);
     if(lbk!==null){
       selectedBook=(selectedBook===lbk)?null:lbk;
-      hoveredArc=null; pinnedDepthBar=null; tip.style.display='none'; draw(); return;
+      hoveredArc=null; pinnedDepthBar=null; tip.style.display='none'; syncBookFilter(); draw(); return;
     }
     // Depth bar click: pin/unpin
     const depthBar=findArc(mx,my)?null:hitDepthBar(mx,my);
@@ -646,6 +681,62 @@ function setupEvents(){
       draw(); return;
     }
   });
+
+  // ── Touch support ──────────────────────────────────────────────────────
+  cv.addEventListener('touchstart',e=>{
+    const t=e.touches[0];
+    const rect=cv.getBoundingClientRect();
+    const mx=(t.clientX-rect.left)*(cv.width/rect.width)/dpr;
+    const my=(t.clientY-rect.top)*(cv.height/rect.height)/dpr;
+
+    // Label tap
+    const lbk=hitLabel(mx,my);
+    if(lbk!==null){
+      e.preventDefault();
+      selectedBook=(selectedBook===lbk)?null:lbk;
+      hoveredArc=null; pinnedDepthBar=null; tip.style.display='none';
+      syncBookFilter(); draw(); return;
+    }
+
+    // Arc tap — show tooltip + scripture
+    const arc=findArc(mx,my);
+    if(arc){
+      e.preventDefault();
+      hoveredArc=arc; hoveredDepthBar=null; draw();
+      const{ntN,ntR,otN,otR,lxx,isCite,ntC,otC}=arc;
+      const oc=OTC[`${otN}:${otC}`]||0, nc=NTC[`${ntN}:${ntC}`]||0;
+      tip.innerHTML=
+        `<span style="color:${isCite?'#fff':'#aad0ff'};font-weight:600;font-size:12px">${NN_L[ntN]} ${ntR}</span>`+
+        `<span style="color:#555;margin:0 5px">${isCite?'→':'≈'}</span>`+
+        `<span style="color:#aac0d0;font-size:11px">${ON_L[otN]} ${otR}</span>`+
+        (lxx?`<span style="color:#7ab;font-size:10px;margin-left:6px">LXX</span>`:'')+
+        `<div style="margin-top:4px;font-size:10px;color:#666">${isCite?'Direct citation':'Verbal allusion'} &nbsp;·&nbsp; `+
+        `${NN_L[ntN]} ch.${ntC}: ${nc} ref${nc!==1?'s':''} &nbsp;·&nbsp; `+
+        `${ON_L[otN]} ch.${otC}: ${oc} ref${oc!==1?'s':''}</div>`+
+        '<div id="tip-scripture"></div>';
+      tip.style.display='block';
+      tip.style.left=Math.min(rect.width-320,Math.max(4,t.clientX-rect.left-160))+'px';
+      tip.style.top=Math.max(4,t.clientY-rect.top-20)+'px';
+      cancelPendingFetch();
+      fetchTimer=setTimeout(()=>{lastFetchedArc=arc;fetchAndShowScripture(arc);},300);
+      return;
+    }
+
+    // Depth bar tap — pin/unpin
+    const depthBar=hitDepthBar(mx,my);
+    if(depthBar){
+      e.preventDefault();
+      hoveredArc=null; tip.style.display='none';
+      pinnedDepthBar=(pinnedDepthBar&&pinnedDepthBar.key===depthBar.key)?null:depthBar;
+      hoveredDepthBar=depthBar;
+      draw(); return;
+    }
+
+    // Tap on empty area — dismiss
+    hoveredArc=null; hoveredDepthBar=null; pinnedDepthBar=null;
+    tip.style.display='none'; cancelPendingFetch();
+    draw();
+  },{passive:false});
 
   window.addEventListener('resize',()=>{hoveredArc=null;hoveredDepthBar=null;pinnedDepthBar=null;buildArcs();draw();});
 }
