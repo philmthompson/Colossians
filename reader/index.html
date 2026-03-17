@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Colossians — Immersive Reader</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+
+  <!-- GSAP + ScrollTrigger -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+
+  <style>
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --warm-bg: #1a1410;
+      --warm-bg-light: #2a2018;
+      --warm-accent: #c8956c;
+      --warm-gold: #d4a76a;
+      --warm-cream: #f0e6d3;
+      --warm-white: #faf5ed;
+      --warm-muted: #8a7a6a;
+      --warm-dim: #5a4a3a;
+      --warm-glow: rgba(212, 167, 106, 0.15);
+      --font-serif: 'Cormorant Garamond', Georgia, serif;
+      --font-sans: 'Inter', system-ui, sans-serif;
+    }
+
+    html {
+      scroll-behavior: auto;
+      background: var(--warm-bg);
+    }
+
+    body {
+      font-family: var(--font-serif);
+      background: var(--warm-bg);
+      color: var(--warm-cream);
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Version Selector ── */
+    .version-selector {
+      position: fixed;
+      top: 1.5rem;
+      right: 1.5rem;
+      z-index: 100;
+      display: flex;
+      gap: 0.5rem;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+
+    .version-selector.visible {
+      opacity: 1;
+    }
+
+    .version-btn {
+      font-family: var(--font-sans);
+      font-size: 0.7rem;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 0.4rem 0.8rem;
+      border: 1px solid var(--warm-dim);
+      border-radius: 2rem;
+      background: rgba(26, 20, 16, 0.85);
+      backdrop-filter: blur(10px);
+      color: var(--warm-muted);
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .version-btn:hover {
+      border-color: var(--warm-accent);
+      color: var(--warm-cream);
+    }
+
+    .version-btn.active {
+      border-color: var(--warm-gold);
+      color: var(--warm-gold);
+      background: rgba(212, 167, 106, 0.1);
+    }
+
+    /* ── Progress Bar ── */
+    .progress-track {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: rgba(255, 255, 255, 0.05);
+      z-index: 200;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--warm-accent), var(--warm-gold));
+      transition: width 0.1s linear;
+    }
+
+    /* ── Chapter Nav ── */
+    .chapter-nav {
+      position: fixed;
+      left: 1.5rem;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+
+    .chapter-nav.visible {
+      opacity: 1;
+    }
+
+    .chapter-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      border: 1px solid var(--warm-dim);
+      background: transparent;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .chapter-dot.active {
+      background: var(--warm-gold);
+      border-color: var(--warm-gold);
+      box-shadow: 0 0 12px rgba(212, 167, 106, 0.4);
+    }
+
+    .chapter-dot::after {
+      content: attr(data-label);
+      position: absolute;
+      left: 1.2rem;
+      top: 50%;
+      transform: translateY(-50%);
+      font-family: var(--font-sans);
+      font-size: 0.65rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--warm-muted);
+      white-space: nowrap;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      pointer-events: none;
+    }
+
+    .chapter-dot:hover::after {
+      opacity: 1;
+    }
+
+    /* ── Hero / Title Section ── */
+    .hero {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 50% 40%, rgba(212, 167, 106, 0.08) 0%, transparent 70%);
+    }
+
+    .hero-title {
+      font-family: var(--font-serif);
+      font-size: clamp(3rem, 8vw, 7rem);
+      font-weight: 300;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--warm-cream);
+      text-align: center;
+      line-height: 1.1;
+      opacity: 0;
+    }
+
+    .hero-subtitle {
+      font-family: var(--font-sans);
+      font-size: clamp(0.7rem, 1.2vw, 0.85rem);
+      font-weight: 300;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--warm-muted);
+      margin-top: 1.5rem;
+      opacity: 0;
+    }
+
+    .hero-line {
+      width: 60px;
+      height: 1px;
+      background: var(--warm-gold);
+      margin-top: 2rem;
+      opacity: 0;
+      transform: scaleX(0);
+    }
+
+    .hero-scroll-cue {
+      position: absolute;
+      bottom: 3rem;
+      font-family: var(--font-sans);
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--warm-dim);
+      opacity: 0;
+    }
+
+    .hero-scroll-cue::after {
+      content: '';
+      display: block;
+      width: 1px;
+      height: 30px;
+      background: linear-gradient(to bottom, var(--warm-dim), transparent);
+      margin: 0.75rem auto 0;
+      animation: scrollPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes scrollPulse {
+      0%, 100% { opacity: 0.3; transform: scaleY(1); }
+      50% { opacity: 1; transform: scaleY(1.3); }
+    }
+
+    /* ── Chapter Header ── */
+    .chapter-header {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .chapter-number {
+      font-family: var(--font-serif);
+      font-size: clamp(5rem, 15vw, 12rem);
+      font-weight: 300;
+      color: var(--warm-dim);
+      line-height: 1;
+      opacity: 0;
+    }
+
+    .chapter-label {
+      font-family: var(--font-sans);
+      font-size: 0.7rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--warm-muted);
+      margin-top: 1rem;
+      opacity: 0;
+    }
+
+    /* ── Phrase Sections ── */
+    .phrase-section {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4rem 2rem;
+      position: relative;
+    }
+
+    .phrase-container {
+      max-width: 800px;
+      width: 100%;
+      position: relative;
+    }
+
+    .phrase-ref {
+      font-family: var(--font-sans);
+      font-size: 0.65rem;
+      font-weight: 500;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--warm-accent);
+      margin-bottom: 1.5rem;
+      opacity: 0;
+    }
+
+    .phrase-text {
+      font-family: var(--font-serif);
+      font-size: clamp(1.6rem, 3.5vw, 2.8rem);
+      font-weight: 300;
+      line-height: 1.5;
+      color: var(--warm-cream);
+      opacity: 0;
+    }
+
+    .phrase-text .word {
+      display: inline;
+      opacity: 0;
+    }
+
+    .phrase-text em {
+      font-style: italic;
+      color: var(--warm-gold);
+    }
+
+    .phrase-annotation {
+      font-family: var(--font-sans);
+      font-size: 0.8rem;
+      font-weight: 300;
+      line-height: 1.8;
+      color: var(--warm-muted);
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid rgba(138, 122, 106, 0.2);
+      max-width: 550px;
+      opacity: 0;
+    }
+
+    /* ── Parallax Divider ── */
+    .divider {
+      height: 40vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .divider-glow {
+      width: 300px;
+      height: 300px;
+      border-radius: 50%;
+      background: radial-gradient(circle, var(--warm-glow) 0%, transparent 70%);
+      opacity: 0;
+    }
+
+    /* ── Section Themes ── */
+    .theme-greeting { --section-accent: #c8956c; }
+    .theme-supremacy { --section-accent: #d4a76a; }
+    .theme-reconciliation { --section-accent: #c09070; }
+    .theme-mystery { --section-accent: #b8a080; }
+
+    .phrase-section[data-theme]::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 50% 50%, rgba(212, 167, 106, 0.03) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    /* ── Mobile ── */
+    @media (max-width: 768px) {
+      .chapter-nav { display: none; }
+      .version-selector {
+        top: auto;
+        bottom: 1rem;
+        right: 50%;
+        transform: translateX(50%);
+      }
+      .phrase-section { padding: 3rem 1.5rem; }
+    }
+
+    /* ── Smooth Scroll Snap (optional enhancement) ── */
+    @media (prefers-reduced-motion: no-preference) {
+      .phrase-text .word {
+        transition: opacity 0.4s ease;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Progress Bar -->
+  <div class="progress-track">
+    <div class="progress-fill" id="progressFill"></div>
+  </div>
+
+  <!-- Version Selector -->
+  <div class="version-selector" id="versionSelector">
+    <button class="version-btn active" data-version="paraphrase">Paraphrase</button>
+    <button class="version-btn" data-version="esv" disabled title="Coming soon">ESV</button>
+    <button class="version-btn" data-version="greek" disabled title="Coming soon">Greek</button>
+  </div>
+
+  <!-- Chapter Navigation -->
+  <nav class="chapter-nav" id="chapterNav">
+    <div class="chapter-dot active" data-chapter="1" data-label="Chapter 1"></div>
+    <div class="chapter-dot" data-chapter="2" data-label="Chapter 2"></div>
+    <div class="chapter-dot" data-chapter="3" data-label="Chapter 3"></div>
+    <div class="chapter-dot" data-chapter="4" data-label="Chapter 4"></div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero" id="hero">
+    <div class="hero-bg"></div>
+    <h1 class="hero-title">Colossians</h1>
+    <p class="hero-subtitle">A Letter from Paul to the Church at Colossae</p>
+    <div class="hero-line"></div>
+    <div class="hero-scroll-cue">Scroll to begin</div>
+  </section>
+
+  <!-- Content rendered by JS from data -->
+  <main id="reader"></main>
+
+  <script>
+    // ────────────────────────────────────────
+    // DATA: Colossians Paraphrase
+    // Structure supports multiple versions per phrase
+    // ────────────────────────────────────────
+    const colossians = {
+      versions: {
+        paraphrase: {
+          label: "Paraphrase",
+          chapters: [
+            {
+              number: 1,
+              label: "Chapter One",
+              sections: [
+                {
+                  theme: "greeting",
+                  phrases: [
+                    {
+                      ref: "1:1–2",
+                      text: "This letter comes from Paul — chosen by God's own will to be an apostle of Christ Jesus — and from Timothy, our brother in the faith.",
+                      annotation: "Paul establishes his authority not as self-appointed, but as called by God's deliberate choice."
+                    },
+                    {
+                      ref: "1:2",
+                      text: "To those in Colossae who belong to God, faithful brothers and sisters united in Christ: may grace and peace pour over you from God our Father.",
+                      annotation: null
+                    }
+                  ]
+                },
+                {
+                  theme: "supremacy",
+                  phrases: [
+                    {
+                      ref: "1:3–4",
+                      text: "Every time we pray for you, we overflow with thanks to God — the Father of our Lord Jesus Christ — because we keep hearing about your faith anchored in Christ and the love you pour out on every one of God's people.",
+                      annotation: "Faith and love: the twin marks of an authentic community."
+                    },
+                    {
+                      ref: "1:5–6",
+                      text: "This faith and love spring from the hope stored up for you in heaven — a hope you first heard about when the true message of the gospel reached you. And that gospel is not standing still. It is bearing fruit and growing across the entire world, just as it has been doing among you since the day you first heard it and truly grasped God's grace.",
+                      annotation: null
+                    },
+                    {
+                      ref: "1:7–8",
+                      text: "You learned this gospel from Epaphras, our beloved fellow servant, who faithfully represents Christ among you. He is the one who told us about the love the Spirit has kindled in your hearts.",
+                      annotation: "Epaphras — the likely founder of the Colossian church and the link between Paul and this community."
+                    },
+                    {
+                      ref: "1:9–10",
+                      text: "So from the day we heard about you, we have not stopped praying. We ask God to fill you with the knowledge of his will — wisdom and understanding that come from the Spirit — so that you would walk in a way that honors the Lord in everything, bearing fruit in every good work and growing deeper in your knowledge of God.",
+                      annotation: null
+                    },
+                    {
+                      ref: "1:11–12",
+                      text: "We pray you would be strengthened with all the power that flows from his glorious might — given endurance and patience with joy — as you give thanks to the Father, who has qualified you to share in the inheritance of the saints who dwell in light.",
+                      annotation: null
+                    },
+                    {
+                      ref: "1:13–14",
+                      text: "He has rescued us from the dominion of darkness and transferred us into the kingdom of his beloved Son, in whom we have redemption — the forgiveness of sins.",
+                      annotation: "A dramatic rescue: from one realm to another. This is kingdom language — a transfer of allegiance and belonging."
+                    }
+                  ]
+                },
+                {
+                  theme: "supremacy",
+                  phrases: [
+                    {
+                      ref: "1:15",
+                      text: "The Son is the visible image of the invisible God, the firstborn over all creation.",
+                      annotation: "\"Firstborn\" here means supreme rank, not first created. Christ stands above and before everything."
+                    },
+                    {
+                      ref: "1:16",
+                      text: "For in him all things were created — things in heaven and on earth, visible and invisible, whether thrones or powers or rulers or authorities. All things were created through him and for him.",
+                      annotation: "Everything that exists — every structure of power, every unseen reality — was made by him and exists for his purposes."
+                    },
+                    {
+                      ref: "1:17",
+                      text: "He exists before all things, and in him all things hold together.",
+                      annotation: null
+                    },
+                    {
+                      ref: "1:18",
+                      text: "He is the head of the body, the church. He is the beginning, the firstborn from among the dead — so that in everything he might have the supremacy.",
+                      annotation: null
+                    },
+                    {
+                      ref: "1:19–20",
+                      text: "For God was pleased to have all his fullness dwell in him, and through him to reconcile to himself all things — whether things on earth or things in heaven — by making peace through his blood, shed on the cross.",
+                      annotation: "The scope of reconciliation is total: not just humans, but the entire created order restored through the cross."
+                    }
+                  ]
+                },
+                {
+                  theme: "reconciliation",
+                  phrases: [
+                    {
+                      ref: "1:21–23",
+                      text: "Once you were alienated from God, hostile in your minds because of your evil behavior. But now he has reconciled you by Christ's physical body through death, to present you holy, without blemish, and free from accusation in his sight — if you continue in your faith, established and firm, and do not move from the hope held out in the gospel.",
+                      annotation: null
+                    },
+                    {
+                      ref: "1:24–27",
+                      text: "Now I rejoice in what I am suffering for your sake, and I fill up in my flesh what is still lacking in regard to Christ's afflictions, for the sake of his body, which is the church. God gave me the task of making his word fully known to you — the mystery hidden for ages and generations, but now revealed to his people. To them God chose to make known the glorious riches of this mystery among the nations: Christ in you, the hope of glory.",
+                      annotation: "\"Christ in you, the hope of glory\" — the great mystery revealed. God's presence is not confined to a temple; he dwells in his people."
+                    },
+                    {
+                      ref: "1:28–29",
+                      text: "He is the one we proclaim, admonishing and teaching everyone with all wisdom, so that we may present everyone fully mature in Christ. To this end I strenuously labor, struggling with all his energy which so powerfully works in me.",
+                      annotation: null
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    };
+
+    // ────────────────────────────────────────
+    // RENDER
+    // ────────────────────────────────────────
+    const reader = document.getElementById('reader');
+    let currentVersion = 'paraphrase';
+
+    function renderVersion(versionKey) {
+      const version = colossians.versions[versionKey];
+      if (!version) return;
+      reader.innerHTML = '';
+
+      version.chapters.forEach(chapter => {
+        // Chapter header
+        const chHeader = document.createElement('section');
+        chHeader.className = 'chapter-header';
+        chHeader.id = `chapter-${chapter.number}`;
+        chHeader.innerHTML = `
+          <div class="chapter-number">${chapter.number}</div>
+          <div class="chapter-label">${chapter.label}</div>
+        `;
+        reader.appendChild(chHeader);
+
+        // Phrases
+        chapter.sections.forEach(section => {
+          section.phrases.forEach(phrase => {
+            const el = document.createElement('section');
+            el.className = 'phrase-section';
+            el.dataset.theme = section.theme;
+
+            // Wrap each word in a span for staggered reveal
+            const words = phrase.text.split(/(\s+)/).map(w => {
+              if (/^\s+$/.test(w)) return w;
+              return `<span class="word">${w}</span>`;
+            }).join('');
+
+            el.innerHTML = `
+              <div class="phrase-container">
+                <div class="phrase-ref">${phrase.ref}</div>
+                <div class="phrase-text">${words}</div>
+                ${phrase.annotation ? `<div class="phrase-annotation">${phrase.annotation}</div>` : ''}
+              </div>
+            `;
+            reader.appendChild(el);
+          });
+
+          // Divider between sections
+          const div = document.createElement('div');
+          div.className = 'divider';
+          div.innerHTML = '<div class="divider-glow"></div>';
+          reader.appendChild(div);
+        });
+      });
+
+      // Spacer at end
+      const spacer = document.createElement('div');
+      spacer.style.height = '50vh';
+      reader.appendChild(spacer);
+
+      initAnimations();
+    }
+
+    // ────────────────────────────────────────
+    // ANIMATIONS
+    // ────────────────────────────────────────
+    function initAnimations() {
+      ScrollTrigger.getAll().forEach(t => t.kill());
+
+      // Hero entrance
+      const heroTl = gsap.timeline({ delay: 0.3 });
+      heroTl
+        .to('.hero-title', { opacity: 1, duration: 1.2, ease: 'power2.out' })
+        .to('.hero-subtitle', { opacity: 1, y: 0, duration: 0.8, ease: 'power2.out' }, '-=0.5')
+        .to('.hero-line', { opacity: 1, scaleX: 1, duration: 0.6, ease: 'power2.out' }, '-=0.3')
+        .to('.hero-scroll-cue', { opacity: 1, duration: 0.6 }, '-=0.2');
+
+      // Hero parallax fade
+      gsap.to('.hero', {
+        scrollTrigger: {
+          trigger: '.hero',
+          start: 'top top',
+          end: 'bottom top',
+          scrub: true,
+        },
+        opacity: 0,
+        y: -100,
+        ease: 'none',
+      });
+
+      // Show nav elements after scrolling past hero
+      ScrollTrigger.create({
+        trigger: '.hero',
+        start: 'bottom 80%',
+        onEnter: () => {
+          document.getElementById('versionSelector').classList.add('visible');
+          document.getElementById('chapterNav').classList.add('visible');
+        },
+        onLeaveBack: () => {
+          document.getElementById('versionSelector').classList.remove('visible');
+          document.getElementById('chapterNav').classList.remove('visible');
+        }
+      });
+
+      // Chapter headers
+      document.querySelectorAll('.chapter-header').forEach(header => {
+        const tl = gsap.timeline({
+          scrollTrigger: {
+            trigger: header,
+            start: 'top 70%',
+            end: 'top 20%',
+            scrub: true,
+          }
+        });
+        tl.fromTo(header.querySelector('.chapter-number'),
+          { opacity: 0, scale: 0.8 },
+          { opacity: 1, scale: 1, ease: 'power2.out' }
+        );
+        tl.fromTo(header.querySelector('.chapter-label'),
+          { opacity: 0, y: 20 },
+          { opacity: 1, y: 0, ease: 'power2.out' },
+          '-=0.3'
+        );
+      });
+
+      // Phrase sections
+      document.querySelectorAll('.phrase-section').forEach(section => {
+        const ref = section.querySelector('.phrase-ref');
+        const words = section.querySelectorAll('.word');
+        const annotation = section.querySelector('.phrase-annotation');
+
+        const tl = gsap.timeline({
+          scrollTrigger: {
+            trigger: section,
+            start: 'top 65%',
+            end: 'top 15%',
+            scrub: true,
+          }
+        });
+
+        // Reference fades in first
+        tl.fromTo(ref,
+          { opacity: 0, x: -20 },
+          { opacity: 1, x: 0, duration: 0.3, ease: 'power2.out' }
+        );
+
+        // Words reveal with stagger
+        tl.fromTo(words,
+          { opacity: 0 },
+          { opacity: 1, duration: 0.1, stagger: 0.02, ease: 'power1.out' },
+          '-=0.1'
+        );
+
+        // Annotation fades in last
+        if (annotation) {
+          tl.fromTo(annotation,
+            { opacity: 0, y: 15 },
+            { opacity: 1, y: 0, duration: 0.3, ease: 'power2.out' },
+            '+=0.1'
+          );
+        }
+
+        // Parallax: slight upward movement
+        gsap.fromTo(section.querySelector('.phrase-container'),
+          { y: 40 },
+          {
+            y: -40,
+            ease: 'none',
+            scrollTrigger: {
+              trigger: section,
+              start: 'top bottom',
+              end: 'bottom top',
+              scrub: true,
+            }
+          }
+        );
+      });
+
+      // Divider glow pulse
+      document.querySelectorAll('.divider-glow').forEach(glow => {
+        gsap.fromTo(glow,
+          { opacity: 0, scale: 0.5 },
+          {
+            opacity: 0.6,
+            scale: 1,
+            ease: 'power2.out',
+            scrollTrigger: {
+              trigger: glow,
+              start: 'top 80%',
+              end: 'top 30%',
+              scrub: true,
+            }
+          }
+        );
+      });
+
+      // Progress bar
+      ScrollTrigger.create({
+        trigger: document.body,
+        start: 'top top',
+        end: 'bottom bottom',
+        onUpdate: (self) => {
+          document.getElementById('progressFill').style.width = `${self.progress * 100}%`;
+        }
+      });
+
+      // Chapter dot tracking
+      document.querySelectorAll('.chapter-header').forEach(header => {
+        const chNum = header.id.replace('chapter-', '');
+        ScrollTrigger.create({
+          trigger: header,
+          start: 'top center',
+          end: 'bottom center',
+          onEnter: () => setActiveDot(chNum),
+          onEnterBack: () => setActiveDot(chNum),
+        });
+      });
+    }
+
+    function setActiveDot(chNum) {
+      document.querySelectorAll('.chapter-dot').forEach(dot => {
+        dot.classList.toggle('active', dot.dataset.chapter === String(chNum));
+      });
+    }
+
+    // ────────────────────────────────────────
+    // VERSION SWITCHING
+    // ────────────────────────────────────────
+    document.querySelectorAll('.version-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (btn.disabled) return;
+        document.querySelectorAll('.version-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentVersion = btn.dataset.version;
+        renderVersion(currentVersion);
+        window.scrollTo(0, 0);
+      });
+    });
+
+    // Chapter dot click navigation
+    document.querySelectorAll('.chapter-dot').forEach(dot => {
+      dot.addEventListener('click', () => {
+        const target = document.getElementById(`chapter-${dot.dataset.chapter}`);
+        if (target) target.scrollIntoView({ behavior: 'smooth' });
+      });
+    });
+
+    // ────────────────────────────────────────
+    // INIT
+    // ────────────────────────────────────────
+    renderVersion('paraphrase');
+  </script>
+</body>
+</html>
