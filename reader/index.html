@@ -644,6 +644,10 @@
                   <img src="images/1_2-cloud2.png" alt="" style="top:-8%;right:-10%;left:auto;width:55%;" />
                   <img src="images/1_2-cloud3.png" alt="" style="top:25%;left:10%;width:50%;" />
                   <img src="images/1_2-cloud4.png" alt="" style="top:15%;right:-5%;left:auto;width:50%;" />
+                  <img src="images/1_2-cloud5.png" alt="" style="top:45%;left:-5%;width:55%;" />
+                  <img src="images/1_2-cloud5.png" alt="" style="top:50%;right:-5%;left:auto;width:55%;" />
+                  <img src="images/1_2-cloud5.png" alt="" style="top:70%;left:5%;width:50%;" />
+                  <img src="images/1_2-cloud5.png" alt="" style="top:65%;right:0%;left:auto;width:50%;" />
                 </div>
               `;
               document.body.appendChild(colBg);
@@ -827,18 +831,17 @@
           // City zooms out fully to reveal the whole scene
           colTl.to(cityLayer, { scale: 1, duration: 1, ease: 'power1.inOut' }, 0);
 
-          // Clouds zoom out less than city, and part to the sides
+          // Clouds part to the sides and fade gradually
           cloudImgs.forEach((cloud, i) => {
-            // Left-side clouds (0, 2) drift left; right-side clouds (1, 3) drift right
             const isLeft = (i % 2 === 0);
-            const driftX = (isLeft ? -1 : 1) * (120 + i * 30);
+            const driftX = (isLeft ? -1 : 1) * (120 + i * 25);
             colTl.to(cloud, {
               x: driftX,
               scale: 1.0,
               opacity: 0,
               duration: 1,
-              ease: 'power1.inOut',
-            }, 0);
+              ease: 'power2.out',
+            }, 0.15);
           });
 
           // Fade out after 1:2 ends
