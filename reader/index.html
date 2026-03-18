@@ -389,7 +389,7 @@
 
   <!-- Version Selector -->
   <div class="version-selector" id="versionSelector">
-    <button class="version-btn active" data-version="paraphrase">Paraphrase</button>
+    <button class="version-btn active" data-version="ppv">PPV</button>
     <button class="version-btn" data-version="esv" disabled title="Coming soon">ESV</button>
     <button class="version-btn" data-version="greek" disabled title="Coming soon">Greek</button>
   </div>
@@ -406,7 +406,7 @@
   <section class="hero" id="hero">
     <div class="hero-bg"></div>
     <h1 class="hero-title">Colossians</h1>
-    <p class="hero-subtitle">A Letter from Paul to the Church at Colossae</p>
+    <p class="hero-subtitle">Phil's Paraphrase Version</p>
     <div class="hero-line"></div>
     <div class="hero-scroll-cue">Scroll to begin</div>
   </section>
@@ -416,177 +416,113 @@
 
   <script>
     // ────────────────────────────────────────
-    // DATA: Colossians Paraphrase
-    // Structure supports multiple versions per phrase
+    // DATA LOADING
+    // Loads chapter JSON files and renders phrase-by-phrase
     // ────────────────────────────────────────
-    const colossians = {
-      versions: {
-        paraphrase: {
-          label: "Paraphrase",
-          chapters: [
-            {
-              number: 1,
-              label: "Chapter One",
-              sections: [
-                {
-                  theme: "greeting",
-                  phrases: [
-                    {
-                      ref: "1:1–2",
-                      text: "This letter comes from Paul — chosen by God's own will to be an apostle of Christ Jesus — and from Timothy, our brother in the faith.",
-                      annotation: "Paul establishes his authority not as self-appointed, but as called by God's deliberate choice."
-                    },
-                    {
-                      ref: "1:2",
-                      text: "To those in Colossae who belong to God, faithful brothers and sisters united in Christ: may grace and peace pour over you from God our Father.",
-                      annotation: null
-                    }
-                  ]
-                },
-                {
-                  theme: "supremacy",
-                  phrases: [
-                    {
-                      ref: "1:3–4",
-                      text: "Every time we pray for you, we overflow with thanks to God — the Father of our Lord Jesus Christ — because we keep hearing about your faith anchored in Christ and the love you pour out on every one of God's people.",
-                      annotation: "Faith and love: the twin marks of an authentic community."
-                    },
-                    {
-                      ref: "1:5–6",
-                      text: "This faith and love spring from the hope stored up for you in heaven — a hope you first heard about when the true message of the gospel reached you. And that gospel is not standing still. It is bearing fruit and growing across the entire world, just as it has been doing among you since the day you first heard it and truly grasped God's grace.",
-                      annotation: null
-                    },
-                    {
-                      ref: "1:7–8",
-                      text: "You learned this gospel from Epaphras, our beloved fellow servant, who faithfully represents Christ among you. He is the one who told us about the love the Spirit has kindled in your hearts.",
-                      annotation: "Epaphras — the likely founder of the Colossian church and the link between Paul and this community."
-                    },
-                    {
-                      ref: "1:9–10",
-                      text: "So from the day we heard about you, we have not stopped praying. We ask God to fill you with the knowledge of his will — wisdom and understanding that come from the Spirit — so that you would walk in a way that honors the Lord in everything, bearing fruit in every good work and growing deeper in your knowledge of God.",
-                      annotation: null
-                    },
-                    {
-                      ref: "1:11–12",
-                      text: "We pray you would be strengthened with all the power that flows from his glorious might — given endurance and patience with joy — as you give thanks to the Father, who has qualified you to share in the inheritance of the saints who dwell in light.",
-                      annotation: null
-                    },
-                    {
-                      ref: "1:13–14",
-                      text: "He has rescued us from the dominion of darkness and transferred us into the kingdom of his beloved Son, in whom we have redemption — the forgiveness of sins.",
-                      annotation: "A dramatic rescue: from one realm to another. This is kingdom language — a transfer of allegiance and belonging."
-                    }
-                  ]
-                },
-                {
-                  theme: "supremacy",
-                  phrases: [
-                    {
-                      ref: "1:15",
-                      text: "The Son is the visible image of the invisible God, the firstborn over all creation.",
-                      annotation: "\"Firstborn\" here means supreme rank, not first created. Christ stands above and before everything."
-                    },
-                    {
-                      ref: "1:16",
-                      text: "For in him all things were created — things in heaven and on earth, visible and invisible, whether thrones or powers or rulers or authorities. All things were created through him and for him.",
-                      annotation: "Everything that exists — every structure of power, every unseen reality — was made by him and exists for his purposes."
-                    },
-                    {
-                      ref: "1:17",
-                      text: "He exists before all things, and in him all things hold together.",
-                      annotation: null
-                    },
-                    {
-                      ref: "1:18",
-                      text: "He is the head of the body, the church. He is the beginning, the firstborn from among the dead — so that in everything he might have the supremacy.",
-                      annotation: null
-                    },
-                    {
-                      ref: "1:19–20",
-                      text: "For God was pleased to have all his fullness dwell in him, and through him to reconcile to himself all things — whether things on earth or things in heaven — by making peace through his blood, shed on the cross.",
-                      annotation: "The scope of reconciliation is total: not just humans, but the entire created order restored through the cross."
-                    }
-                  ]
-                },
-                {
-                  theme: "reconciliation",
-                  phrases: [
-                    {
-                      ref: "1:21–23",
-                      text: "Once you were alienated from God, hostile in your minds because of your evil behavior. But now he has reconciled you by Christ's physical body through death, to present you holy, without blemish, and free from accusation in his sight — if you continue in your faith, established and firm, and do not move from the hope held out in the gospel.",
-                      annotation: null
-                    },
-                    {
-                      ref: "1:24–27",
-                      text: "Now I rejoice in what I am suffering for your sake, and I fill up in my flesh what is still lacking in regard to Christ's afflictions, for the sake of his body, which is the church. God gave me the task of making his word fully known to you — the mystery hidden for ages and generations, but now revealed to his people. To them God chose to make known the glorious riches of this mystery among the nations: Christ in you, the hope of glory.",
-                      annotation: "\"Christ in you, the hope of glory\" — the great mystery revealed. God's presence is not confined to a temple; he dwells in his people."
-                    },
-                    {
-                      ref: "1:28–29",
-                      text: "He is the one we proclaim, admonishing and teaching everyone with all wisdom, so that we may present everyone fully mature in Christ. To this end I strenuously labor, struggling with all his energy which so powerfully works in me.",
-                      annotation: null
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        }
-      }
+    const chapterFiles = {
+      1: 'data/chapter1.json'
+      // 2: 'data/chapter2.json', etc.
     };
+
+    const loadedChapters = {};
+    const reader = document.getElementById('reader');
+    let currentVersion = 'ppv';
+
+    // Thematic groupings for visual sections (verse ranges → theme)
+    const sectionMap = {
+      1: [
+        { start: 1, end: 2, theme: 'greeting' },
+        { start: 3, end: 8, theme: 'thanksgiving' },
+        { start: 9, end: 14, theme: 'prayer' },
+        { start: 15, end: 20, theme: 'supremacy' },
+        { start: 21, end: 23, theme: 'reconciliation' },
+        { start: 24, end: 29, theme: 'mystery' }
+      ]
+    };
+
+    function getThemeForVerse(chapter, verse) {
+      const sections = sectionMap[chapter];
+      if (!sections) return 'default';
+      const section = sections.find(s => verse >= s.start && verse <= s.end);
+      return section ? section.theme : 'default';
+    }
+
+    function isNewSection(chapter, verse) {
+      const sections = sectionMap[chapter];
+      if (!sections) return false;
+      return sections.some(s => s.start === verse);
+    }
+
+    async function loadChapter(num) {
+      if (loadedChapters[num]) return loadedChapters[num];
+      const file = chapterFiles[num];
+      if (!file) return null;
+      const resp = await fetch(file);
+      const data = await resp.json();
+      loadedChapters[num] = data;
+      return data;
+    }
 
     // ────────────────────────────────────────
     // RENDER
     // ────────────────────────────────────────
-    const reader = document.getElementById('reader');
-    let currentVersion = 'paraphrase';
-
-    function renderVersion(versionKey) {
-      const version = colossians.versions[versionKey];
-      if (!version) return;
+    async function renderAll() {
       reader.innerHTML = '';
 
-      version.chapters.forEach(chapter => {
+      for (const chNum of Object.keys(chapterFiles).map(Number).sort((a, b) => a - b)) {
+        const data = await loadChapter(chNum);
+        if (!data) continue;
+
         // Chapter header
         const chHeader = document.createElement('section');
         chHeader.className = 'chapter-header';
-        chHeader.id = `chapter-${chapter.number}`;
+        chHeader.id = `chapter-${chNum}`;
         chHeader.innerHTML = `
-          <div class="chapter-number">${chapter.number}</div>
-          <div class="chapter-label">${chapter.label}</div>
+          <div class="chapter-number">${chNum}</div>
+          <div class="chapter-label">Chapter ${chNum === 1 ? 'One' : chNum === 2 ? 'Two' : chNum === 3 ? 'Three' : 'Four'}</div>
         `;
         reader.appendChild(chHeader);
 
-        // Phrases
-        chapter.sections.forEach(section => {
-          section.phrases.forEach(phrase => {
+        // Render each verse phrase-by-phrase
+        data.verses.forEach(verse => {
+          const theme = getThemeForVerse(verse.chapter, verse.verse);
+
+          // Insert a divider glow between thematic sections
+          if (isNewSection(verse.chapter, verse.verse) && verse.verse > 1) {
+            const div = document.createElement('div');
+            div.className = 'divider';
+            div.innerHTML = '<div class="divider-glow"></div>';
+            reader.appendChild(div);
+          }
+
+          // Each phrase gets its own scroll-animated section
+          verse.phrases.forEach((phrase, i) => {
             const el = document.createElement('section');
             el.className = 'phrase-section';
-            el.dataset.theme = section.theme;
+            el.dataset.theme = theme;
+            el.dataset.verse = verse.id;
 
             // Wrap each word in a span for staggered reveal
-            const words = phrase.text.split(/(\s+)/).map(w => {
+            const words = phrase.split(/(\s+)/).map(w => {
               if (/^\s+$/.test(w)) return w;
               return `<span class="word">${w}</span>`;
             }).join('');
 
+            // Show verse ref only on first phrase of each verse
+            const refHtml = i === 0
+              ? `<div class="phrase-ref">${verse.id}</div>`
+              : '';
+
             el.innerHTML = `
               <div class="phrase-container">
-                <div class="phrase-ref">${phrase.ref}</div>
+                ${refHtml}
                 <div class="phrase-text">${words}</div>
-                ${phrase.annotation ? `<div class="phrase-annotation">${phrase.annotation}</div>` : ''}
               </div>
             `;
             reader.appendChild(el);
           });
-
-          // Divider between sections
-          const div = document.createElement('div');
-          div.className = 'divider';
-          div.innerHTML = '<div class="divider-glow"></div>';
-          reader.appendChild(div);
         });
-      });
+      }
 
       // Spacer at end
       const spacer = document.createElement('div');
@@ -658,11 +594,10 @@
         );
       });
 
-      // Phrase sections
+      // Phrase sections — scroll-scrubbed word-by-word reveal
       document.querySelectorAll('.phrase-section').forEach(section => {
         const ref = section.querySelector('.phrase-ref');
         const words = section.querySelectorAll('.word');
-        const annotation = section.querySelector('.phrase-annotation');
 
         const tl = gsap.timeline({
           scrollTrigger: {
@@ -674,28 +609,21 @@
         });
 
         // Reference fades in first
-        tl.fromTo(ref,
-          { opacity: 0, x: -20 },
-          { opacity: 1, x: 0, duration: 0.3, ease: 'power2.out' }
-        );
+        if (ref) {
+          tl.fromTo(ref,
+            { opacity: 0, x: -20 },
+            { opacity: 1, x: 0, duration: 0.3, ease: 'power2.out' }
+          );
+        }
 
         // Words reveal with stagger
         tl.fromTo(words,
           { opacity: 0 },
           { opacity: 1, duration: 0.1, stagger: 0.02, ease: 'power1.out' },
-          '-=0.1'
+          ref ? '-=0.1' : '0'
         );
 
-        // Annotation fades in last
-        if (annotation) {
-          tl.fromTo(annotation,
-            { opacity: 0, y: 15 },
-            { opacity: 1, y: 0, duration: 0.3, ease: 'power2.out' },
-            '+=0.1'
-          );
-        }
-
-        // Parallax: slight upward movement
+        // Parallax: slight upward drift
         gsap.fromTo(section.querySelector('.phrase-container'),
           { y: 40 },
           {
@@ -767,7 +695,8 @@
         document.querySelectorAll('.version-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         currentVersion = btn.dataset.version;
-        renderVersion(currentVersion);
+        // Future: reload with different version data
+        renderAll();
         window.scrollTo(0, 0);
       });
     });
@@ -783,7 +712,7 @@
     // ────────────────────────────────────────
     // INIT
     // ────────────────────────────────────────
-    renderVersion('paraphrase');
+    renderAll();
   </script>
 </body>
 </html>
