@@ -51,10 +51,6 @@
       -webkit-font-smoothing: antialiased;
     }
 
-    main {
-      position: relative;
-    }
-
     /* ── Version Selector ── */
     /* ── Progress Bar ── */
     .progress-track {
@@ -555,28 +551,45 @@
       transform-origin: center bottom;
     }
 
-    /* Faith → Love → Confidence meandering dotted trail overlay */
-    #word-trail-svg {
+    /* Faith → Love → Confidence: dotted circle on keywords */
+    .gold-word[data-keyword] {
+      position: relative;
+    }
+    .gold-word[data-keyword]::after {
+      content: '';
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
+      top: -4px;
+      left: -8px;
+      right: -8px;
+      bottom: -4px;
+      border: 1.5px dashed rgba(232, 183, 48, 0);
+      border-radius: 50%;
       pointer-events: none;
-      z-index: 2;
+      transition: border-color 0.6s ease;
+    }
+    .gold-word[data-keyword].circle-active::after {
+      border-color: rgba(232, 183, 48, 0.6);
+      filter: drop-shadow(0 0 4px rgba(232, 183, 48, 0.3));
+    }
+
+    /* Meandering dotted connector between keywords */
+    .word-connector {
+      display: block;
+      width: 60px;
+      height: 80px;
+      margin: -8px auto -8px;
       overflow: visible;
+      pointer-events: none;
+      position: relative;
+      z-index: 2;
     }
-    #word-trail-svg .word-trail-path {
-      fill: none;
-      stroke: rgba(232, 183, 48, 0.55);
-      stroke-width: 2;
-      stroke-linecap: round;
-    }
-    #word-trail-svg .word-trail-circle {
+    .word-connector path {
       fill: none;
       stroke: rgba(232, 183, 48, 0.5);
       stroke-width: 1.5;
+      stroke-dasharray: 5 7;
       stroke-linecap: round;
+      filter: drop-shadow(0 0 3px rgba(232, 183, 48, 0.25));
     }
 
     /* Kingdoms — two halves */
@@ -859,12 +872,24 @@
               reader.appendChild(paulImg);
             }
 
-            // Insert gold wireframe SVGs between phrases
+            // Insert gold wireframe SVGs between phrases + dotted connectors
             if (verse.chapter === 1 && verse.verse === 4 && i === 0) {
               reader.appendChild(createSvgBlock('<img src="images/1_3-faith.svg" alt="" class="wireframe-icon wireframe-faith" />'));
+              // Connector: faith → love
+              const c1 = document.createElement('svg');
+              c1.className = 'word-connector';
+              c1.setAttribute('viewBox', '0 0 60 80');
+              c1.innerHTML = '<path class="connector-path" d="M30,0 C45,15 15,30 35,45 C55,60 20,70 30,80" />';
+              reader.appendChild(c1);
             }
             if (verse.chapter === 1 && verse.verse === 4 && i === 1) {
               reader.appendChild(createSvgBlock('<img src="images/1_3-love.svg" alt="" class="wireframe-icon wireframe-love" />'));
+              // Connector: love → confidence
+              const c2 = document.createElement('svg');
+              c2.className = 'word-connector';
+              c2.setAttribute('viewBox', '0 0 60 80');
+              c2.innerHTML = '<path class="connector-path" d="M30,0 C10,18 50,35 25,50 C0,65 45,72 30,80" />';
+              reader.appendChild(c2);
             }
             if (verse.chapter === 1 && verse.verse === 5 && i === 0) {
               reader.appendChild(createSvgBlock('<img src="images/1_3-hope.svg" alt="" class="wireframe-icon wireframe-hope" />'));
@@ -1320,6 +1345,42 @@
         });
       });
 
+      // ── Dotted circles on faith / love / confidence keywords ──
+      document.querySelectorAll('.gold-word[data-keyword]').forEach(word => {
+        const section = word.closest('.phrase-section');
+        if (!section) return;
+        ScrollTrigger.create({
+          trigger: section,
+          start: 'top 55%',
+          end: 'bottom 30%',
+          onEnter: () => word.classList.add('circle-active'),
+          onLeave: () => word.classList.remove('circle-active'),
+          onEnterBack: () => word.classList.add('circle-active'),
+          onLeaveBack: () => word.classList.remove('circle-active'),
+        });
+      });
+
+      // ── Meandering dotted connectors (draw-on between faith→love→confidence) ──
+      document.querySelectorAll('.word-connector .connector-path').forEach(path => {
+        const connector = path.closest('.word-connector');
+        if (!connector) return;
+        const len = path.getTotalLength();
+        gsap.set(path, { strokeDashoffset: len, opacity: 0 });
+        // Override the CSS dasharray with the full length for draw-on
+        path.style.strokeDasharray = len + 'px';
+        const cTl = gsap.timeline({
+          scrollTrigger: {
+            trigger: connector,
+            start: 'top 75%',
+            end: 'bottom 25%',
+            scrub: 1,
+          }
+        });
+        cTl.to(path, { opacity: 0.6, duration: 0.05 }, 0);
+        cTl.to(path, { strokeDashoffset: 0, duration: 0.9, ease: 'none' }, 0.05);
+        cTl.to(path, { opacity: 0, duration: 0.1 }, 0.9);
+      });
+
       // ── Map dots (Israel → Turkey → Africa → Italy) ──
       const mapContainer = document.querySelector('.map-container');
       if (mapContainer) {
@@ -1692,157 +1753,6 @@
     // INIT
     // ────────────────────────────────────────
     renderAll();
-
-    // ────────────────────────────────────────
-    // WORD TRAIL — meandering dotted line: faith → love → confidence
-    // ────────────────────────────────────────
-    function buildWordTrail() {
-      // Remove previous trail if any
-      const old = document.getElementById('word-trail-svg');
-      if (old) old.remove();
-
-      const reader = document.getElementById('reader');
-      const readerRect = reader.getBoundingClientRect();
-      const scrollY = window.scrollY || document.documentElement.scrollTop;
-      const readerTop = readerRect.top + scrollY;
-      const readerLeft = readerRect.left;
-
-      // Find the three gold-word spans
-      const faithEl = reader.querySelector('.gold-word[data-keyword="faith"]');
-      const loveEl = reader.querySelector('.gold-word[data-keyword="love"]');
-      const confEl = reader.querySelector('.gold-word[data-keyword="confidence"]');
-      if (!faithEl || !loveEl || !confEl) return;
-
-      function wordCenter(el) {
-        const r = el.getBoundingClientRect();
-        return {
-          x: r.left + r.width / 2 - readerLeft,
-          y: r.top + r.height / 2 + scrollY - readerTop,
-          w: r.width,
-          h: r.height
-        };
-      }
-
-      const f = wordCenter(faithEl);
-      const l = wordCenter(loveEl);
-      const c = wordCenter(confEl);
-
-      const svgNS = 'http://www.w3.org/2000/svg';
-      const svg = document.createElementNS(svgNS, 'svg');
-      svg.id = 'word-trail-svg';
-      svg.setAttribute('viewBox', `0 0 ${readerRect.width} ${reader.scrollHeight}`);
-      svg.setAttribute('preserveAspectRatio', 'none');
-
-      // Encircling ellipses around each word
-      const pad = 10;
-      [[f, 'faith'], [l, 'love'], [c, 'confidence']].forEach(([pt, name]) => {
-        const ellipse = document.createElementNS(svgNS, 'ellipse');
-        ellipse.setAttribute('cx', pt.x);
-        ellipse.setAttribute('cy', pt.y);
-        ellipse.setAttribute('rx', pt.w / 2 + pad);
-        ellipse.setAttribute('ry', pt.h / 2 + pad * 0.8);
-        ellipse.classList.add('word-trail-circle');
-        ellipse.dataset.name = name;
-        svg.appendChild(ellipse);
-      });
-
-      // Meandering path from faith → love
-      function meander(start, end) {
-        const dx = end.x - start.x;
-        const dy = end.y - start.y;
-        const midY = start.y + dy * 0.5;
-        // S-curve: drift right then left (or vice versa)
-        const drift = Math.min(80, Math.abs(dx) + 50);
-        return `M${start.x},${start.y + start.h / 2 + pad}` +
-               ` C${start.x + drift},${start.y + dy * 0.25}` +
-               ` ${end.x - drift},${midY}` +
-               ` ${(start.x + end.x) / 2},${midY}` +
-               ` S${end.x + drift * 0.5},${end.y - dy * 0.15}` +
-               ` ${end.x},${end.y - end.h / 2 - pad}`;
-      }
-
-      const path1 = document.createElementNS(svgNS, 'path');
-      path1.setAttribute('d', meander(f, l));
-      path1.classList.add('word-trail-path');
-      path1.id = 'trail-faith-love';
-      svg.appendChild(path1);
-
-      const path2 = document.createElementNS(svgNS, 'path');
-      path2.setAttribute('d', meander(l, c));
-      path2.classList.add('word-trail-path');
-      path2.id = 'trail-love-confidence';
-      svg.appendChild(path2);
-
-      reader.appendChild(svg);
-
-      // Set up stroke-dasharray for draw-on animation
-      [path1, path2].forEach(p => {
-        const len = p.getTotalLength();
-        gsap.set(p, { strokeDasharray: `6 8`, strokeDashoffset: len, opacity: 0 });
-      });
-
-      svg.querySelectorAll('.word-trail-circle').forEach(el => {
-        const len = el.getTotalLength();
-        gsap.set(el, { strokeDasharray: `5 7`, strokeDashoffset: len, opacity: 0 });
-      });
-
-      // Scroll-triggered: draw circle around "faith", then path to "love"
-      const faithSection = faithEl.closest('.phrase-section');
-      const loveSection = loveEl.closest('.phrase-section');
-      const confSection = confEl.closest('.phrase-section');
-
-      // Circle around faith draws on
-      const circFaith = svg.querySelector('[data-name="faith"]');
-      gsap.timeline({
-        scrollTrigger: { trigger: faithSection, start: 'top 55%', end: 'bottom 35%', scrub: 1 }
-      }).to(circFaith, { opacity: 0.8, strokeDashoffset: 0, duration: 1, ease: 'none' });
-
-      // Path from faith → love draws on
-      gsap.timeline({
-        scrollTrigger: { trigger: faithSection, start: 'bottom 60%', endTrigger: loveSection, end: 'top 50%', scrub: 1 }
-      }).to(path1, { opacity: 0.6, duration: 0.05 }, 0)
-        .to(path1, { strokeDashoffset: 0, duration: 0.95, ease: 'none' }, 0.05);
-
-      // Circle around love draws on
-      const circLove = svg.querySelector('[data-name="love"]');
-      gsap.timeline({
-        scrollTrigger: { trigger: loveSection, start: 'top 55%', end: 'bottom 35%', scrub: 1 }
-      }).to(circLove, { opacity: 0.8, strokeDashoffset: 0, duration: 1, ease: 'none' });
-
-      // Path from love → confidence draws on
-      gsap.timeline({
-        scrollTrigger: { trigger: loveSection, start: 'bottom 60%', endTrigger: confSection, end: 'top 50%', scrub: 1 }
-      }).to(path2, { opacity: 0.6, duration: 0.05 }, 0)
-        .to(path2, { strokeDashoffset: 0, duration: 0.95, ease: 'none' }, 0.05);
-
-      // Circle around confidence draws on
-      const circConf = svg.querySelector('[data-name="confidence"]');
-      gsap.timeline({
-        scrollTrigger: { trigger: confSection, start: 'top 55%', end: 'bottom 35%', scrub: 1 }
-      }).to(circConf, { opacity: 0.8, strokeDashoffset: 0, duration: 1, ease: 'none' });
-
-      // Fade everything out after confidence
-      const hopeSvgBlock = confSection.nextElementSibling;
-      if (hopeSvgBlock) {
-        gsap.timeline({
-          scrollTrigger: { trigger: hopeSvgBlock, start: 'top 50%', end: 'bottom 30%', scrub: 1 }
-        }).to(svg, { opacity: 0, duration: 1 });
-      }
-    }
-
-    // Build after layout is complete
-    requestAnimationFrame(() => requestAnimationFrame(buildWordTrail));
-    // Rebuild on resize (positions shift)
-    let resizeTimer;
-    window.addEventListener('resize', () => {
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(() => {
-        ScrollTrigger.getAll().forEach(st => {
-          if (st.trigger && st.trigger.closest && st.trigger.closest('#word-trail-svg')) st.kill();
-        });
-        buildWordTrail();
-      }, 300);
-    });
   </script>
 </body>
 </html>
