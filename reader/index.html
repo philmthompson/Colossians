@@ -194,7 +194,6 @@
       color: var(--warm-cream);
       text-align: center;
       line-height: 1.1;
-      opacity: 0;
     }
 
     .hero-subtitle {
@@ -205,7 +204,6 @@
       text-transform: uppercase;
       color: var(--warm-muted);
       margin-top: 1.5rem;
-      opacity: 0;
     }
 
     .hero-line {
@@ -213,8 +211,6 @@
       height: 1px;
       background: var(--warm-gold);
       margin-top: 2rem;
-      opacity: 0;
-      transform: scaleX(0);
     }
 
     .hero-scroll-cue {
@@ -225,7 +221,6 @@
       letter-spacing: 0.2em;
       text-transform: uppercase;
       color: var(--warm-dim);
-      opacity: 0;
     }
 
     .hero-scroll-cue::after {
@@ -259,7 +254,6 @@
       font-weight: 300;
       color: var(--warm-dim);
       line-height: 1;
-      opacity: 0;
     }
 
     .chapter-label {
@@ -269,7 +263,6 @@
       text-transform: uppercase;
       color: var(--warm-muted);
       margin-top: 1rem;
-      opacity: 0;
     }
 
     /* ── Phrase Sections ── */
@@ -296,7 +289,6 @@
       text-transform: uppercase;
       color: var(--warm-accent);
       margin-bottom: 1.5rem;
-      opacity: 0;
     }
 
     .phrase-text {
@@ -305,12 +297,10 @@
       font-weight: 300;
       line-height: 1.5;
       color: var(--warm-cream);
-      opacity: 0;
     }
 
     .phrase-text .word {
       display: inline;
-      opacity: 0;
     }
 
     .phrase-text em {
@@ -328,7 +318,6 @@
       padding-top: 1.5rem;
       border-top: 1px solid rgba(138, 122, 106, 0.2);
       max-width: 550px;
-      opacity: 0;
     }
 
     /* ── Parallax Divider ── */
@@ -346,7 +335,6 @@
       height: 300px;
       border-radius: 50%;
       background: radial-gradient(circle, var(--warm-glow) 0%, transparent 70%);
-      opacity: 0;
     }
 
     /* ── Section Themes ── */
@@ -536,7 +524,9 @@
     function initAnimations() {
       ScrollTrigger.getAll().forEach(t => t.kill());
 
-      // Hero entrance
+      // Hero entrance — set to hidden first, then animate in
+      gsap.set(['.hero-title', '.hero-subtitle', '.hero-line', '.hero-scroll-cue'], { opacity: 0 });
+      gsap.set('.hero-line', { scaleX: 0 });
       const heroTl = gsap.timeline({ delay: 0.3 });
       heroTl
         .to('.hero-title', { opacity: 1, duration: 1.2, ease: 'power2.out' })
@@ -573,6 +563,8 @@
 
       // Chapter headers
       document.querySelectorAll('.chapter-header').forEach(header => {
+        gsap.set(header.querySelector('.chapter-number'), { opacity: 0, scale: 0.8 });
+        gsap.set(header.querySelector('.chapter-label'), { opacity: 0, y: 20 });
         const tl = gsap.timeline({
           scrollTrigger: {
             trigger: header,
@@ -581,12 +573,10 @@
             scrub: true,
           }
         });
-        tl.fromTo(header.querySelector('.chapter-number'),
-          { opacity: 0, scale: 0.8 },
+        tl.to(header.querySelector('.chapter-number'),
           { opacity: 1, scale: 1, ease: 'power2.out' }
         );
-        tl.fromTo(header.querySelector('.chapter-label'),
-          { opacity: 0, y: 20 },
+        tl.to(header.querySelector('.chapter-label'),
           { opacity: 1, y: 0, ease: 'power2.out' },
           '-=0.3'
         );
@@ -596,6 +586,10 @@
       document.querySelectorAll('.phrase-section').forEach(section => {
         const ref = section.querySelector('.phrase-ref');
         const words = section.querySelectorAll('.word');
+
+        // Hide elements via JS so they're visible if GSAP fails
+        if (ref) gsap.set(ref, { opacity: 0, x: -20 });
+        gsap.set(words, { opacity: 0 });
 
         const tl = gsap.timeline({
           scrollTrigger: {
@@ -608,15 +602,13 @@
 
         // Reference fades in first
         if (ref) {
-          tl.fromTo(ref,
-            { opacity: 0, x: -20 },
+          tl.to(ref,
             { opacity: 1, x: 0, duration: 0.3, ease: 'power2.out' }
           );
         }
 
         // Words reveal with stagger
-        tl.fromTo(words,
-          { opacity: 0 },
+        tl.to(words,
           { opacity: 1, duration: 0.1, stagger: 0.02, ease: 'power1.out' },
           ref ? '-=0.1' : '0'
         );
