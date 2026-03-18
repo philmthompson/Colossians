@@ -515,14 +515,19 @@
     }
     .map-dot {
       position: absolute;
-      width: 14px;
-      height: 14px;
+      width: 10px;
+      height: 10px;
       border-radius: 50%;
       background: #f6d365;
-      box-shadow: 0 0 8px rgba(246, 211, 101, 0.9), 0 0 24px rgba(232, 183, 48, 0.5);
+      box-shadow: 0 0 6px rgba(246, 211, 101, 0.9), 0 0 18px rgba(232, 183, 48, 0.5);
       opacity: 0;
       transform: scale(0);
       pointer-events: none;
+    }
+    .map-dot[data-order="0"] {
+      width: 14px;
+      height: 14px;
+      box-shadow: 0 0 10px rgba(246, 211, 101, 1), 0 0 30px rgba(232, 183, 48, 0.7);
     }
     .map-line {
       position: absolute;
@@ -896,10 +901,44 @@
               const mapBlock = createSvgBlock(`
                 <div class="map-container">
                   <img src="images/1_6-with-across-the-world.svg" alt="" class="map-img gold-filter" />
-                  <span class="map-dot" data-order="0" style="left:74%;top:52%"></span>
-                  <span class="map-dot" data-order="1" style="left:62%;top:34%"></span>
-                  <span class="map-dot" data-order="2" style="left:55%;top:68%"></span>
-                  <span class="map-dot" data-order="3" style="left:32%;top:32%"></span>
+                  <!-- Wave 0: Colossae / Asia Minor -->
+                  <span class="map-dot" data-order="0" style="left:74%;top:42%"></span>
+                  <!-- Wave 1: Near neighbors — western Turkey, Cyprus, Syria -->
+                  <span class="map-dot" data-order="1" style="left:68%;top:38%"></span>
+                  <span class="map-dot" data-order="1" style="left:79%;top:36%"></span>
+                  <span class="map-dot" data-order="1" style="left:76%;top:50%"></span>
+                  <span class="map-dot" data-order="1" style="left:83%;top:52%"></span>
+                  <!-- Wave 2: Greece, Crete, Lebanon, Egypt -->
+                  <span class="map-dot" data-order="2" style="left:60%;top:36%"></span>
+                  <span class="map-dot" data-order="2" style="left:63%;top:42%"></span>
+                  <span class="map-dot" data-order="2" style="left:62%;top:54%"></span>
+                  <span class="map-dot" data-order="2" style="left:85%;top:58%"></span>
+                  <span class="map-dot" data-order="2" style="left:78%;top:64%"></span>
+                  <!-- Wave 3: Italy, Balkans, North Africa east -->
+                  <span class="map-dot" data-order="3" style="left:47%;top:32%"></span>
+                  <span class="map-dot" data-order="3" style="left:45%;top:42%"></span>
+                  <span class="map-dot" data-order="3" style="left:49%;top:50%"></span>
+                  <span class="map-dot" data-order="3" style="left:55%;top:30%"></span>
+                  <span class="map-dot" data-order="3" style="left:52%;top:62%"></span>
+                  <span class="map-dot" data-order="3" style="left:72%;top:68%"></span>
+                  <!-- Wave 4: Sicily, Sardinia, Tunisia, Libya -->
+                  <span class="map-dot" data-order="4" style="left:44%;top:52%"></span>
+                  <span class="map-dot" data-order="4" style="left:38%;top:42%"></span>
+                  <span class="map-dot" data-order="4" style="left:42%;top:60%"></span>
+                  <span class="map-dot" data-order="4" style="left:55%;top:68%"></span>
+                  <span class="map-dot" data-order="4" style="left:62%;top:70%"></span>
+                  <!-- Wave 5: Spain, France, Morocco, Algeria -->
+                  <span class="map-dot" data-order="5" style="left:32%;top:32%"></span>
+                  <span class="map-dot" data-order="5" style="left:28%;top:38%"></span>
+                  <span class="map-dot" data-order="5" style="left:22%;top:42%"></span>
+                  <span class="map-dot" data-order="5" style="left:34%;top:58%"></span>
+                  <span class="map-dot" data-order="5" style="left:26%;top:60%"></span>
+                  <span class="map-dot" data-order="5" style="left:18%;top:56%"></span>
+                  <!-- Wave 6: Far west — Portugal, Atlantic coast, western Morocco -->
+                  <span class="map-dot" data-order="6" style="left:12%;top:40%"></span>
+                  <span class="map-dot" data-order="6" style="left:14%;top:50%"></span>
+                  <span class="map-dot" data-order="6" style="left:10%;top:62%"></span>
+                  <span class="map-dot" data-order="6" style="left:20%;top:30%"></span>
                 </div>
               `);
               reader.appendChild(mapBlock);
@@ -1327,16 +1366,16 @@
               scrub: 1,
             }
           });
-          mapTl.to(mapImg, { opacity: 0.85, duration: 0.15 }, 0);
-          // Dots appear sequentially
+          mapTl.to(mapImg, { opacity: 0.85, duration: 0.12 }, 0);
+          // Dots appear in waves radiating outward from Colossae
           dots.forEach(dot => {
             const order = parseInt(dot.dataset.order);
-            const start = 0.15 + order * 0.15;
-            mapTl.to(dot, { opacity: 1, scale: 1, duration: 0.12, ease: 'back.out(2)' }, start);
+            const start = 0.12 + order * 0.1;
+            mapTl.to(dot, { opacity: 1, scale: 1, duration: 0.08, ease: 'back.out(2)' }, start);
           });
           // Fade out at end
-          mapTl.to(mapImg, { opacity: 0, duration: 0.1 }, 0.85);
-          mapTl.to(dots, { opacity: 0, duration: 0.1 }, 0.85);
+          mapTl.to(mapImg, { opacity: 0, duration: 0.1 }, 0.88);
+          mapTl.to(dots, { opacity: 0, duration: 0.1 }, 0.88);
         }
       }
 
