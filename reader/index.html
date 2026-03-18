@@ -267,11 +267,11 @@
 
     /* ── Phrase Sections ── */
     .phrase-section {
-      min-height: 70vh;
+      min-height: 40vh;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 2rem 2rem;
+      padding: 1rem 2rem;
       position: relative;
     }
 
@@ -360,7 +360,7 @@
         right: 50%;
         transform: translateX(50%);
       }
-      .phrase-section { padding: 1.5rem 1.5rem; min-height: 60vh; }
+      .phrase-section { padding: 1rem 1.5rem; min-height: 35vh; }
       .colossae-layer.layer-clouds img {
         min-width: 110% !important;
       }
@@ -484,18 +484,54 @@
     /* SVG block — sits between phrases in its own scroll space */
     .svg-block {
       width: 100%;
-      min-height: 25vh;
+      min-height: 6vh;
       display: flex;
       align-items: center;
       justify-content: center;
       pointer-events: none;
       overflow: visible;
+      padding: 1rem 0;
     }
     .svg-block > img {
-      width: clamp(100px, 22vw, 260px);
+      width: clamp(150px, 40vw, 500px);
       height: auto;
       opacity: 0;
       filter: drop-shadow(0 0 12px rgba(232, 183, 48, 0.5));
+    }
+
+    /* Map — enlarged with animated dots */
+    .map-container {
+      position: relative;
+      width: clamp(320px, 90vw, 1000px);
+    }
+    .map-container > img {
+      width: 100%;
+      height: auto;
+      opacity: 0;
+      filter: drop-shadow(0 0 12px rgba(232, 183, 48, 0.5));
+    }
+    .map-container > img.gold-filter {
+      filter: invert(75%) sepia(50%) saturate(500%) hue-rotate(5deg) brightness(1.05)
+        drop-shadow(0 0 15px rgba(232, 183, 48, 0.6)) !important;
+    }
+    .map-dot {
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #f6d365;
+      box-shadow: 0 0 8px rgba(246, 211, 101, 0.9), 0 0 24px rgba(232, 183, 48, 0.5);
+      opacity: 0;
+      transform: scale(0);
+      pointer-events: none;
+    }
+    .map-line {
+      position: absolute;
+      height: 2px;
+      background: linear-gradient(90deg, rgba(246, 211, 101, 0.8), rgba(232, 183, 48, 0.3));
+      transform-origin: left center;
+      opacity: 0;
+      pointer-events: none;
     }
 
     /* Gold-glow keywords */
@@ -562,8 +598,8 @@
     /* Kingdoms — two halves */
     .kingdoms-container {
       position: relative;
-      width: clamp(100px, 22vw, 260px);
-      height: clamp(80px, 18vw, 210px);
+      width: clamp(180px, 45vw, 520px);
+      height: clamp(140px, 36vw, 420px);
     }
     .kingdoms-container img {
       position: absolute;
@@ -586,8 +622,8 @@
     /* Forgiveness — eraser wipe */
     .forgiveness-container {
       position: relative;
-      width: clamp(100px, 22vw, 260px);
-      height: clamp(80px, 18vw, 210px);
+      width: clamp(180px, 45vw, 520px);
+      height: clamp(140px, 36vw, 420px);
     }
     .forgiveness-container img {
       position: absolute;
@@ -857,7 +893,16 @@
 
             // ── 1:6 SVG blocks ──
             if (verse.chapter === 1 && verse.verse === 6 && i === 0) {
-              reader.appendChild(createSvgBlock('<img src="images/1_6-with-across-the-world.svg" alt="" class="wireframe-icon gold-filter" />'));
+              const mapBlock = createSvgBlock(`
+                <div class="map-container">
+                  <img src="images/1_6-with-across-the-world.svg" alt="" class="map-img gold-filter" />
+                  <span class="map-dot" data-order="0" style="left:74%;top:52%"></span>
+                  <span class="map-dot" data-order="1" style="left:62%;top:34%"></span>
+                  <span class="map-dot" data-order="2" style="left:55%;top:68%"></span>
+                  <span class="map-dot" data-order="3" style="left:32%;top:32%"></span>
+                </div>
+              `);
+              reader.appendChild(mapBlock);
             }
             if (verse.chapter === 1 && verse.verse === 6 && i === 1) {
               reader.appendChild(createSvgBlock('<img src="images/1_6-before-you-produce-fruit.svg" alt="" class="wireframe-icon gold-filter" />'));
@@ -1217,6 +1262,36 @@
           onLeaveBack: () => word.classList.remove('glow-active'),
         });
       });
+
+      // ── Map dots (Israel → Turkey → Africa → Italy) ──
+      const mapContainer = document.querySelector('.map-container');
+      if (mapContainer) {
+        const mapImg = mapContainer.querySelector('.map-img');
+        const mapBlock = mapContainer.closest('.svg-block');
+        const dots = mapContainer.querySelectorAll('.map-dot');
+        if (mapBlock && dots.length) {
+          // Fade map in
+          gsap.set(mapImg, { opacity: 0 });
+          const mapTl = gsap.timeline({
+            scrollTrigger: {
+              trigger: mapBlock,
+              start: 'top 80%',
+              end: 'bottom 10%',
+              scrub: 1,
+            }
+          });
+          mapTl.to(mapImg, { opacity: 0.85, duration: 0.15 }, 0);
+          // Dots appear sequentially
+          dots.forEach(dot => {
+            const order = parseInt(dot.dataset.order);
+            const start = 0.15 + order * 0.15;
+            mapTl.to(dot, { opacity: 1, scale: 1, duration: 0.12, ease: 'back.out(2)' }, start);
+          });
+          // Fade out at end
+          mapTl.to(mapImg, { opacity: 0, duration: 0.1 }, 0.85);
+          mapTl.to(dots, { opacity: 0, duration: 0.1 }, 0.85);
+        }
+      }
 
       // ── Hand-drawn SVG reveal (clip-path wipe left→right) ──
       document.querySelectorAll('.hand-drawn').forEach(icon => {
