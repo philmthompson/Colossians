@@ -363,8 +363,8 @@
       .phrase-section { padding: 3rem 1.5rem; }
     }
 
-    /* ── Writing Scene (inline object) ── */
-    .writing-scene {
+    /* ── Inline Scene Images ── */
+    .scene-img-wrapper {
       display: flex;
       align-items: center;
       justify-content: center;
@@ -372,7 +372,7 @@
       opacity: 0;
     }
 
-    .writing-scene-img {
+    .scene-img-wrapper img {
       max-width: min(85vw, 680px);
       height: auto;
       border-radius: 6px;
@@ -457,6 +457,14 @@
       return sections.some(s => s.start === verse);
     }
 
+    // Helper: create an inline scene image element
+    function createSceneImg(src) {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'scene-img-wrapper';
+      wrapper.innerHTML = `<img src="${src}" alt="" />`;
+      return wrapper;
+    }
+
     // ────────────────────────────────────────
     // RENDER
     // ────────────────────────────────────────
@@ -485,15 +493,17 @@
 
         // Insert writing image inline between chapter header and first verse
         if (chNum === 1) {
-          const scene = document.createElement('div');
-          scene.className = 'writing-scene';
-          scene.innerHTML = `<img class="writing-scene-img" src="images/1_0-writing.png" alt="" />`;
-          reader.appendChild(scene);
+          reader.appendChild(createSceneImg('images/1_0-writing.png'));
         }
 
         // Render each verse phrase-by-phrase
         data.verses.forEach(verse => {
           const theme = getThemeForVerse(verse.chapter, verse.verse);
+
+          // Insert Timothy image before verse 1:2
+          if (verse.chapter === 1 && verse.verse === 2) {
+            reader.appendChild(createSceneImg('images/1_1-Timothy.png'));
+          }
 
           // Insert a divider glow between thematic sections
           if (isNewSection(verse.chapter, verse.verse) && verse.verse > 1) {
@@ -528,6 +538,11 @@
               </div>
             `;
             reader.appendChild(el);
+
+            // Insert Paul image after the "From:" phrase
+            if (verse.chapter === 1 && verse.verse === 1 && i === 0) {
+              reader.appendChild(createSceneImg('images/1_1-Paul.png'));
+            }
           });
         });
       });
@@ -606,25 +621,24 @@
         );
       });
 
-      // Writing image — subtle fade up and out as it scrolls by
-      const writingScene = document.querySelector('.writing-scene');
-      if (writingScene) {
-        const img = writingScene.querySelector('.writing-scene-img');
+      // Scene images — subtle fade up and out as they scroll by
+      document.querySelectorAll('.scene-img-wrapper').forEach(wrapper => {
+        const img = wrapper.querySelector('img');
 
         gsap.set(img, { y: 20 });
 
         gsap.timeline({
           scrollTrigger: {
-            trigger: writingScene,
+            trigger: wrapper,
             start: 'top 85%',
             end: 'bottom 20%',
             scrub: 0.8,
           }
         })
-        .to(writingScene, { opacity: 0.35, duration: 0.4, ease: 'power1.out' })
+        .to(wrapper, { opacity: 0.35, duration: 0.4, ease: 'power1.out' })
         .to(img, { y: -10, duration: 0.6, ease: 'none' }, 0)
-        .to(writingScene, { opacity: 0, duration: 0.3, ease: 'power1.in' }, 0.6);
-      }
+        .to(wrapper, { opacity: 0, duration: 0.3, ease: 'power1.in' }, 0.6);
+      });
 
       // Phrase sections — scroll-scrubbed word-by-word reveal
       document.querySelectorAll('.phrase-section').forEach(section => {
