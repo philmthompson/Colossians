@@ -481,6 +481,18 @@
       filter: drop-shadow(0 0 12px rgba(232, 183, 48, 0.5));
     }
 
+    /* Gold-glow keywords */
+    .gold-word {
+      transition: color 0.4s, text-shadow 0.4s;
+    }
+    .gold-word.glow-active {
+      color: #f6d365 !important;
+      text-shadow:
+        0 0 8px rgba(246, 211, 101, 0.7),
+        0 0 20px rgba(232, 183, 48, 0.4),
+        0 0 40px rgba(232, 183, 48, 0.2);
+    }
+
     /* ── Smooth Scroll Snap (optional enhancement) ── */
     @media (prefers-reduced-motion: no-preference) {
       .phrase-text .word {
@@ -632,8 +644,14 @@
             el.dataset.verse = verse.id;
 
             // Wrap each word in a span for staggered reveal
+            const goldWords = (verse.chapter === 1 && (verse.verse === 4 || verse.verse === 5))
+              ? /^(faith|love|confidence),?$/i : null;
             const words = phrase.split(/(\s+)/).map(w => {
               if (/^\s+$/.test(w)) return w;
+              const bare = w.replace(/[,;:.!?]/g, '');
+              if (goldWords && goldWords.test(bare)) {
+                return `<span class="word gold-word">${w}</span>`;
+              }
               return `<span class="word">${w}</span>`;
             }).join('');
 
@@ -944,6 +962,21 @@
           duration: 0.25,
           ease: 'power1.in',
         }, 0.75);
+      });
+
+      // Gold-glow keywords — toggle class when scrolled into view
+      document.querySelectorAll('.gold-word').forEach(word => {
+        const section = word.closest('.phrase-section');
+        if (!section) return;
+        ScrollTrigger.create({
+          trigger: section,
+          start: 'top 55%',
+          end: 'bottom 30%',
+          onEnter: () => word.classList.add('glow-active'),
+          onLeave: () => word.classList.remove('glow-active'),
+          onEnterBack: () => word.classList.add('glow-active'),
+          onLeaveBack: () => word.classList.remove('glow-active'),
+        });
       });
 
       // Phrase sections — scroll-scrubbed word-by-word reveal
