@@ -452,17 +452,8 @@
       object-fit: cover;
     }
 
-    .colossae-layer.layer-mountain img {
-      width: 50%;
-      left: 25%;
-      bottom: 30%;
-      position: absolute;
-    }
-
     .colossae-layer.layer-clouds img {
       position: absolute;
-      width: 20%;
-      opacity: 0.7;
     }
 
     /* ── Smooth Scroll Snap (optional enhancement) ── */
@@ -648,12 +639,11 @@
               colBg.id = 'colossae-bg';
               colBg.innerHTML = `
                 <div class="colossae-layer layer-city"><img src="images/1_2-city.png" alt="" /></div>
-                <div class="colossae-layer layer-mountain"><img src="images/1_2-mountain.png" alt="" /></div>
                 <div class="colossae-layer layer-clouds">
-                  <img src="images/1_2-cloud1.png" alt="" style="top:8%;left:5%;" />
-                  <img src="images/1_2-cloud2.png" alt="" style="top:5%;right:8%;left:auto;" />
-                  <img src="images/1_2-cloud3.png" alt="" style="top:18%;left:35%;width:25%;" />
-                  <img src="images/1_2-cloud4.png" alt="" style="top:2%;left:55%;width:22%;" />
+                  <img src="images/1_2-cloud1.png" alt="" style="top:-5%;left:-10%;width:55%;" />
+                  <img src="images/1_2-cloud2.png" alt="" style="top:-8%;right:-10%;left:auto;width:55%;" />
+                  <img src="images/1_2-cloud3.png" alt="" style="top:25%;left:10%;width:50%;" />
+                  <img src="images/1_2-cloud4.png" alt="" style="top:15%;right:-5%;left:auto;width:50%;" />
                 </div>
               `;
               document.body.appendChild(colBg);
@@ -805,7 +795,7 @@
         }
       }
 
-      // Colossae parallax — clouds and mountain over city, camera zooms out
+      // Colossae parallax — clouds cover city, zoom out and part to reveal
       const colBg = document.getElementById('colossae-bg');
       if (colBg) {
         const v2sections = document.querySelectorAll('.phrase-section[data-verse="1:2"]');
@@ -814,12 +804,12 @@
           const lastV2 = v2sections[v2sections.length - 1];
 
           const cityLayer = colBg.querySelector('.layer-city');
-          const mountainLayer = colBg.querySelector('.layer-mountain');
           const cloudImgs = colBg.querySelectorAll('.layer-clouds img');
 
-          // Start zoomed in — only clouds and mountain visible
-          gsap.set(cityLayer, { scale: 2.2 });
-          gsap.set(mountainLayer, { scale: 1.8, y: '15%' });
+          // Start: city zoomed in tight so only the mountain peak is visible
+          gsap.set(cityLayer, { scale: 3, transformOrigin: '50% 15%' });
+          // Clouds start large to fully cover the scene
+          gsap.set(cloudImgs, { scale: 1.6 });
 
           const colTl = gsap.timeline({
             scrollTrigger: {
@@ -831,25 +821,21 @@
             }
           });
 
-          // Fade in the whole composite
+          // Fade in
           colTl.to(colBg, { opacity: 0.2, duration: 0.12, ease: 'power1.out' }, 0);
 
-          // City zooms out to reveal the full scene
+          // City zooms out fully to reveal the whole scene
           colTl.to(cityLayer, { scale: 1, duration: 1, ease: 'power1.inOut' }, 0);
 
-          // Mountain zooms out and settles
-          colTl.to(mountainLayer, { scale: 1, y: '0%', duration: 0.9, ease: 'power1.inOut' }, 0);
-
-          // Clouds drift outward and fade as we zoom out
+          // Clouds zoom out less than city, and part to the sides
           cloudImgs.forEach((cloud, i) => {
-            const driftX = (i % 2 === 0 ? -1 : 1) * (40 + i * 15);
-            const driftY = -(20 + i * 10);
-            gsap.set(cloud, { scale: 1.5 });
+            // Left-side clouds (0, 2) drift left; right-side clouds (1, 3) drift right
+            const isLeft = (i % 2 === 0);
+            const driftX = (isLeft ? -1 : 1) * (120 + i * 30);
             colTl.to(cloud, {
               x: driftX,
-              y: driftY,
-              scale: 0.8,
-              opacity: 0.2,
+              scale: 1.0,
+              opacity: 0,
               duration: 1,
               ease: 'power1.inOut',
             }, 0);
