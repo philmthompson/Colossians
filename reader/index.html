@@ -685,13 +685,16 @@
       });
 
       // Cell background — zoom out from deep inside the cell through prison bars
+      // Continues zooming all the way through 1:2, fades out when 1:2 hits center
       const cellBg = document.getElementById('cell-bg-1-1');
       if (cellBg) {
         const cellImg = cellBg.querySelector('img');
         const v1sections = document.querySelectorAll('.phrase-section[data-verse="1:1"]');
+        const v2sections = document.querySelectorAll('.phrase-section[data-verse="1:2"]');
+        const endSections = v2sections.length ? v2sections : v1sections;
         if (v1sections.length) {
           const firstEl = v1sections[0];
-          const lastEl = v1sections[v1sections.length - 1];
+          const lastV2 = endSections[endSections.length - 1];
 
           // Start zoomed deep into the cell
           gsap.set(cellImg, { scale: 2.5 });
@@ -699,18 +702,18 @@
           gsap.timeline({
             scrollTrigger: {
               trigger: firstEl,
-              endTrigger: lastEl,
+              endTrigger: lastV2,
               start: 'top 90%',
-              end: 'bottom 10%',
+              end: 'center center',
               scrub: 1.5,
             }
           })
           // Fade in
-          .to(cellBg, { opacity: 0.18, duration: 0.15, ease: 'power1.out' })
-          // Pull out through the bars across the full verse
-          .to(cellImg, { scale: 1, duration: 0.7, ease: 'power1.inOut' }, 0)
-          // Fade out at the end
-          .to(cellBg, { opacity: 0, duration: 0.2, ease: 'power1.in' }, 0.8);
+          .to(cellBg, { opacity: 0.18, duration: 0.1, ease: 'power1.out' })
+          // Zoom out continuously across the entire span (1:1 through 1:2)
+          .to(cellImg, { scale: 0.9, duration: 0.85, ease: 'power1.inOut' }, 0)
+          // Fade out only at the very end, when 1:2 is centered
+          .to(cellBg, { opacity: 0, duration: 0.15, ease: 'power1.in' }, 0.85);
         }
       }
 
