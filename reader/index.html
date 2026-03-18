@@ -493,6 +493,145 @@
         0 0 40px rgba(232, 183, 48, 0.2);
     }
 
+    /* Gold filter — turns black SVGs into gold wireframe look */
+    .gold-filter {
+      filter: invert(75%) sepia(50%) saturate(500%) hue-rotate(5deg) brightness(1.05)
+        drop-shadow(0 0 15px rgba(232, 183, 48, 0.6)) !important;
+    }
+
+    /* Walk overlay — fixed walking figure */
+    .walk-fixed {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100vh;
+      pointer-events: none;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      opacity: 0;
+    }
+    .walk-fixed img {
+      width: clamp(80px, 15vw, 180px);
+      height: auto;
+    }
+
+    /* Fruit scatter background */
+    .fruit-fixed {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100vh;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0;
+      overflow: hidden;
+    }
+    .fruit-fixed img {
+      position: absolute;
+      width: clamp(30px, 6vw, 70px);
+      height: auto;
+    }
+
+    /* Empowered flex animation */
+    @keyframes flex-pulse {
+      0%, 100% { transform: scaleX(1) scaleY(1); }
+      25% { transform: scaleX(1.03) scaleY(0.97); }
+      75% { transform: scaleX(0.97) scaleY(1.03); }
+    }
+    .svg-empowered.flexing {
+      animation: flex-pulse 1.5s ease-in-out infinite;
+      transform-origin: center bottom;
+    }
+
+    /* Kingdoms — two halves */
+    .kingdoms-container {
+      position: relative;
+      width: clamp(100px, 22vw, 260px);
+      height: clamp(80px, 18vw, 210px);
+    }
+    .kingdoms-container img {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      object-fit: contain;
+      opacity: 0;
+    }
+    .kingdoms-dark {
+      clip-path: inset(0 50% 0 0);
+      filter: invert(20%) sepia(90%) saturate(700%) hue-rotate(340deg) brightness(1.2)
+        drop-shadow(0 0 20px rgba(255, 60, 60, 0.8)) !important;
+    }
+    .kingdoms-light {
+      clip-path: inset(0 0 0 50%);
+      filter: invert(85%) sepia(40%) saturate(600%) hue-rotate(5deg) brightness(1.3)
+        drop-shadow(0 0 25px rgba(246, 211, 101, 0.9)) !important;
+    }
+
+    /* Forgiveness — eraser wipe */
+    .forgiveness-container {
+      position: relative;
+      width: clamp(100px, 22vw, 260px);
+      height: clamp(80px, 18vw, 210px);
+    }
+    .forgiveness-container img {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      object-fit: contain;
+      opacity: 0;
+    }
+
+    /* Glory swap — bright background for blinding glory lines */
+    .glory-swap {
+      background-color: var(--warm-bg);
+      transition: background-color 0.6s ease;
+    }
+    .glory-swap.bright {
+      background-color: var(--warm-cream) !important;
+    }
+    .glory-swap .phrase-text {
+      transition: color 0.6s ease;
+    }
+    .glory-swap.bright .phrase-text {
+      color: var(--warm-bg) !important;
+    }
+    .glory-swap .phrase-ref {
+      transition: color 0.6s ease;
+    }
+    .glory-swap.bright .phrase-ref {
+      color: #8b5e3c !important;
+    }
+
+    /* Dotted underline words */
+    .dotted-word {
+      position: relative;
+      display: inline-block;
+    }
+    .dotted-word::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 0;
+      border-bottom: 2px dotted var(--warm-gold);
+    }
+    .dotted-word.underline-active::after {
+      width: 100%;
+      transition: width 0.8s ease;
+    }
+
+    /* Joy emphasis */
+    .joy-word {
+      display: inline-block;
+      transition: color 0.5s, transform 0.5s, text-shadow 0.5s;
+    }
+    .joy-word.joy-active {
+      color: #f6d365 !important;
+      transform: scale(1.2);
+      text-shadow:
+        0 0 12px rgba(246, 211, 101, 0.8),
+        0 0 30px rgba(232, 183, 48, 0.5);
+    }
+
     /* ── Smooth Scroll Snap (optional enhancement) ── */
     @media (prefers-reduced-motion: no-preference) {
       .phrase-text .word {
@@ -646,11 +785,17 @@
             // Wrap each word in a span for staggered reveal
             const goldWords = (verse.chapter === 1 && (verse.verse === 4 || verse.verse === 5))
               ? /^(faith|love|confidence),?$/i : null;
+            const specialWordMap = (verse.chapter === 1 && verse.verse === 11 && i === 2)
+              ? { patience: 'dotted-word', endurance: 'dotted-word', joy: 'joy-word' } : null;
             const words = phrase.split(/(\s+)/).map(w => {
               if (/^\s+$/.test(w)) return w;
               const bare = w.replace(/[,;:.!?]/g, '');
               if (goldWords && goldWords.test(bare)) {
                 return `<span class="word gold-word">${w}</span>`;
+              }
+              if (specialWordMap) {
+                const cls = specialWordMap[bare.toLowerCase()];
+                if (cls) return `<span class="word ${cls}">${w}</span>`;
               }
               return `<span class="word">${w}</span>`;
             }).join('');
@@ -692,6 +837,115 @@
               const overlay = document.createElement('div');
               overlay.className = 'wireframe-overlay';
               overlay.innerHTML = '<img src="images/1_3-hope.svg" alt="" class="wireframe-icon wireframe-hope" />';
+              el.querySelector('.phrase-container').appendChild(overlay);
+            }
+
+            // ── 1:6 SVG overlays ──
+            if (verse.chapter === 1 && verse.verse === 6 && i === 0) {
+              const overlay = document.createElement('div');
+              overlay.className = 'wireframe-overlay';
+              overlay.innerHTML = '<img src="images/1_6-with-across-the-world.svg" alt="" class="wireframe-icon gold-filter" />';
+              el.querySelector('.phrase-container').appendChild(overlay);
+            }
+            if (verse.chapter === 1 && verse.verse === 6 && i === 1) {
+              const overlay = document.createElement('div');
+              overlay.className = 'wireframe-overlay';
+              overlay.innerHTML = '<img src="images/1_6-before-you-produce-fruit.svg" alt="" class="wireframe-icon gold-filter" />';
+              el.querySelector('.phrase-container').appendChild(overlay);
+            }
+            if (verse.chapter === 1 && verse.verse === 6 && i === 2) {
+              const overlay = document.createElement('div');
+              overlay.className = 'wireframe-overlay';
+              overlay.innerHTML = '<img src="images/1_6-after-little-children.svg" alt="" class="svg-icon gold-filter hand-drawn" />';
+              el.querySelector('.phrase-container').appendChild(overlay);
+            }
+            if (verse.chapter === 1 && verse.verse === 6 && i === 3) {
+              const overlay = document.createElement('div');
+              overlay.className = 'wireframe-overlay';
+              overlay.innerHTML = '<img src="images/1_6-saving-grace.svg" alt="" class="wireframe-icon gold-filter" />';
+              el.querySelector('.phrase-container').appendChild(overlay);
+            }
+
+            // ── 1:7 scene images (zoom in/out) ──
+            if (verse.chapter === 1 && verse.verse === 7 && i === 0) {
+              reader.appendChild(createSceneImg('images/1_7-Epaphras.png'));
+            }
+            if (verse.chapter === 1 && verse.verse === 7 && i === 1) {
+              reader.appendChild(createSceneImg('images/1_7-coworker.png'));
+            }
+
+            // ── 1:9 praying image + knowledge overlay ──
+            if (verse.chapter === 1 && verse.verse === 9 && i === 1) {
+              reader.appendChild(createSceneImg('images/1_9-praying.png'));
+            }
+            if (verse.chapter === 1 && verse.verse === 9 && i === 2) {
+              const overlay = document.createElement('div');
+              overlay.className = 'wireframe-overlay';
+              overlay.innerHTML = '<img src="images/1_9-knowledge.svg" alt="" class="wireframe-icon gold-filter" />';
+              el.querySelector('.phrase-container').appendChild(overlay);
+            }
+
+            // ── 1:10 walk (fixed), fruit (scattered fixed), children (hand-drawn) ──
+            if (verse.chapter === 1 && verse.verse === 10 && i === 0) {
+              const walkEl = document.createElement('div');
+              walkEl.className = 'walk-fixed';
+              walkEl.id = 'walk-fixed';
+              walkEl.innerHTML = '<img src="images/1_10-walk.svg" alt="" class="gold-filter" />';
+              document.body.appendChild(walkEl);
+            }
+            if (verse.chapter === 1 && verse.verse === 10 && i === 2) {
+              const fruitEl = document.createElement('div');
+              fruitEl.className = 'fruit-fixed';
+              fruitEl.id = 'fruit-fixed';
+              const imgs = [];
+              for (let f = 0; f < 15; f++) {
+                imgs.push(`<img src="images/1_10-fruit.svg" alt="" class="gold-filter" style="left:${Math.random()*90}%;top:${Math.random()*85}%;transform:rotate(${Math.random()*360}deg) scale(${0.4+Math.random()*0.8});" />`);
+              }
+              fruitEl.innerHTML = imgs.join('');
+              document.body.appendChild(fruitEl);
+            }
+            if (verse.chapter === 1 && verse.verse === 10 && i === 3) {
+              const overlay = document.createElement('div');
+              overlay.className = 'wireframe-overlay';
+              overlay.innerHTML = '<img src="images/1_10-children.svg" alt="" class="svg-icon gold-filter hand-drawn" />';
+              el.querySelector('.phrase-container').appendChild(overlay);
+            }
+
+            // ── 1:11 empowered overlay + glory swap ──
+            if (verse.chapter === 1 && verse.verse === 11 && i === 0) {
+              const overlay = document.createElement('div');
+              overlay.className = 'wireframe-overlay';
+              overlay.innerHTML = '<img src="images/1_11-empowered.svg" alt="" class="svg-icon gold-filter svg-empowered" />';
+              el.querySelector('.phrase-container').appendChild(overlay);
+            }
+            if (verse.chapter === 1 && verse.verse === 11 && i === 1) {
+              el.classList.add('glory-swap');
+            }
+
+            // ── 1:12 bright inheritance glory swap ──
+            if (verse.chapter === 1 && verse.verse === 12 && i === 1) {
+              el.classList.add('glory-swap');
+            }
+
+            // ── 1:13 kingdoms overlay (left red, right bright) ──
+            if (verse.chapter === 1 && verse.verse === 13 && i === 0) {
+              const overlay = document.createElement('div');
+              overlay.className = 'wireframe-overlay';
+              overlay.innerHTML = '<div class="kingdoms-container"><img src="images/1_13-kingdoms.svg" alt="" class="kingdoms-dark" /><img src="images/1_13-kingdoms.svg" alt="" class="kingdoms-light" /></div>';
+              el.querySelector('.phrase-container').appendChild(overlay);
+            }
+
+            // ── 1:14 chains + forgiveness overlays ──
+            if (verse.chapter === 1 && verse.verse === 14 && i === 0) {
+              const overlay = document.createElement('div');
+              overlay.className = 'wireframe-overlay';
+              overlay.innerHTML = '<img src="images/1_14-chains.svg" alt="" class="wireframe-icon gold-filter" />';
+              el.querySelector('.phrase-container').appendChild(overlay);
+            }
+            if (verse.chapter === 1 && verse.verse === 14 && i === 1) {
+              const overlay = document.createElement('div');
+              overlay.className = 'wireframe-overlay';
+              overlay.innerHTML = '<div class="forgiveness-container"><img src="images/1_14-forgiveness.svg" alt="" class="forgiveness-mark gold-filter" /><img src="images/1_14-forgiveness.svg" alt="" class="forgiveness-eraser gold-filter" /></div>';
               el.querySelector('.phrase-container').appendChild(overlay);
             }
 
@@ -977,6 +1231,177 @@
           onEnterBack: () => word.classList.add('glow-active'),
           onLeaveBack: () => word.classList.remove('glow-active'),
         });
+      });
+
+      // ── Hand-drawn SVG reveal (clip-path wipe left→right) ──
+      document.querySelectorAll('.hand-drawn').forEach(icon => {
+        const section = icon.closest('.phrase-section');
+        if (!section) return;
+        gsap.set(icon, { opacity: 0.85, clipPath: 'inset(0 100% 0 0)' });
+        const hdTl = gsap.timeline({
+          scrollTrigger: {
+            trigger: section,
+            start: 'top 60%',
+            end: 'top 10%',
+            scrub: 1,
+          }
+        });
+        hdTl.to(icon, { clipPath: 'inset(0 0% 0 0)', duration: 0.7, ease: 'power2.out' }, 0);
+        hdTl.to(icon, { opacity: 0, duration: 0.2 }, 0.8);
+      });
+
+      // ── Empowered flexing SVG ──
+      document.querySelectorAll('.svg-empowered').forEach(icon => {
+        const section = icon.closest('.phrase-section');
+        if (!section) return;
+        gsap.set(icon, { opacity: 0, scale: 0.5 });
+        const empTl = gsap.timeline({
+          scrollTrigger: {
+            trigger: section,
+            start: 'top 70%',
+            end: 'bottom 20%',
+            scrub: 1,
+            onEnter: () => icon.classList.add('flexing'),
+            onLeave: () => icon.classList.remove('flexing'),
+            onEnterBack: () => icon.classList.add('flexing'),
+            onLeaveBack: () => icon.classList.remove('flexing'),
+          }
+        });
+        empTl.to(icon, { opacity: 0.85, scale: 1, duration: 0.4 }, 0);
+        empTl.to(icon, { opacity: 0, scale: 0.7, duration: 0.25 }, 0.75);
+      });
+
+      // ── Walking figure (left→right across viewport) ──
+      const walkEl = document.getElementById('walk-fixed');
+      if (walkEl) {
+        const walkImg = walkEl.querySelector('img');
+        const v10sections = document.querySelectorAll('.phrase-section[data-verse="1:10"]');
+        if (v10sections.length >= 3) {
+          gsap.set(walkImg, { x: '-20vw' });
+          const walkTl = gsap.timeline({
+            scrollTrigger: {
+              trigger: v10sections[0],
+              endTrigger: v10sections[2],
+              start: 'top 70%',
+              end: 'top 30%',
+              scrub: 1.5,
+            }
+          });
+          walkTl.to(walkEl, { opacity: 0.8, duration: 0.1 }, 0);
+          walkTl.to(walkImg, { x: '110vw', duration: 0.8, ease: 'none' }, 0);
+          walkTl.to(walkEl, { opacity: 0, duration: 0.1 }, 0.9);
+        }
+      }
+
+      // ── Fruit scatter (fill background, fade before next phrase) ──
+      const fruitEl = document.getElementById('fruit-fixed');
+      if (fruitEl) {
+        const v10sections = document.querySelectorAll('.phrase-section[data-verse="1:10"]');
+        if (v10sections.length >= 4) {
+          const fruitTl = gsap.timeline({
+            scrollTrigger: {
+              trigger: v10sections[2],
+              endTrigger: v10sections[3],
+              start: 'top 60%',
+              end: 'top 70%',
+              scrub: 1,
+            }
+          });
+          fruitTl.to(fruitEl, { opacity: 1, duration: 0.3 }, 0);
+          fruitTl.to(fruitEl, { opacity: 0, duration: 0.3 }, 0.7);
+        }
+      }
+
+      // ── Glory swap (bright background for blinding glory) ──
+      document.querySelectorAll('.glory-swap').forEach(section => {
+        ScrollTrigger.create({
+          trigger: section,
+          start: 'top 60%',
+          end: 'bottom 30%',
+          onEnter: () => section.classList.add('bright'),
+          onLeave: () => section.classList.remove('bright'),
+          onEnterBack: () => section.classList.add('bright'),
+          onLeaveBack: () => section.classList.remove('bright'),
+        });
+      });
+
+      // ── Dotted underlines (patience, endurance) ──
+      document.querySelectorAll('.dotted-word').forEach(word => {
+        const section = word.closest('.phrase-section');
+        if (!section) return;
+        ScrollTrigger.create({
+          trigger: section,
+          start: 'top 50%',
+          end: 'bottom 30%',
+          onEnter: () => word.classList.add('underline-active'),
+          onLeave: () => word.classList.remove('underline-active'),
+          onEnterBack: () => word.classList.add('underline-active'),
+          onLeaveBack: () => word.classList.remove('underline-active'),
+        });
+      });
+
+      // ── Joy emphasis (bright + larger) ──
+      document.querySelectorAll('.joy-word').forEach(word => {
+        const section = word.closest('.phrase-section');
+        if (!section) return;
+        ScrollTrigger.create({
+          trigger: section,
+          start: 'top 45%',
+          end: 'bottom 30%',
+          onEnter: () => word.classList.add('joy-active'),
+          onLeave: () => word.classList.remove('joy-active'),
+          onEnterBack: () => word.classList.add('joy-active'),
+          onLeaveBack: () => word.classList.remove('joy-active'),
+        });
+      });
+
+      // ── Kingdoms (dark castle burns red, light castle glows bright) ──
+      document.querySelectorAll('.kingdoms-container').forEach(container => {
+        const section = container.closest('.phrase-section');
+        if (!section) return;
+        const dark = container.querySelector('.kingdoms-dark');
+        const light = container.querySelector('.kingdoms-light');
+        const kTl = gsap.timeline({
+          scrollTrigger: {
+            trigger: section,
+            start: 'top 70%',
+            end: 'bottom 20%',
+            scrub: 1,
+          }
+        });
+        // Dark castle appears with red glow
+        kTl.to(dark, { opacity: 0.9, duration: 0.2 }, 0);
+        // Dark castle burns (scale up + fade out = fire effect)
+        kTl.to(dark, { opacity: 0, scale: 1.5, duration: 0.3, ease: 'power2.in' }, 0.3);
+        // Light castle fades in bright
+        kTl.to(light, { opacity: 1, scale: 1, duration: 0.4, ease: 'power2.out' }, 0.4);
+        // Light castle fades out at end
+        kTl.to(light, { opacity: 0, duration: 0.2 }, 0.8);
+      });
+
+      // ── Forgiveness (eraser on right rubs out mark on left) ──
+      document.querySelectorAll('.forgiveness-container').forEach(container => {
+        const section = container.closest('.phrase-section');
+        if (!section) return;
+        const mark = container.querySelector('.forgiveness-mark');
+        const eraser = container.querySelector('.forgiveness-eraser');
+        const fTl = gsap.timeline({
+          scrollTrigger: {
+            trigger: section,
+            start: 'top 70%',
+            end: 'bottom 20%',
+            scrub: 1,
+          }
+        });
+        // Mark appears
+        fTl.to(mark, { opacity: 0.85, duration: 0.2 }, 0);
+        // Eraser slides in from right
+        fTl.fromTo(eraser, { opacity: 0, x: 50 }, { opacity: 0.85, x: 0, duration: 0.3 }, 0.15);
+        // Eraser moves left, erasing the mark
+        fTl.to(eraser, { x: -80, duration: 0.3 }, 0.4);
+        fTl.to(mark, { opacity: 0, clipPath: 'inset(0 0 0 100%)', duration: 0.3 }, 0.4);
+        // Everything fades out
+        fTl.to(eraser, { opacity: 0, duration: 0.15 }, 0.75);
       });
 
       // Phrase sections — scroll-scrubbed word-by-word reveal
