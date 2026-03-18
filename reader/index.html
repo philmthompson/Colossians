@@ -481,6 +481,23 @@
       filter: drop-shadow(0 0 12px rgba(232, 183, 48, 0.5));
     }
 
+    /* SVG block — sits between phrases in its own scroll space */
+    .svg-block {
+      width: 100%;
+      min-height: 25vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      overflow: visible;
+    }
+    .svg-block > img {
+      width: clamp(100px, 22vw, 260px);
+      height: auto;
+      opacity: 0;
+      filter: drop-shadow(0 0 12px rgba(232, 183, 48, 0.5));
+    }
+
     /* Gold-glow keywords */
     .gold-word {
       transition: color 0.4s, text-shadow 0.4s;
@@ -718,6 +735,13 @@
       return wrapper;
     }
 
+    function createSvgBlock(html) {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'svg-block';
+      wrapper.innerHTML = html;
+      return wrapper;
+    }
+
     // ────────────────────────────────────────
     // RENDER
     // ────────────────────────────────────────
@@ -820,50 +844,29 @@
               reader.appendChild(paulImg);
             }
 
-            // Insert gold wireframe overlays for faith, love, hope
+            // Insert gold wireframe SVGs between phrases
             if (verse.chapter === 1 && verse.verse === 4 && i === 0) {
-              const overlay = document.createElement('div');
-              overlay.className = 'wireframe-overlay';
-              overlay.innerHTML = '<img src="images/1_3-faith.svg" alt="" class="wireframe-icon wireframe-faith" />';
-              el.querySelector('.phrase-container').appendChild(overlay);
+              reader.appendChild(createSvgBlock('<img src="images/1_3-faith.svg" alt="" class="wireframe-icon wireframe-faith" />'));
             }
             if (verse.chapter === 1 && verse.verse === 4 && i === 1) {
-              const overlay = document.createElement('div');
-              overlay.className = 'wireframe-overlay';
-              overlay.innerHTML = '<img src="images/1_3-love.svg" alt="" class="wireframe-icon wireframe-love" />';
-              el.querySelector('.phrase-container').appendChild(overlay);
+              reader.appendChild(createSvgBlock('<img src="images/1_3-love.svg" alt="" class="wireframe-icon wireframe-love" />'));
             }
             if (verse.chapter === 1 && verse.verse === 5 && i === 0) {
-              const overlay = document.createElement('div');
-              overlay.className = 'wireframe-overlay';
-              overlay.innerHTML = '<img src="images/1_3-hope.svg" alt="" class="wireframe-icon wireframe-hope" />';
-              el.querySelector('.phrase-container').appendChild(overlay);
+              reader.appendChild(createSvgBlock('<img src="images/1_3-hope.svg" alt="" class="wireframe-icon wireframe-hope" />'));
             }
 
-            // ── 1:6 SVG overlays ──
+            // ── 1:6 SVG blocks ──
             if (verse.chapter === 1 && verse.verse === 6 && i === 0) {
-              const overlay = document.createElement('div');
-              overlay.className = 'wireframe-overlay';
-              overlay.innerHTML = '<img src="images/1_6-with-across-the-world.svg" alt="" class="wireframe-icon gold-filter" />';
-              el.querySelector('.phrase-container').appendChild(overlay);
+              reader.appendChild(createSvgBlock('<img src="images/1_6-with-across-the-world.svg" alt="" class="wireframe-icon gold-filter" />'));
             }
             if (verse.chapter === 1 && verse.verse === 6 && i === 1) {
-              const overlay = document.createElement('div');
-              overlay.className = 'wireframe-overlay';
-              overlay.innerHTML = '<img src="images/1_6-before-you-produce-fruit.svg" alt="" class="wireframe-icon gold-filter" />';
-              el.querySelector('.phrase-container').appendChild(overlay);
+              reader.appendChild(createSvgBlock('<img src="images/1_6-before-you-produce-fruit.svg" alt="" class="wireframe-icon gold-filter" />'));
             }
             if (verse.chapter === 1 && verse.verse === 6 && i === 2) {
-              const overlay = document.createElement('div');
-              overlay.className = 'wireframe-overlay';
-              overlay.innerHTML = '<img src="images/1_6-after-little-children.svg" alt="" class="svg-icon gold-filter hand-drawn" />';
-              el.querySelector('.phrase-container').appendChild(overlay);
+              reader.appendChild(createSvgBlock('<img src="images/1_6-after-little-children.svg" alt="" class="svg-icon gold-filter hand-drawn" />'));
             }
             if (verse.chapter === 1 && verse.verse === 6 && i === 3) {
-              const overlay = document.createElement('div');
-              overlay.className = 'wireframe-overlay';
-              overlay.innerHTML = '<img src="images/1_6-saving-grace.svg" alt="" class="wireframe-icon gold-filter" />';
-              el.querySelector('.phrase-container').appendChild(overlay);
+              reader.appendChild(createSvgBlock('<img src="images/1_6-saving-grace.svg" alt="" class="wireframe-icon gold-filter" />'));
             }
 
             // ── 1:7 scene images (zoom in/out) ──
@@ -874,15 +877,12 @@
               reader.appendChild(createSceneImg('images/1_7-coworker.png'));
             }
 
-            // ── 1:9 praying image + knowledge overlay ──
+            // ── 1:9 praying image + knowledge block ──
             if (verse.chapter === 1 && verse.verse === 9 && i === 1) {
               reader.appendChild(createSceneImg('images/1_9-praying.png'));
             }
             if (verse.chapter === 1 && verse.verse === 9 && i === 2) {
-              const overlay = document.createElement('div');
-              overlay.className = 'wireframe-overlay';
-              overlay.innerHTML = '<img src="images/1_9-knowledge.svg" alt="" class="wireframe-icon gold-filter" />';
-              el.querySelector('.phrase-container').appendChild(overlay);
+              reader.appendChild(createSvgBlock('<img src="images/1_9-knowledge.svg" alt="" class="wireframe-icon gold-filter" />'));
             }
 
             // ── 1:10 walk (fixed), fruit (scattered fixed), children (hand-drawn) ──
@@ -905,18 +905,12 @@
               document.body.appendChild(fruitEl);
             }
             if (verse.chapter === 1 && verse.verse === 10 && i === 3) {
-              const overlay = document.createElement('div');
-              overlay.className = 'wireframe-overlay';
-              overlay.innerHTML = '<img src="images/1_10-children.svg" alt="" class="svg-icon gold-filter hand-drawn" />';
-              el.querySelector('.phrase-container').appendChild(overlay);
+              reader.appendChild(createSvgBlock('<img src="images/1_10-children.svg" alt="" class="svg-icon gold-filter hand-drawn" />'));
             }
 
-            // ── 1:11 empowered overlay + glory swap ──
+            // ── 1:11 empowered block + glory swap ──
             if (verse.chapter === 1 && verse.verse === 11 && i === 0) {
-              const overlay = document.createElement('div');
-              overlay.className = 'wireframe-overlay';
-              overlay.innerHTML = '<img src="images/1_11-empowered.svg" alt="" class="svg-icon gold-filter svg-empowered" />';
-              el.querySelector('.phrase-container').appendChild(overlay);
+              reader.appendChild(createSvgBlock('<img src="images/1_11-empowered.svg" alt="" class="svg-icon gold-filter svg-empowered" />'));
             }
             if (verse.chapter === 1 && verse.verse === 11 && i === 1) {
               el.classList.add('glory-swap');
@@ -927,26 +921,17 @@
               el.classList.add('glory-swap');
             }
 
-            // ── 1:13 kingdoms overlay (left red, right bright) ──
+            // ── 1:13 kingdoms block (left red, right bright) ──
             if (verse.chapter === 1 && verse.verse === 13 && i === 0) {
-              const overlay = document.createElement('div');
-              overlay.className = 'wireframe-overlay';
-              overlay.innerHTML = '<div class="kingdoms-container"><img src="images/1_13-kingdoms.svg" alt="" class="kingdoms-dark" /><img src="images/1_13-kingdoms.svg" alt="" class="kingdoms-light" /></div>';
-              el.querySelector('.phrase-container').appendChild(overlay);
+              reader.appendChild(createSvgBlock('<div class="kingdoms-container"><img src="images/1_13-kingdoms.svg" alt="" class="kingdoms-dark" /><img src="images/1_13-kingdoms.svg" alt="" class="kingdoms-light" /></div>'));
             }
 
-            // ── 1:14 chains + forgiveness overlays ──
+            // ── 1:14 chains + forgiveness blocks ──
             if (verse.chapter === 1 && verse.verse === 14 && i === 0) {
-              const overlay = document.createElement('div');
-              overlay.className = 'wireframe-overlay';
-              overlay.innerHTML = '<img src="images/1_14-chains.svg" alt="" class="wireframe-icon gold-filter" />';
-              el.querySelector('.phrase-container').appendChild(overlay);
+              reader.appendChild(createSvgBlock('<img src="images/1_14-chains.svg" alt="" class="wireframe-icon gold-filter" />'));
             }
             if (verse.chapter === 1 && verse.verse === 14 && i === 1) {
-              const overlay = document.createElement('div');
-              overlay.className = 'wireframe-overlay';
-              overlay.innerHTML = '<div class="forgiveness-container"><img src="images/1_14-forgiveness.svg" alt="" class="forgiveness-mark gold-filter" /><img src="images/1_14-forgiveness.svg" alt="" class="forgiveness-eraser gold-filter" /></div>';
-              el.querySelector('.phrase-container').appendChild(overlay);
+              reader.appendChild(createSvgBlock('<div class="forgiveness-container"><img src="images/1_14-forgiveness.svg" alt="" class="forgiveness-mark gold-filter" /><img src="images/1_14-forgiveness.svg" alt="" class="forgiveness-eraser gold-filter" /></div>'));
             }
 
             // Create Colossae parallax background when 1:2 begins
@@ -1168,7 +1153,7 @@
 
       // Faith / Love / Hope wireframe animations
       document.querySelectorAll('.wireframe-icon').forEach(icon => {
-        const section = icon.closest('.phrase-section');
+        const section = icon.closest('.svg-block');
         if (!section) return;
 
         // Determine animation style per icon
@@ -1235,7 +1220,7 @@
 
       // ── Hand-drawn SVG reveal (clip-path wipe left→right) ──
       document.querySelectorAll('.hand-drawn').forEach(icon => {
-        const section = icon.closest('.phrase-section');
+        const section = icon.closest('.svg-block');
         if (!section) return;
         gsap.set(icon, { opacity: 0.85, clipPath: 'inset(0 100% 0 0)' });
         const hdTl = gsap.timeline({
@@ -1252,7 +1237,7 @@
 
       // ── Empowered flexing SVG ──
       document.querySelectorAll('.svg-empowered').forEach(icon => {
-        const section = icon.closest('.phrase-section');
+        const section = icon.closest('.svg-block');
         if (!section) return;
         gsap.set(icon, { opacity: 0, scale: 0.5 });
         const empTl = gsap.timeline({
@@ -1357,7 +1342,7 @@
 
       // ── Kingdoms (dark castle burns red, light castle glows bright) ──
       document.querySelectorAll('.kingdoms-container').forEach(container => {
-        const section = container.closest('.phrase-section');
+        const section = container.closest('.svg-block');
         if (!section) return;
         const dark = container.querySelector('.kingdoms-dark');
         const light = container.querySelector('.kingdoms-light');
@@ -1381,7 +1366,7 @@
 
       // ── Forgiveness (eraser on right rubs out mark on left) ──
       document.querySelectorAll('.forgiveness-container').forEach(container => {
-        const section = container.closest('.phrase-section');
+        const section = container.closest('.svg-block');
         if (!section) return;
         const mark = container.querySelector('.forgiveness-mark');
         const eraser = container.querySelector('.forgiveness-eraser');
