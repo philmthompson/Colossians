@@ -390,6 +390,15 @@
       border-radius: 0 6px 6px 0;
     }
 
+    .scene-img-wrapper.align-right {
+      justify-content: flex-end;
+      padding-left: 0;
+      padding-right: 0;
+    }
+    .scene-img-wrapper.align-right img {
+      border-radius: 6px 0 0 6px;
+    }
+
     /* ── Verse Background Layer ── */
     .verse-bg {
       position: fixed;
@@ -581,7 +590,9 @@
 
             // Insert Paul image after the "From:" phrase
             if (verse.chapter === 1 && verse.verse === 1 && i === 0) {
-              reader.appendChild(createSceneImg('images/1_1-Paul.png'));
+              const paulImg = createSceneImg('images/1_1-Paul.png');
+              paulImg.classList.add('align-right');
+              reader.appendChild(paulImg);
             }
 
             // Insert map image after the "To:" phrase
@@ -671,21 +682,35 @@
         );
       });
 
-      // Scene images — parallax drift
+      // Scene images — parallax drift with subtle zoom arc
       document.querySelectorAll('.scene-img-wrapper').forEach(wrapper => {
         const img = wrapper.querySelector('img');
 
+        // Vertical parallax
         gsap.fromTo(img,
-          { y: 120, scale: 0.96, rotation: -0.5 },
+          { y: 80 },
           {
-            y: -120,
-            scale: 1,
-            rotation: 0.5,
+            y: -80,
             ease: 'none',
             scrollTrigger: {
               trigger: wrapper,
               start: 'top bottom',
               end: 'bottom top',
+              scrub: true,
+            }
+          }
+        );
+
+        // Subtle zoom: scale up as image enters, then back down as it leaves
+        gsap.fromTo(img,
+          { scale: 0.97 },
+          {
+            scale: 1.03,
+            ease: 'power1.inOut',
+            scrollTrigger: {
+              trigger: wrapper,
+              start: 'top 85%',
+              end: 'bottom 15%',
               scrub: true,
             }
           }
