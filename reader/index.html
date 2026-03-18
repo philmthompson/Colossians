@@ -1462,7 +1462,7 @@
         }
       }
 
-      // ── Fruit scatter (fill background, fade before next phrase) ──
+      // ── Fruit scatter (visible with "bearing fruit" text, fades when it leaves) ──
       const fruitEl = document.getElementById('fruit-fixed');
       if (fruitEl) {
         const v10sections = document.querySelectorAll('.phrase-section[data-verse="1:10"]');
@@ -1470,14 +1470,14 @@
           const fruitTl = gsap.timeline({
             scrollTrigger: {
               trigger: v10sections[2],
-              endTrigger: v10sections[3],
-              start: 'top 60%',
-              end: 'top 70%',
+              endTrigger: v10sections[2],
+              start: 'top 70%',
+              end: 'bottom 10%',
               scrub: 1,
             }
           });
-          fruitTl.to(fruitEl, { opacity: 1, duration: 0.3 }, 0);
-          fruitTl.to(fruitEl, { opacity: 0, duration: 0.3 }, 0.7);
+          fruitTl.to(fruitEl, { opacity: 1, duration: 0.15 }, 0);
+          fruitTl.to(fruitEl, { opacity: 0, duration: 0.15 }, 0.85);
         }
       }
 
