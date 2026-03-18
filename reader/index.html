@@ -331,10 +331,10 @@
     }
 
     .divider-glow {
-      width: 300px;
-      height: 300px;
-      border-radius: 50%;
-      background: radial-gradient(circle, var(--warm-glow) 0%, transparent 70%);
+      width: 100%;
+      height: 100%;
+      border-radius: 0;
+      background: radial-gradient(ellipse at 50% 50%, rgba(212, 167, 106, 0.06) 0%, transparent 70%);
     }
 
     /* ── Section Themes ── */
@@ -347,7 +347,7 @@
       content: '';
       position: absolute;
       inset: 0;
-      background: radial-gradient(ellipse at 50% 50%, rgba(212, 167, 106, 0.03) 0%, transparent 60%);
+      background: none;
       pointer-events: none;
     }
 
@@ -641,19 +641,19 @@
     /* Glory swap — bright background for blinding glory lines */
     .glory-swap {
       background-color: var(--warm-bg);
-      transition: background-color 0.6s ease;
+      transition: background-color 1.2s ease;
     }
     .glory-swap.bright {
-      background-color: var(--warm-cream) !important;
+      background-color: rgba(240, 230, 211, 0.85) !important;
     }
     .glory-swap .phrase-text {
-      transition: color 0.6s ease;
+      transition: color 1.2s ease;
     }
     .glory-swap.bright .phrase-text {
       color: var(--warm-bg) !important;
     }
     .glory-swap .phrase-ref {
-      transition: color 0.6s ease;
+      transition: color 1.2s ease;
     }
     .glory-swap.bright .phrase-ref {
       color: #8b5e3c !important;
@@ -913,31 +913,31 @@
                   <span class="map-dot" data-order="2" style="left:63%;top:42%"></span>
                   <span class="map-dot" data-order="2" style="left:62%;top:54%"></span>
                   <span class="map-dot" data-order="2" style="left:85%;top:58%"></span>
-                  <span class="map-dot" data-order="2" style="left:78%;top:64%"></span>
+                  <span class="map-dot" data-order="2" style="left:78%;top:82%"></span>
                   <!-- Wave 3: Italy, Balkans, North Africa east -->
                   <span class="map-dot" data-order="3" style="left:47%;top:32%"></span>
                   <span class="map-dot" data-order="3" style="left:45%;top:42%"></span>
                   <span class="map-dot" data-order="3" style="left:49%;top:50%"></span>
                   <span class="map-dot" data-order="3" style="left:55%;top:30%"></span>
-                  <span class="map-dot" data-order="3" style="left:52%;top:62%"></span>
-                  <span class="map-dot" data-order="3" style="left:72%;top:68%"></span>
+                  <span class="map-dot" data-order="3" style="left:52%;top:80%"></span>
+                  <span class="map-dot" data-order="3" style="left:72%;top:85%"></span>
                   <!-- Wave 4: Sicily, Sardinia, Tunisia, Libya -->
                   <span class="map-dot" data-order="4" style="left:44%;top:52%"></span>
                   <span class="map-dot" data-order="4" style="left:38%;top:42%"></span>
-                  <span class="map-dot" data-order="4" style="left:42%;top:60%"></span>
-                  <span class="map-dot" data-order="4" style="left:55%;top:68%"></span>
-                  <span class="map-dot" data-order="4" style="left:62%;top:70%"></span>
+                  <span class="map-dot" data-order="4" style="left:42%;top:80%"></span>
+                  <span class="map-dot" data-order="4" style="left:55%;top:84%"></span>
+                  <span class="map-dot" data-order="4" style="left:62%;top:82%"></span>
                   <!-- Wave 5: Spain, France, Morocco, Algeria -->
                   <span class="map-dot" data-order="5" style="left:32%;top:32%"></span>
                   <span class="map-dot" data-order="5" style="left:28%;top:38%"></span>
                   <span class="map-dot" data-order="5" style="left:22%;top:42%"></span>
-                  <span class="map-dot" data-order="5" style="left:34%;top:58%"></span>
-                  <span class="map-dot" data-order="5" style="left:26%;top:60%"></span>
-                  <span class="map-dot" data-order="5" style="left:18%;top:56%"></span>
+                  <span class="map-dot" data-order="5" style="left:34%;top:82%"></span>
+                  <span class="map-dot" data-order="5" style="left:26%;top:85%"></span>
+                  <span class="map-dot" data-order="5" style="left:18%;top:80%"></span>
                   <!-- Wave 6: Far west — Portugal, Atlantic coast, western Morocco -->
                   <span class="map-dot" data-order="6" style="left:12%;top:40%"></span>
                   <span class="map-dot" data-order="6" style="left:14%;top:50%"></span>
-                  <span class="map-dot" data-order="6" style="left:10%;top:62%"></span>
+                  <span class="map-dot" data-order="6" style="left:10%;top:84%"></span>
                   <span class="map-dot" data-order="6" style="left:20%;top:30%"></span>
                 </div>
               `);
@@ -1665,9 +1665,9 @@
       // Divider glow pulse
       document.querySelectorAll('.divider-glow').forEach(glow => {
         gsap.fromTo(glow,
-          { opacity: 0, scale: 0.5 },
+          { opacity: 0, scale: 0.8 },
           {
-            opacity: 0.6,
+            opacity: 0.3,
             scale: 1,
             ease: 'power2.out',
             scrollTrigger: {
