@@ -379,6 +379,26 @@
       will-change: transform, opacity;
     }
 
+    /* ── Verse Background Layer ── */
+    .verse-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+      opacity: 0;
+    }
+
+    .verse-bg img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      will-change: transform;
+    }
+
     /* ── Smooth Scroll Snap (optional enhancement) ── */
     @media (prefers-reduced-motion: no-preference) {
       .phrase-text .word {
@@ -494,6 +514,13 @@
         // Insert writing image inline between chapter header and first verse
         if (chNum === 1) {
           reader.appendChild(createSceneImg('images/1_0-writing.png'));
+
+          // Cell background — fixed layer behind verse 1:1
+          const cellBg = document.createElement('div');
+          cellBg.className = 'verse-bg';
+          cellBg.id = 'cell-bg-1-1';
+          cellBg.innerHTML = `<img src="images/1_1-cell.png" alt="" />`;
+          document.body.appendChild(cellBg);
         }
 
         // Render each verse phrase-by-phrase
@@ -639,6 +666,36 @@
         .to(img, { y: -10, duration: 0.6, ease: 'none' }, 0)
         .to(wrapper, { opacity: 0, duration: 0.3, ease: 'power1.in' }, 0.6);
       });
+
+      // Cell background — zoom out from deep inside the cell through prison bars
+      const cellBg = document.getElementById('cell-bg-1-1');
+      if (cellBg) {
+        const cellImg = cellBg.querySelector('img');
+        const v1sections = document.querySelectorAll('.phrase-section[data-verse="1:1"]');
+        if (v1sections.length) {
+          const firstEl = v1sections[0];
+          const lastEl = v1sections[v1sections.length - 1];
+
+          // Start zoomed deep into the cell
+          gsap.set(cellImg, { scale: 2.5 });
+
+          gsap.timeline({
+            scrollTrigger: {
+              trigger: firstEl,
+              endTrigger: lastEl,
+              start: 'top 90%',
+              end: 'bottom 10%',
+              scrub: 1.5,
+            }
+          })
+          // Fade in
+          .to(cellBg, { opacity: 0.18, duration: 0.15, ease: 'power1.out' })
+          // Pull out through the bars across the full verse
+          .to(cellImg, { scale: 1, duration: 0.7, ease: 'power1.inOut' }, 0)
+          // Fade out at the end
+          .to(cellBg, { opacity: 0, duration: 0.2, ease: 'power1.in' }, 0.8);
+        }
+      }
 
       // Phrase sections — scroll-scrubbed word-by-word reveal
       document.querySelectorAll('.phrase-section').forEach(section => {
