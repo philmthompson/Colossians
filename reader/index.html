@@ -564,7 +564,7 @@
       opacity: 0;
     }
     .walker-svg {
-      width: clamp(50px, 8vw, 100px);
+      width: clamp(80px, 12vw, 150px);
       height: auto;
     }
 
@@ -930,49 +930,54 @@
               reader.appendChild(createSvgBlock('<img src="images/1_9-knowledge.svg" alt="" class="wireframe-icon gold-filter" />'));
             }
 
-            // ── 1:10 walk (inline SVG stickman with GSAP walk cycle) ──
+            // ── 1:10 walk (Diaco walk cycle, restyled gold) ──
             if (verse.chapter === 1 && verse.verse === 10 && i === 0) {
               const walkEl = document.createElement('div');
               walkEl.className = 'walk-fixed';
               walkEl.id = 'walk-fixed';
               walkEl.innerHTML = `
-                <svg class="walker-svg" viewBox="0 0 100 200">
+                <svg id="walkSvg" class="walker-svg" xmlns="http://www.w3.org/2000/svg" viewBox="15 0 315 325">
                   <defs>
-                    <linearGradient id="wg" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stop-color="#f6d365"/>
-                      <stop offset="50%" stop-color="#fde68a"/>
-                      <stop offset="100%" stop-color="#e8b730"/>
-                    </linearGradient>
                     <filter id="wglow">
-                      <feGaussianBlur stdDeviation="2.5" result="blur"/>
+                      <feGaussianBlur stdDeviation="3" result="blur"/>
                       <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
                     </filter>
                   </defs>
                   <g filter="url(#wglow)">
-                    <!-- Head -->
-                    <circle cx="50" cy="28" r="10" stroke="url(#wg)" stroke-width="2.5" fill="none"/>
-                    <!-- Torso -->
-                    <line x1="50" y1="38" x2="50" y2="95" stroke="url(#wg)" stroke-width="2.5"/>
-                    <!-- Left arm -->
-                    <g class="w-larm">
-                      <line x1="50" y1="50" x2="50" y2="80" stroke="url(#wg)" stroke-width="2" stroke-linecap="round"/>
-                    </g>
-                    <!-- Right arm -->
-                    <g class="w-rarm">
-                      <line x1="50" y1="50" x2="50" y2="80" stroke="url(#wg)" stroke-width="2" stroke-linecap="round"/>
-                    </g>
-                    <!-- Left leg -->
-                    <g class="w-lleg">
-                      <line x1="50" y1="95" x2="50" y2="140" stroke="url(#wg)" stroke-width="2.5" stroke-linecap="round"/>
-                      <g class="w-lshin">
-                        <line x1="50" y1="140" x2="50" y2="185" stroke="url(#wg)" stroke-width="2.5" stroke-linecap="round"/>
+                    <ellipse id="wmSH" fill="#e8b730" opacity="0.15" cx="175" cy="313" rx="110" ry="10"/>
+                    <g id="wB">
+                      <g id="wUB">
+                        <g id="wH">
+                          <path d="M188.8.2c-9.1-.3-16.2 7.3-16.2 15.4 0 8.9 7.2 13.8 7.2 13.8s1.3 3.8 0 6.9c-2.1 4.8-6.6 11.1-6.6 11.1l17.6 8.9s-3.8-8.4-2.2-13.8c.8-2.9 4.7-3.5 6.9-3.1 3.8 3.7 7.7 5.5 9.1 4.6 1.9-1.2 4.9-18.4 4.5-26.8-.4-8.5-9.5-16.3-20.3-17z"/>
+                          <g fill="none" stroke="#fde68a" opacity="0.3">
+                            <path d="M191.1.3s4 4.4 4.9 17.9-.9 21-.9 21"/>
+                            <path d="M172.6 16.2s8.2 2.1 19.2 2.4c11.5.3 17.4-1.5 17.4-1.5"/>
+                          </g>
+                          <g fill="none" stroke="#fde68a" opacity="0.5" stroke-linecap="round" stroke-width="3">
+                            <path d="M181,7.1c-0.8,0.7-1.6,1.4-2.2,2.3"/>
+                            <path d="M198.6,7.6c-4.1-2.8-9.3-4.3-14-2.6"/>
+                          </g>
+                        </g>
+                        <path d="M196.9 83.1c-1.6 8-2.9 14.6-2.9 14.6l-4.9 46.1-21.9-7.7 3.4-11c.7-3.7.9-8.5.4-12.3-4.272-29.697-8.373-41.774-5.7-52.182 2.043-6.93 9.2-17.518 9.2-17.518s3.7 1.4 6.6 2.2c3.5 1.2 8.3 2.9 8.3 2.9s10 21.9 7.5 34.9z"/>
+                        <path class="wFB" d="M167.5 132.7c-9 18.6 6.4 27.6 10.6 27.6 6 0 11.8-9.2 12.3-24.1l-22.9-5.7v2.2z"/>
                       </g>
-                    </g>
-                    <!-- Right leg -->
-                    <g class="w-rleg">
-                      <line x1="50" y1="95" x2="50" y2="140" stroke="url(#wg)" stroke-width="2.5" stroke-linecap="round"/>
-                      <g class="w-rshin">
-                        <line x1="50" y1="140" x2="50" y2="185" stroke="url(#wg)" stroke-width="2.5" stroke-linecap="round"/>
+                      <g id="wFF">
+                        <path d="M169.2 223.345c.1-.21-.4-2.11 1.4-20.466-1.9-15.51-4.6-39.88-1.2-52.86 2.9-12.66 16.7-15.83 19.1-1.588.4 11.183.4 15.51-2 35.66-4.6 23.313-9.7 39.243-9.8 40.09-.1.525-2.2 2.32-4.4 2.002-1.7.104-3.3-2.217-3.1-2.85z"/>
+                        <g class="wF1">
+                          <path d="M162.9 307.954s1.2-11.393.3-24.264c-.5-9.284-5.8-30.594-4.7-38.93 6.8-18.777 13.6-23.42 16.4-22.26 1.1.95 1.9 2.322 1.3 4.01-.1.106-3.8 23.632-6 40.3-2.3 18.04.7 41.144.7 41.144h-8z"/>
+                          <g class="wF2">
+                            <path d="M192.2 316.183s-25.4-16.985-28.8-14.242c-1.4 6.65-11.8 19.1-2.9 22.9 3.3 1.27 7-1.16 8.3-1.37 6.3-1.16 19.1 1.48 20.2 1.48 2.8 0 5.1-1.687 5.1-4.64 0-1.69-.8-3.27-1.9-4.116z"/>
+                            <path class="wF3" d="M191.7 315.867s-1.5-.528-2.3-.528c-2.6 0-4.6 2.11-4.6 4.85 0 2.42 1.7 4.53 4.1 4.75 0 0 17 .95 17.3-2.64.3-3.38-7.5-2.85-14.5-6.44z"/>
+                          </g>
+                        </g>
+                      </g>
+                      <path fill="#9a7209" d="M191.1 49.9l-18.9-3.7c-.9-.1-1.2-1.1-.6-1.6l1.9-2.3c.2-.3.7-.4 1.1-.3l16.7 5.7c-.1-.1-.2 2.2-.2 2.2z"/>
+                      <g id="wHF">
+                        <path d="M179.9 111.275c.5-1.88 7.2-21.42 6.3-36.154 4.4-10.76 2-18.49.7-21.42-3.1-7-13.2-5.74-14.6 4.29-.5 3.66-1.5 10.87 2 19.33-2.6 17.24.7 31.87.9 33.96s4.1 1.988 4.7 0"/>
+                        <g class="wH1">
+                          <path d="M185 122.56c-.5-3.135-4.4-17.137-8.8-16.3-2.1.417-3.3 12.016-3.3 12.016 1.5 11.39 6.533 25.093 10.333 35.96l4.567-.852c.2 0-2.5-14.628-2.8-30.824z"/>
+                          <path class="wH2" d="M186.87 152.17c-1 .11-2.9.774-4 .885-.6.11-2 4.318-2.8 7.308-.4 1.44-1 8.083-1 9.633l.4 6.312s1.5 5.315 1.8 5.98c.5 1.55 1.4.664 1.4.664s1.3 3.22 1.4 3.55c.3.67.8.89 1.3.78 2.3-.44-.1-5.09-.9-7.192.2-1.44-.3-4.872-.3-4.872s1 6.2 1.1 6.756c.1 1.77 2.1 4.87 2.4 5.87.1.995 1.6 1.327 2.4.44 1.7-1.88-1.8-6.53-1.8-6.53.4-2.216-.7-7.53-.7-7.53s1.5 9.52 2.2 11.736c.1.333 1.1 4.984 1.3 5.205.3.554 1 .554 1.5.333 2.2-1.33.7-6.866.2-7.862-.1-.33-.1-4.32-.7-7.75.15-4.882-.227-5.843-.8-7.64s.9 3.544 1.5 4.54c.04 4.22 2.277 7.61 4.355 6.67.8-.663.19-5.314-.555-8.552l-2.4-7.525c.2.33-6.2-11.3-7.3-11.19v-.028z"/>
+                        </g>
                       </g>
                     </g>
                   </g>
@@ -1373,46 +1378,87 @@
         empTl.to(icon, { opacity: 0, scale: 0.7, duration: 0.25 }, 0.75);
       });
 
-      // ── Walking figure — GSAP walk cycle + scroll-driven left→right ──
+      // ── Walking figure — Diaco walk cycle (GSAP v3) + scroll-driven left→right ──
+      // Based on a Pen by Diaco m.lotfollahi: https://diacodesign.com
       const walkEl = document.getElementById('walk-fixed');
       if (walkEl) {
-        const walkerSvg = walkEl.querySelector('.walker-svg');
+        const wSvg = walkEl.querySelector('#walkSvg');
         const v10sections = document.querySelectorAll('.phrase-section[data-verse="1:10"]');
 
-        if (walkerSvg && v10sections.length >= 3) {
-          // Set rotation pivots (svgOrigin = point in SVG coordinate space)
-          gsap.set('.w-larm, .w-rarm', { svgOrigin: '50 50' });
-          gsap.set('.w-lleg, .w-rleg', { svgOrigin: '50 95' });
-          gsap.set('.w-lshin, .w-rshin', { svgOrigin: '50 140' });
+        if (wSvg && v10sections.length >= 3) {
+          const wB = wSvg.querySelector('#wB');
+          const wUB = wSvg.querySelector('#wUB');
+          const wFF = wSvg.querySelector('#wFF');
+          const wHF = wSvg.querySelector('#wHF');
 
-          // Walk cycle — yoyo creates alternating stride
-          const walkCycle = gsap.timeline({ repeat: -1, yoyo: true, paused: true });
-          walkCycle
-            .to('.w-larm', { rotation: -30, duration: 0.35, ease: 'sine.inOut' }, 0)
-            .to('.w-rarm', { rotation: 30, duration: 0.35, ease: 'sine.inOut' }, 0)
-            .to('.w-lleg', { rotation: 30, duration: 0.35, ease: 'sine.inOut' }, 0)
-            .to('.w-rleg', { rotation: -30, duration: 0.35, ease: 'sine.inOut' }, 0)
-            .to('.w-lshin', { rotation: 25, duration: 0.35, ease: 'sine.inOut' }, 0)
-            .to('.w-rshin', { rotation: 5, duration: 0.35, ease: 'sine.inOut' }, 0);
+          // Initial transforms and gold fills
+          gsap.set(wB, { y: 10 });
+          gsap.set(wUB, { fill: '#c9952a', transformOrigin: '50% 100%' });
+          gsap.set(wHF, { transformOrigin: '-5px 0px', rotation: -10, fill: '#d4a76a', y: -1 });
+          gsap.set(wFF, { transformOrigin: '55% 10px', rotation: -37, fill: '#e8b730' });
+          gsap.set('#walkSvg #wH', { transformOrigin: '5px 50px', fill: '#d4a76a', scale: 0.967, rotation: -5 });
+          gsap.set('#walkSvg .wH1', { rotation: -20, transformOrigin: '0px 5px', y: -5 });
+          gsap.set('#walkSvg .wH2', { transformOrigin: '10% 0%', rotation: -10, y: -1.5, scaleY: 1.03 });
+          gsap.set('#walkSvg .wF1', { transformOrigin: '21px 2px' });
+          gsap.set('#walkSvg .wF2', { transformOrigin: '25px 0px' });
+          gsap.set('#walkSvg .wF3', { transformOrigin: '4.2px 4.2px' });
+
+          // Clone front limbs → back limbs (inserted behind the body)
+          const wF2 = wFF.cloneNode(true);
+          const wH2c = wHF.cloneNode(true);
+          wF2.id = 'wFB';
+          wH2c.id = 'wHB';
+          wB.insertBefore(wF2, wUB);
+          wB.insertBefore(wH2c, wF2);
+
+          gsap.set('#walkSvg .wFB', { fill: '#e8b730' });
+          gsap.set('#walkSvg #wFB', { fill: '#9a7209' });
+          gsap.set('#walkSvg #wHB', { y: -3, fill: '#8b6914' });
+
+          // Walk cycle function — animates one leg + opposite arm
+          function walkM(p1, p2) {
+            const tl = gsap.timeline({ repeat: -1 });
+            tl.addLabel('l1', 0).addLabel('l2', 0.25).addLabel('l3', 0.5).addLabel('l4', 0.75);
+            tl.to(p1, { rotation: 27, duration: 0.5, ease: 'sine.inOut' }, 'l1')
+              .to(p1, { rotation: -37, duration: 0.25, ease: 'sine.in' }, 'l3')
+              .to(`${p1} .wF1`, { rotation: 15, duration: 0.25, ease: 'sine.inOut' }, 'l2')
+              .to(`${p1} .wF1`, { rotation: 80, duration: 0.25, ease: 'sine.in' }, 'l3')
+              .to(`${p1} .wF1`, { rotation: 0, duration: 0.25, ease: 'sine.out' }, 'l4')
+              .to(`${p1} .wF2`, { rotation: 45, duration: 0.25, repeat: 1, yoyo: true }, 'l3')
+              .to(`${p1} .wF3`, { rotation: -35, duration: 0.25, repeat: 1, yoyo: true, scaleX: 0.925 }, 'l2')
+              .to(p2, { rotation: 25, duration: 0.5, ease: 'sine.inOut', yoyo: true, repeat: 1 }, 'l1')
+              .to(`${p2} .wH1`, { rotation: 15, duration: 0.5, ease: 'sine.inOut', yoyo: true, repeat: 1 }, 'l1')
+              .to(`${p2} .wH2`, { rotation: 0, duration: 0.5, ease: 'sine.inOut', yoyo: true, repeat: 1 }, 'l1');
+            return tl;
+          }
+
+          // Master walk cycle — two phased strides + body bounce + head bob
+          const walkMaster = gsap.timeline({ paused: true });
+          walkMaster.add(walkM('#walkSvg #wFF', '#walkSvg #wHB'));
+          walkMaster.add(walkM('#walkSvg #wFB', '#walkSvg #wHF'), 0.5);
+          walkMaster.to(wB, { y: '-=20', duration: 0.25, repeat: -1, yoyo: true, ease: 'sine.inOut' }, 0);
+          walkMaster.to('#walkSvg #wH', { rotation: 1, duration: 0.25, repeat: -1, yoyo: true, ease: 'sine.inOut' }, 0);
+          walkMaster.to('#walkSvg #wmSH', { scaleX: 0.6, duration: 0.25, repeat: -1, yoyo: true, ease: 'sine.in', transformOrigin: 'center' }, 0);
+          walkMaster.time(0.5);
 
           // Scroll-driven horizontal movement across viewport
-          gsap.set(walkerSvg, { x: '-10vw' });
-          const walkTl = gsap.timeline({
+          gsap.set(wSvg, { x: '-10vw' });
+          const walkScrollTl = gsap.timeline({
             scrollTrigger: {
               trigger: v10sections[0],
               endTrigger: v10sections[2],
               start: 'top 70%',
               end: 'top 30%',
               scrub: 1.5,
-              onEnter: () => walkCycle.play(),
-              onLeave: () => walkCycle.pause(),
-              onEnterBack: () => walkCycle.play(),
-              onLeaveBack: () => walkCycle.pause(),
+              onEnter: () => walkMaster.play(),
+              onLeave: () => walkMaster.pause(),
+              onEnterBack: () => walkMaster.play(),
+              onLeaveBack: () => walkMaster.pause(),
             }
           });
-          walkTl.to(walkEl, { opacity: 0.9, duration: 0.1 }, 0);
-          walkTl.to(walkerSvg, { x: '95vw', duration: 0.8, ease: 'none' }, 0);
-          walkTl.to(walkEl, { opacity: 0, duration: 0.1 }, 0.9);
+          walkScrollTl.to(walkEl, { opacity: 0.9, duration: 0.1 }, 0);
+          walkScrollTl.to(wSvg, { x: '95vw', duration: 0.8, ease: 'none' }, 0);
+          walkScrollTl.to(walkEl, { opacity: 0, duration: 0.1 }, 0.9);
         }
       }
 
