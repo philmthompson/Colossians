@@ -1,0 +1,1672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Colossians — Immersive Reader</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+
+  <!-- GSAP + ScrollTrigger -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+
+  <!-- Chapter data (edit these .js files to update text) -->
+  <script src="data/chapter1.js"></script>
+
+  <style>
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --warm-bg: #1a1410;
+      --warm-bg-light: #2a2018;
+      --warm-accent: #c8956c;
+      --warm-gold: #d4a76a;
+      --warm-cream: #f0e6d3;
+      --warm-white: #faf5ed;
+      --warm-muted: #8a7a6a;
+      --warm-dim: #5a4a3a;
+      --warm-glow: rgba(212, 167, 106, 0.15);
+      --font-serif: 'Cormorant Garamond', Georgia, serif;
+      --font-sans: 'Inter', system-ui, sans-serif;
+    }
+
+    html {
+      scroll-behavior: auto;
+      background: var(--warm-bg);
+    }
+
+    body {
+      font-family: var(--font-serif);
+      background: var(--warm-bg);
+      color: var(--warm-cream);
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Version Selector ── */
+    /* ── Progress Bar ── */
+    .progress-track {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: rgba(255, 255, 255, 0.05);
+      z-index: 200;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--warm-accent), var(--warm-gold));
+      transition: width 0.1s linear;
+    }
+
+    /* ── Chapter Nav ── */
+    .chapter-nav {
+      position: fixed;
+      left: 1.5rem;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+
+    .chapter-nav.visible {
+      opacity: 1;
+    }
+
+    .chapter-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      border: 1px solid var(--warm-dim);
+      background: transparent;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .chapter-dot.active {
+      background: var(--warm-gold);
+      border-color: var(--warm-gold);
+      box-shadow: 0 0 12px rgba(212, 167, 106, 0.4);
+    }
+
+    .chapter-dot::after {
+      content: attr(data-label);
+      position: absolute;
+      left: 1.2rem;
+      top: 50%;
+      transform: translateY(-50%);
+      font-family: var(--font-sans);
+      font-size: 0.65rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--warm-muted);
+      white-space: nowrap;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      pointer-events: none;
+    }
+
+    .chapter-dot:hover::after {
+      opacity: 1;
+    }
+
+    /* ── Hero / Title Section ── */
+    .hero {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 50% 40%, rgba(212, 167, 106, 0.08) 0%, transparent 70%);
+    }
+
+    .hero-title {
+      font-family: var(--font-serif);
+      font-size: clamp(3rem, 8vw, 7rem);
+      font-weight: 300;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--warm-cream);
+      text-align: center;
+      line-height: 1.1;
+    }
+
+    .hero-subtitle {
+      font-family: var(--font-sans);
+      font-size: clamp(0.7rem, 1.2vw, 0.85rem);
+      font-weight: 300;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--warm-muted);
+      margin-top: 1.5rem;
+    }
+
+    .hero-line {
+      width: 60px;
+      height: 1px;
+      background: var(--warm-gold);
+      margin-top: 2rem;
+    }
+
+    .hero-scroll-cue {
+      position: absolute;
+      bottom: 3rem;
+      font-family: var(--font-sans);
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--warm-dim);
+    }
+
+    .hero-scroll-cue::after {
+      content: '';
+      display: block;
+      width: 1px;
+      height: 30px;
+      background: linear-gradient(to bottom, var(--warm-dim), transparent);
+      margin: 0.75rem auto 0;
+      animation: scrollPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes scrollPulse {
+      0%, 100% { opacity: 0.3; transform: scaleY(1); }
+      50% { opacity: 1; transform: scaleY(1.3); }
+    }
+
+    /* ── Chapter Header ── */
+    .chapter-header {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .chapter-number {
+      font-family: var(--font-serif);
+      font-size: clamp(5rem, 15vw, 12rem);
+      font-weight: 300;
+      color: var(--warm-dim);
+      line-height: 1;
+    }
+
+    .chapter-label {
+      font-family: var(--font-sans);
+      font-size: 0.7rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--warm-muted);
+      margin-top: 1rem;
+    }
+
+    /* ── Phrase Sections ── */
+    .phrase-section {
+      min-height: 20vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem 2rem;
+      position: relative;
+    }
+
+    .phrase-container {
+      max-width: 800px;
+      width: 100%;
+      position: relative;
+    }
+
+    .phrase-ref {
+      font-family: var(--font-sans);
+      font-size: 0.65rem;
+      font-weight: 500;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--warm-accent);
+      margin-bottom: 1.5rem;
+    }
+
+    .phrase-text {
+      font-family: var(--font-serif);
+      font-size: clamp(1.6rem, 3.5vw, 2.8rem);
+      font-weight: 300;
+      line-height: 1.5;
+      color: var(--warm-cream);
+    }
+
+    .phrase-text .word {
+      display: inline;
+    }
+
+    .phrase-text em {
+      font-style: italic;
+      color: var(--warm-gold);
+    }
+
+    .phrase-annotation {
+      font-family: var(--font-sans);
+      font-size: 0.8rem;
+      font-weight: 300;
+      line-height: 1.8;
+      color: var(--warm-muted);
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid rgba(138, 122, 106, 0.2);
+      max-width: 550px;
+    }
+
+    /* ── Parallax Divider ── */
+    .divider {
+      height: 10vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .divider-glow {
+      width: 100%;
+      height: 100%;
+      border-radius: 0;
+      background: radial-gradient(ellipse at 50% 50%, rgba(212, 167, 106, 0.06) 0%, transparent 70%);
+    }
+
+    /* ── Section Themes ── */
+    .theme-greeting { --section-accent: #c8956c; }
+    .theme-supremacy { --section-accent: #d4a76a; }
+    .theme-reconciliation { --section-accent: #c09070; }
+    .theme-mystery { --section-accent: #b8a080; }
+
+    .phrase-section[data-theme]::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: none;
+      pointer-events: none;
+    }
+
+    /* ── Mobile ── */
+    @media (max-width: 768px) {
+      .chapter-nav { display: none; }
+      .phrase-section { padding: 1rem 1.5rem; min-height: 15vh; }
+      .colossae-layer.layer-clouds img {
+        min-width: 110% !important;
+      }
+    }
+
+    /* ── Inline Scene Images ── */
+    .scene-img-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem 2rem;
+      position: relative;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .scene-img-wrapper img {
+      max-width: min(92vw, 850px);
+      height: auto;
+      border-radius: 6px;
+      will-change: transform;
+    }
+
+    .scene-img-wrapper.align-left {
+      justify-content: flex-start;
+      padding-left: 0;
+      padding-right: 0;
+    }
+    .scene-img-wrapper.align-left img {
+      border-radius: 0 6px 6px 0;
+    }
+
+    .scene-img-wrapper.align-right {
+      justify-content: flex-end;
+      padding-left: 0;
+      padding-right: 0;
+    }
+    .scene-img-wrapper.align-right img {
+      border-radius: 6px 0 0 6px;
+    }
+
+    /* ── Verse Background Layer ── */
+    .verse-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+      opacity: 0;
+    }
+
+    .verse-bg img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      will-change: transform;
+    }
+
+    /* ── Colossae Parallax Background ── */
+    .colossae-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+      opacity: 0;
+    }
+
+    .colossae-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      will-change: transform;
+    }
+
+    .colossae-layer img {
+      position: absolute;
+      will-change: transform;
+    }
+
+    .colossae-layer.layer-city img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .colossae-layer.layer-clouds img {
+      position: absolute;
+    }
+
+    /* ── Faith / Love / Hope Gold Wireframe Overlays ── */
+    .wireframe-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1;
+      overflow: visible;
+    }
+
+    .wireframe-overlay img {
+      width: clamp(160px, 35vw, 420px);
+      height: auto;
+      opacity: 0;
+      filter: drop-shadow(0 0 12px rgba(232, 183, 48, 0.5));
+    }
+
+    /* SVG block — fills the space between phrases */
+    .svg-block {
+      width: 100%;
+      min-height: 25vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      overflow: visible;
+    }
+    .svg-block > img {
+      width: clamp(220px, 60vw, 720px);
+      height: auto;
+      opacity: 0;
+      filter: drop-shadow(0 0 12px rgba(232, 183, 48, 0.5));
+    }
+
+    /* Map — enlarged with animated dots */
+    .map-container {
+      position: relative;
+      width: clamp(360px, 95vw, 1200px);
+    }
+    .map-container > img {
+      width: 100%;
+      height: auto;
+      opacity: 0;
+      filter: drop-shadow(0 0 12px rgba(232, 183, 48, 0.5));
+    }
+    .map-container > img.gold-filter {
+      filter: invert(75%) sepia(50%) saturate(500%) hue-rotate(5deg) brightness(1.05)
+        drop-shadow(0 0 15px rgba(232, 183, 48, 0.6)) !important;
+    }
+    .map-dot {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #f6d365;
+      box-shadow: 0 0 6px rgba(246, 211, 101, 0.9), 0 0 18px rgba(232, 183, 48, 0.5);
+      opacity: 0;
+      transform: scale(0);
+      pointer-events: none;
+    }
+    .map-dot[data-order="0"] {
+      width: 14px;
+      height: 14px;
+      box-shadow: 0 0 10px rgba(246, 211, 101, 1), 0 0 30px rgba(232, 183, 48, 0.7);
+    }
+    .map-line {
+      position: absolute;
+      height: 2px;
+      background: linear-gradient(90deg, rgba(246, 211, 101, 0.8), rgba(232, 183, 48, 0.3));
+      transform-origin: left center;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* Gold-glow keywords */
+    .gold-word {
+      transition: color 0.4s, text-shadow 0.4s;
+    }
+    .gold-word.glow-active {
+      color: #f6d365 !important;
+      text-shadow:
+        0 0 8px rgba(246, 211, 101, 0.7),
+        0 0 20px rgba(232, 183, 48, 0.4),
+        0 0 40px rgba(232, 183, 48, 0.2);
+    }
+
+    /* Gold filter — turns black SVGs into gold wireframe look */
+    .gold-filter {
+      filter: invert(75%) sepia(50%) saturate(500%) hue-rotate(5deg) brightness(1.05)
+        drop-shadow(0 0 15px rgba(232, 183, 48, 0.6)) !important;
+    }
+
+    /* Walk overlay — fixed walking figure */
+    .walk-fixed {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100vh;
+      pointer-events: none;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      opacity: 0;
+    }
+    .walker-svg {
+      width: clamp(120px, 18vw, 220px);
+      height: auto;
+    }
+
+    /* Fruit scatter background */
+    .fruit-fixed {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100vh;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0;
+      overflow: hidden;
+    }
+    .fruit-fixed img {
+      position: absolute;
+      width: clamp(45px, 9vw, 100px);
+      height: auto;
+    }
+
+    /* Empowered flex animation */
+    @keyframes flex-pulse {
+      0%, 100% { transform: scaleX(1) scaleY(1); }
+      25% { transform: scaleX(1.03) scaleY(0.97); }
+      75% { transform: scaleX(0.97) scaleY(1.03); }
+    }
+    .svg-empowered.flexing {
+      animation: flex-pulse 1.5s ease-in-out infinite;
+      transform-origin: center bottom;
+    }
+
+    /* Kingdoms — two halves */
+    .kingdoms-container {
+      position: relative;
+      width: clamp(280px, 65vw, 800px);
+      height: clamp(220px, 52vw, 640px);
+    }
+    .kingdoms-container img {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      object-fit: contain;
+      opacity: 0;
+    }
+    .kingdoms-dark {
+      clip-path: inset(0 50% 0 0);
+      filter: invert(20%) sepia(90%) saturate(700%) hue-rotate(340deg) brightness(1.2)
+        drop-shadow(0 0 20px rgba(255, 60, 60, 0.8)) !important;
+    }
+    .kingdoms-light {
+      clip-path: inset(0 0 0 50%);
+      filter: invert(85%) sepia(40%) saturate(600%) hue-rotate(5deg) brightness(1.3)
+        drop-shadow(0 0 25px rgba(246, 211, 101, 0.9)) !important;
+    }
+
+    /* Forgiveness — mark + eraser side by side */
+    .forgiveness-container {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: clamp(12px, 5vw, 60px);
+      width: clamp(340px, 75vw, 900px);
+    }
+    .forgiveness-container img {
+      width: clamp(130px, 30vw, 380px);
+      height: auto;
+      opacity: 0;
+    }
+
+    /* Glory swap — bright background for blinding glory lines */
+    .glory-swap {
+      background-color: var(--warm-bg);
+      transition: background-color 1.2s ease;
+    }
+    .glory-swap.bright {
+      background-color: rgba(240, 230, 211, 0.85) !important;
+    }
+    .glory-swap .phrase-text {
+      transition: color 1.2s ease;
+    }
+    .glory-swap.bright .phrase-text {
+      color: var(--warm-bg) !important;
+    }
+    .glory-swap .phrase-ref {
+      transition: color 1.2s ease;
+    }
+    .glory-swap.bright .phrase-ref {
+      color: #8b5e3c !important;
+    }
+
+    /* Dotted underline words */
+    .dotted-word {
+      position: relative;
+      display: inline-block;
+    }
+    .dotted-word::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 0;
+      border-bottom: 2px dotted var(--warm-gold);
+    }
+    .dotted-word.underline-active::after {
+      width: 100%;
+      transition: width 0.8s ease;
+    }
+
+    /* Joy emphasis */
+    .joy-word {
+      display: inline-block;
+      transition: color 0.5s, transform 0.5s, text-shadow 0.5s;
+    }
+    .joy-word.joy-active {
+      color: #f6d365 !important;
+      transform: scale(1.2);
+      text-shadow:
+        0 0 12px rgba(246, 211, 101, 0.8),
+        0 0 30px rgba(232, 183, 48, 0.5);
+    }
+
+    /* ── Smooth Scroll Snap (optional enhancement) ── */
+    @media (prefers-reduced-motion: no-preference) {
+      .phrase-text .word {
+        transition: opacity 0.4s ease;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Progress Bar -->
+  <div class="progress-track">
+    <div class="progress-fill" id="progressFill"></div>
+  </div>
+
+
+  <!-- Chapter Navigation -->
+  <nav class="chapter-nav" id="chapterNav">
+    <div class="chapter-dot active" data-chapter="1" data-label="Chapter 1"></div>
+    <div class="chapter-dot" data-chapter="2" data-label="Chapter 2"></div>
+    <div class="chapter-dot" data-chapter="3" data-label="Chapter 3"></div>
+    <div class="chapter-dot" data-chapter="4" data-label="Chapter 4"></div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero" id="hero">
+    <div class="hero-bg"></div>
+    <h1 class="hero-title">Colossians</h1>
+    <p class="hero-subtitle">A Paraphrase</p>
+    <div class="hero-line"></div>
+    <div class="hero-scroll-cue">Scroll to begin</div>
+  </section>
+
+  <!-- Content rendered by JS from data -->
+  <main id="reader"></main>
+
+  <script>
+    // ────────────────────────────────────────
+    // DATA LOADING
+    // Loads chapter JSON files and renders phrase-by-phrase
+    // ────────────────────────────────────────
+    // Chapter data is loaded via <script> tags in <head> and
+    // registered on window.ColossiansPPV[chapterNumber].
+    // To add chapters: create data/chapter2.js, add a <script> tag, etc.
+    const reader = document.getElementById('reader');
+
+
+    // Thematic groupings for visual sections (verse ranges → theme)
+    const sectionMap = {
+      1: [
+        { start: 1, end: 2, theme: 'greeting' },
+        { start: 3, end: 8, theme: 'thanksgiving' },
+        { start: 9, end: 14, theme: 'prayer' },
+        { start: 15, end: 20, theme: 'supremacy' },
+        { start: 21, end: 23, theme: 'reconciliation' },
+        { start: 24, end: 29, theme: 'mystery' }
+      ]
+    };
+
+    function getThemeForVerse(chapter, verse) {
+      const sections = sectionMap[chapter];
+      if (!sections) return 'default';
+      const section = sections.find(s => verse >= s.start && verse <= s.end);
+      return section ? section.theme : 'default';
+    }
+
+    function isNewSection(chapter, verse) {
+      const sections = sectionMap[chapter];
+      if (!sections) return false;
+      return sections.some(s => s.start === verse);
+    }
+
+    // Helper: create an inline scene image element
+    function createSceneImg(src) {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'scene-img-wrapper';
+      wrapper.innerHTML = `<img src="${src}" alt="" />`;
+      return wrapper;
+    }
+
+    function createSvgBlock(html) {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'svg-block';
+      wrapper.innerHTML = html;
+      return wrapper;
+    }
+
+    // ────────────────────────────────────────
+    // RENDER
+    // ────────────────────────────────────────
+    function renderAll() {
+      reader.innerHTML = '';
+      const ppv = window.ColossiansPPV || {};
+      const chapterNums = Object.keys(ppv).map(Number).sort((a, b) => a - b);
+
+      if (chapterNums.length === 0) {
+        reader.innerHTML = '<div style="color:var(--warm-accent);text-align:center;padding:4rem 2rem;font-family:var(--font-sans);">No chapter data found.</div>';
+        return;
+      }
+
+      chapterNums.forEach(chNum => {
+        const data = ppv[chNum];
+
+        // Chapter header
+        const chHeader = document.createElement('section');
+        chHeader.className = 'chapter-header';
+        chHeader.id = `chapter-${chNum}`;
+        chHeader.innerHTML = `
+          <div class="chapter-number">${chNum}</div>
+          <div class="chapter-label">Chapter ${chNum === 1 ? 'One' : chNum === 2 ? 'Two' : chNum === 3 ? 'Three' : 'Four'}</div>
+        `;
+        reader.appendChild(chHeader);
+
+        // Insert writing image inline between chapter header and first verse
+        if (chNum === 1) {
+          const writingImg = createSceneImg('images/1_0-writing.png');
+          writingImg.classList.add('align-left');
+          reader.appendChild(writingImg);
+
+          // Cell background — fixed layer behind verse 1:1
+          const cellBg = document.createElement('div');
+          cellBg.className = 'verse-bg';
+          cellBg.id = 'cell-bg-1-1';
+          cellBg.innerHTML = `<img src="images/1_1-cell.png" alt="" />`;
+          document.body.appendChild(cellBg);
+        }
+
+        // Render each verse phrase-by-phrase
+        data.verses.forEach(verse => {
+          const theme = getThemeForVerse(verse.chapter, verse.verse);
+
+          // Insert Timothy image before verse 1:2
+          if (verse.chapter === 1 && verse.verse === 2) {
+            reader.appendChild(createSceneImg('images/1_1-Timothy.png'));
+          }
+
+          // Insert a divider glow between thematic sections
+          if (isNewSection(verse.chapter, verse.verse) && verse.verse > 1) {
+            const div = document.createElement('div');
+            div.className = 'divider';
+            div.innerHTML = '<div class="divider-glow"></div>';
+            reader.appendChild(div);
+          }
+
+          // Each phrase gets its own scroll-animated section
+          verse.phrases.forEach((phrase, i) => {
+            const el = document.createElement('section');
+            el.className = 'phrase-section';
+            el.dataset.theme = theme;
+            el.dataset.verse = verse.id;
+
+            // Wrap each word in a span for staggered reveal
+            const goldWords = (verse.chapter === 1 && (verse.verse === 4 || verse.verse === 5))
+              ? /^(faith|love|confidence),?$/i : null;
+            const specialWordMap = (verse.chapter === 1 && verse.verse === 11 && i === 2)
+              ? { patience: 'dotted-word', endurance: 'dotted-word', joy: 'joy-word' } : null;
+            const words = phrase.split(/(\s+)/).map(w => {
+              if (/^\s+$/.test(w)) return w;
+              const bare = w.replace(/[,;:.!?]/g, '');
+              if (goldWords && goldWords.test(bare)) {
+                return `<span class="word gold-word">${w}</span>`;
+              }
+              if (specialWordMap) {
+                const cls = specialWordMap[bare.toLowerCase()];
+                if (cls) return `<span class="word ${cls}">${w}</span>`;
+              }
+              return `<span class="word">${w}</span>`;
+            }).join('');
+
+            // Show verse ref only on first phrase of each verse
+            const refHtml = i === 0
+              ? `<div class="phrase-ref">${verse.id}</div>`
+              : '';
+
+            el.innerHTML = `
+              <div class="phrase-container">
+                ${refHtml}
+                <div class="phrase-text">${words}</div>
+              </div>
+            `;
+            reader.appendChild(el);
+
+            // Insert Paul image after the "From:" phrase
+            if (verse.chapter === 1 && verse.verse === 1 && i === 0) {
+              const paulImg = createSceneImg('images/1_1-Paul.png');
+              paulImg.classList.add('align-right');
+              reader.appendChild(paulImg);
+            }
+
+            // Insert gold wireframe SVGs between phrases
+            if (verse.chapter === 1 && verse.verse === 4 && i === 0) {
+              reader.appendChild(createSvgBlock('<img src="images/1_3-faith.svg" alt="" class="wireframe-icon wireframe-faith" />'));
+            }
+            if (verse.chapter === 1 && verse.verse === 4 && i === 1) {
+              reader.appendChild(createSvgBlock('<img src="images/1_3-love.svg" alt="" class="wireframe-icon wireframe-love" />'));
+            }
+            if (verse.chapter === 1 && verse.verse === 5 && i === 0) {
+              reader.appendChild(createSvgBlock('<img src="images/1_3-hope.svg" alt="" class="wireframe-icon wireframe-hope" />'));
+            }
+
+            // ── 1:6 SVG blocks ──
+            if (verse.chapter === 1 && verse.verse === 6 && i === 0) {
+              const mapBlock = createSvgBlock(`
+                <div class="map-container">
+                  <img src="images/1_6-with-across-the-world.svg" alt="" class="map-img gold-filter" />
+                  <!-- Wave 0: Colossae / Asia Minor -->
+                  <span class="map-dot" data-order="0" style="left:74%;top:42%"></span>
+                  <!-- Wave 1: Near neighbors — western Turkey, Cyprus, Syria -->
+                  <span class="map-dot" data-order="1" style="left:68%;top:38%"></span>
+                  <span class="map-dot" data-order="1" style="left:79%;top:36%"></span>
+                  <span class="map-dot" data-order="1" style="left:76%;top:50%"></span>
+                  <span class="map-dot" data-order="1" style="left:83%;top:52%"></span>
+                  <!-- Wave 2: Greece, Crete, Lebanon, Egypt -->
+                  <span class="map-dot" data-order="2" style="left:60%;top:36%"></span>
+                  <span class="map-dot" data-order="2" style="left:63%;top:42%"></span>
+                  <span class="map-dot" data-order="2" style="left:62%;top:54%"></span>
+                  <span class="map-dot" data-order="2" style="left:85%;top:58%"></span>
+                  <span class="map-dot" data-order="2" style="left:78%;top:92%"></span>
+                  <!-- Wave 3: Italy, Balkans, North Africa east -->
+                  <span class="map-dot" data-order="3" style="left:47%;top:32%"></span>
+                  <span class="map-dot" data-order="3" style="left:45%;top:42%"></span>
+                  <span class="map-dot" data-order="3" style="left:49%;top:50%"></span>
+                  <span class="map-dot" data-order="3" style="left:55%;top:30%"></span>
+                  <span class="map-dot" data-order="3" style="left:52%;top:91%"></span>
+                  <span class="map-dot" data-order="3" style="left:72%;top:94%"></span>
+                  <!-- Wave 4: Sicily, Sardinia, Tunisia, Libya -->
+                  <span class="map-dot" data-order="4" style="left:44%;top:52%"></span>
+                  <span class="map-dot" data-order="4" style="left:38%;top:42%"></span>
+                  <span class="map-dot" data-order="4" style="left:42%;top:90%"></span>
+                  <span class="map-dot" data-order="4" style="left:55%;top:93%"></span>
+                  <span class="map-dot" data-order="4" style="left:62%;top:92%"></span>
+                  <!-- Wave 5: Spain, France, Morocco, Algeria -->
+                  <span class="map-dot" data-order="5" style="left:32%;top:32%"></span>
+                  <span class="map-dot" data-order="5" style="left:28%;top:38%"></span>
+                  <span class="map-dot" data-order="5" style="left:22%;top:42%"></span>
+                  <span class="map-dot" data-order="5" style="left:34%;top:92%"></span>
+                  <span class="map-dot" data-order="5" style="left:26%;top:94%"></span>
+                  <span class="map-dot" data-order="5" style="left:18%;top:90%"></span>
+                  <!-- Wave 6: Far west — Portugal, Atlantic coast, western Morocco -->
+                  <span class="map-dot" data-order="6" style="left:12%;top:40%"></span>
+                  <span class="map-dot" data-order="6" style="left:14%;top:50%"></span>
+                  <span class="map-dot" data-order="6" style="left:10%;top:93%"></span>
+                  <span class="map-dot" data-order="6" style="left:20%;top:30%"></span>
+                </div>
+              `);
+              reader.appendChild(mapBlock);
+            }
+            if (verse.chapter === 1 && verse.verse === 6 && i === 1) {
+              reader.appendChild(createSvgBlock('<img src="images/1_6-before-you-produce-fruit.svg" alt="" class="wireframe-icon gold-filter" />'));
+            }
+            if (verse.chapter === 1 && verse.verse === 6 && i === 2) {
+              reader.appendChild(createSvgBlock('<img src="images/1_6-after-little-children.svg" alt="" class="svg-icon gold-filter hand-drawn" />'));
+            }
+            if (verse.chapter === 1 && verse.verse === 6 && i === 3) {
+              reader.appendChild(createSvgBlock('<img src="images/1_6-saving-grace.svg" alt="" class="wireframe-icon gold-filter" />'));
+            }
+
+            // ── 1:7 scene images (zoom in/out) ──
+            if (verse.chapter === 1 && verse.verse === 7 && i === 0) {
+              reader.appendChild(createSceneImg('images/1_7-Epaphras.png'));
+            }
+            if (verse.chapter === 1 && verse.verse === 7 && i === 1) {
+              reader.appendChild(createSceneImg('images/1_7-coworker.png'));
+            }
+
+            // ── 1:9 praying image + knowledge block ──
+            if (verse.chapter === 1 && verse.verse === 9 && i === 1) {
+              reader.appendChild(createSceneImg('images/1_9-praying.png'));
+            }
+            if (verse.chapter === 1 && verse.verse === 9 && i === 2) {
+              reader.appendChild(createSvgBlock('<img src="images/1_9-knowledge.svg" alt="" class="wireframe-icon gold-filter" />'));
+            }
+
+            // ── 1:10 walk (Diaco walk cycle, restyled gold) ──
+            if (verse.chapter === 1 && verse.verse === 10 && i === 0) {
+              const walkEl = document.createElement('div');
+              walkEl.className = 'walk-fixed';
+              walkEl.id = 'walk-fixed';
+              walkEl.innerHTML = `
+                <svg id="walkSvg" class="walker-svg" xmlns="http://www.w3.org/2000/svg" viewBox="15 0 315 325">
+                  <defs>
+                    <filter id="wglow">
+                      <feGaussianBlur stdDeviation="3" result="blur"/>
+                      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                    </filter>
+                  </defs>
+                  <g filter="url(#wglow)">
+                    <ellipse id="wmSH" fill="#e8b730" opacity="0.15" cx="175" cy="313" rx="110" ry="10"/>
+                    <g id="wB">
+                      <g id="wUB">
+                        <g id="wH">
+                          <path d="M188.8.2c-9.1-.3-16.2 7.3-16.2 15.4 0 8.9 7.2 13.8 7.2 13.8s1.3 3.8 0 6.9c-2.1 4.8-6.6 11.1-6.6 11.1l17.6 8.9s-3.8-8.4-2.2-13.8c.8-2.9 4.7-3.5 6.9-3.1 3.8 3.7 7.7 5.5 9.1 4.6 1.9-1.2 4.9-18.4 4.5-26.8-.4-8.5-9.5-16.3-20.3-17z"/>
+                          <g fill="none" stroke="#fde68a" opacity="0.3">
+                            <path d="M191.1.3s4 4.4 4.9 17.9-.9 21-.9 21"/>
+                            <path d="M172.6 16.2s8.2 2.1 19.2 2.4c11.5.3 17.4-1.5 17.4-1.5"/>
+                          </g>
+                          <g fill="none" stroke="#fde68a" opacity="0.5" stroke-linecap="round" stroke-width="3">
+                            <path d="M181,7.1c-0.8,0.7-1.6,1.4-2.2,2.3"/>
+                            <path d="M198.6,7.6c-4.1-2.8-9.3-4.3-14-2.6"/>
+                          </g>
+                        </g>
+                        <path d="M196.9 83.1c-1.6 8-2.9 14.6-2.9 14.6l-4.9 46.1-21.9-7.7 3.4-11c.7-3.7.9-8.5.4-12.3-4.272-29.697-8.373-41.774-5.7-52.182 2.043-6.93 9.2-17.518 9.2-17.518s3.7 1.4 6.6 2.2c3.5 1.2 8.3 2.9 8.3 2.9s10 21.9 7.5 34.9z"/>
+                        <path class="wFB" d="M167.5 132.7c-9 18.6 6.4 27.6 10.6 27.6 6 0 11.8-9.2 12.3-24.1l-22.9-5.7v2.2z"/>
+                      </g>
+                      <g id="wFF">
+                        <path d="M169.2 223.345c.1-.21-.4-2.11 1.4-20.466-1.9-15.51-4.6-39.88-1.2-52.86 2.9-12.66 16.7-15.83 19.1-1.588.4 11.183.4 15.51-2 35.66-4.6 23.313-9.7 39.243-9.8 40.09-.1.525-2.2 2.32-4.4 2.002-1.7.104-3.3-2.217-3.1-2.85z"/>
+                        <g class="wF1">
+                          <path d="M162.9 307.954s1.2-11.393.3-24.264c-.5-9.284-5.8-30.594-4.7-38.93 6.8-18.777 13.6-23.42 16.4-22.26 1.1.95 1.9 2.322 1.3 4.01-.1.106-3.8 23.632-6 40.3-2.3 18.04.7 41.144.7 41.144h-8z"/>
+                          <g class="wF2">
+                            <path d="M192.2 316.183s-25.4-16.985-28.8-14.242c-1.4 6.65-11.8 19.1-2.9 22.9 3.3 1.27 7-1.16 8.3-1.37 6.3-1.16 19.1 1.48 20.2 1.48 2.8 0 5.1-1.687 5.1-4.64 0-1.69-.8-3.27-1.9-4.116z"/>
+                            <path class="wF3" d="M191.7 315.867s-1.5-.528-2.3-.528c-2.6 0-4.6 2.11-4.6 4.85 0 2.42 1.7 4.53 4.1 4.75 0 0 17 .95 17.3-2.64.3-3.38-7.5-2.85-14.5-6.44z"/>
+                          </g>
+                        </g>
+                      </g>
+                      <path fill="#9a7209" d="M191.1 49.9l-18.9-3.7c-.9-.1-1.2-1.1-.6-1.6l1.9-2.3c.2-.3.7-.4 1.1-.3l16.7 5.7c-.1-.1-.2 2.2-.2 2.2z"/>
+                      <g id="wHF">
+                        <path d="M179.9 111.275c.5-1.88 7.2-21.42 6.3-36.154 4.4-10.76 2-18.49.7-21.42-3.1-7-13.2-5.74-14.6 4.29-.5 3.66-1.5 10.87 2 19.33-2.6 17.24.7 31.87.9 33.96s4.1 1.988 4.7 0"/>
+                        <g class="wH1">
+                          <path d="M185 122.56c-.5-3.135-4.4-17.137-8.8-16.3-2.1.417-3.3 12.016-3.3 12.016 1.5 11.39 6.533 25.093 10.333 35.96l4.567-.852c.2 0-2.5-14.628-2.8-30.824z"/>
+                          <path class="wH2" d="M186.87 152.17c-1 .11-2.9.774-4 .885-.6.11-2 4.318-2.8 7.308-.4 1.44-1 8.083-1 9.633l.4 6.312s1.5 5.315 1.8 5.98c.5 1.55 1.4.664 1.4.664s1.3 3.22 1.4 3.55c.3.67.8.89 1.3.78 2.3-.44-.1-5.09-.9-7.192.2-1.44-.3-4.872-.3-4.872s1 6.2 1.1 6.756c.1 1.77 2.1 4.87 2.4 5.87.1.995 1.6 1.327 2.4.44 1.7-1.88-1.8-6.53-1.8-6.53.4-2.216-.7-7.53-.7-7.53s1.5 9.52 2.2 11.736c.1.333 1.1 4.984 1.3 5.205.3.554 1 .554 1.5.333 2.2-1.33.7-6.866.2-7.862-.1-.33-.1-4.32-.7-7.75.15-4.882-.227-5.843-.8-7.64s.9 3.544 1.5 4.54c.04 4.22 2.277 7.61 4.355 6.67.8-.663.19-5.314-.555-8.552l-2.4-7.525c.2.33-6.2-11.3-7.3-11.19v-.028z"/>
+                        </g>
+                      </g>
+                    </g>
+                  </g>
+                </svg>
+              `;
+              document.body.appendChild(walkEl);
+            }
+            if (verse.chapter === 1 && verse.verse === 10 && i === 2) {
+              const fruitEl = document.createElement('div');
+              fruitEl.className = 'fruit-fixed';
+              fruitEl.id = 'fruit-fixed';
+              const imgs = [];
+              for (let f = 0; f < 15; f++) {
+                imgs.push(`<img src="images/1_10-fruit.svg" alt="" class="gold-filter" style="left:${Math.random()*90}%;top:${Math.random()*85}%;transform:rotate(${Math.random()*360}deg) scale(${0.4+Math.random()*0.8});" />`);
+              }
+              fruitEl.innerHTML = imgs.join('');
+              document.body.appendChild(fruitEl);
+            }
+            if (verse.chapter === 1 && verse.verse === 10 && i === 3) {
+              reader.appendChild(createSvgBlock('<img src="images/1_10-children.svg" alt="" class="svg-icon gold-filter hand-drawn" />'));
+            }
+
+            // ── 1:11 empowered block + glory swap ──
+            if (verse.chapter === 1 && verse.verse === 11 && i === 0) {
+              reader.appendChild(createSvgBlock('<img src="images/1_11-empowered.svg" alt="" class="svg-icon gold-filter svg-empowered" />'));
+            }
+            if (verse.chapter === 1 && verse.verse === 11 && i === 1) {
+              el.classList.add('glory-swap');
+            }
+
+            // ── 1:12 bright inheritance glory swap ──
+            if (verse.chapter === 1 && verse.verse === 12 && i === 1) {
+              el.classList.add('glory-swap');
+            }
+
+            // ── 1:13 kingdoms block (left red, right bright) ──
+            if (verse.chapter === 1 && verse.verse === 13 && i === 0) {
+              const kb = createSvgBlock('<div class="kingdoms-container"><img src="images/1_13-kingdoms.svg" alt="" class="kingdoms-dark" /><img src="images/1_13-kingdoms.svg" alt="" class="kingdoms-light" /></div>');
+              kb.style.minHeight = '0';
+              reader.appendChild(kb);
+            }
+
+            // ── 1:14 chains + forgiveness blocks ──
+            if (verse.chapter === 1 && verse.verse === 14 && i === 0) {
+              reader.appendChild(createSvgBlock('<img src="images/1_14-chains.svg" alt="" class="wireframe-icon gold-filter" />'));
+            }
+            if (verse.chapter === 1 && verse.verse === 14 && i === 1) {
+              reader.appendChild(createSvgBlock('<div class="forgiveness-container"><img src="images/1_14-mark.svg" alt="" class="forgiveness-mark gold-filter" /><img src="images/1_14-eraser.svg" alt="" class="forgiveness-eraser gold-filter" /></div>'));
+            }
+
+            // Create Colossae parallax background when 1:2 begins
+            if (verse.chapter === 1 && verse.verse === 2 && i === 0) {
+              const colBg = document.createElement('div');
+              colBg.className = 'colossae-bg';
+              colBg.id = 'colossae-bg';
+              colBg.innerHTML = `
+                <div class="colossae-layer layer-city"><img src="images/1_2-city.png" alt="" /></div>
+                <div class="colossae-layer layer-clouds">
+                  <img src="images/1_2-cloud1.png" alt="" style="top:-5%;left:-10%;width:55%;" />
+                  <img src="images/1_2-cloud2.png" alt="" style="top:-8%;right:-10%;left:auto;width:55%;" />
+                  <img src="images/1_2-cloud3.png" alt="" style="top:25%;left:10%;width:50%;" />
+                  <img src="images/1_2-cloud4.png" alt="" style="top:15%;right:-5%;left:auto;width:50%;" />
+                  <img src="images/1_2-cloud5.png" alt="" style="top:45%;left:-5%;width:55%;" />
+                  <img src="images/1_2-cloud5.png" alt="" style="top:50%;right:-5%;left:auto;width:55%;" />
+                  <img src="images/1_2-cloud5.png" alt="" style="top:70%;left:5%;width:50%;" />
+                  <img src="images/1_2-cloud5.png" alt="" style="top:65%;right:0%;left:auto;width:50%;" />
+                </div>
+              `;
+              document.body.appendChild(colBg);
+            }
+          });
+
+          // (1_2-Colossian removed — replaced by Colossae parallax background)
+        });
+      });
+
+      // Spacer at end
+      const spacer = document.createElement('div');
+      spacer.style.height = '30vh';
+      reader.appendChild(spacer);
+
+      initAnimations();
+      // Ensure ScrollTrigger recalculates after async DOM insertion
+      ScrollTrigger.refresh();
+    }
+
+    // ────────────────────────────────────────
+    // ANIMATIONS
+    // ────────────────────────────────────────
+    function initAnimations() {
+      ScrollTrigger.getAll().forEach(t => t.kill());
+
+      // Hero entrance — set to hidden first, then animate in
+      gsap.set(['.hero-title', '.hero-subtitle', '.hero-line', '.hero-scroll-cue'], { opacity: 0 });
+      gsap.set('.hero-line', { scaleX: 0 });
+      const heroTl = gsap.timeline({ delay: 0.3 });
+      heroTl
+        .to('.hero-title', { opacity: 1, duration: 1.2, ease: 'power2.out' })
+        .to('.hero-subtitle', { opacity: 1, y: 0, duration: 0.8, ease: 'power2.out' }, '-=0.5')
+        .to('.hero-line', { opacity: 1, scaleX: 1, duration: 0.6, ease: 'power2.out' }, '-=0.3')
+        .to('.hero-scroll-cue', { opacity: 1, duration: 0.6 }, '-=0.2');
+
+      // Hero parallax fade
+      gsap.to('.hero', {
+        scrollTrigger: {
+          trigger: '.hero',
+          start: 'top top',
+          end: 'bottom top',
+          scrub: true,
+        },
+        opacity: 0,
+        y: -100,
+        ease: 'none',
+      });
+
+      // Show nav elements after scrolling past hero
+      ScrollTrigger.create({
+        trigger: '.hero',
+        start: 'bottom 80%',
+        onEnter: () => {
+          document.getElementById('chapterNav').classList.add('visible');
+        },
+        onLeaveBack: () => {
+          document.getElementById('chapterNav').classList.remove('visible');
+        }
+      });
+
+      // Chapter headers
+      document.querySelectorAll('.chapter-header').forEach(header => {
+        gsap.set(header.querySelector('.chapter-number'), { opacity: 0, scale: 0.8 });
+        gsap.set(header.querySelector('.chapter-label'), { opacity: 0, y: 20 });
+        const tl = gsap.timeline({
+          scrollTrigger: {
+            trigger: header,
+            start: 'top 70%',
+            end: 'top 20%',
+            scrub: true,
+          }
+        });
+        tl.to(header.querySelector('.chapter-number'),
+          { opacity: 1, scale: 1, ease: 'power2.out' }
+        );
+        tl.to(header.querySelector('.chapter-label'),
+          { opacity: 1, y: 0, ease: 'power2.out' },
+          '-=0.3'
+        );
+      });
+
+      // Scene images — parallax drift with subtle zoom arc
+      document.querySelectorAll('.scene-img-wrapper').forEach(wrapper => {
+        const img = wrapper.querySelector('img');
+
+        // Vertical parallax
+        gsap.fromTo(img,
+          { y: 80 },
+          {
+            y: -80,
+            ease: 'none',
+            scrollTrigger: {
+              trigger: wrapper,
+              start: 'top bottom',
+              end: 'bottom top',
+              scrub: true,
+            }
+          }
+        );
+
+        // Subtle zoom: scale up as image enters, then back down as it leaves
+        gsap.fromTo(img,
+          { scale: 0.97 },
+          {
+            scale: 1.03,
+            ease: 'power1.inOut',
+            scrollTrigger: {
+              trigger: wrapper,
+              start: 'top 85%',
+              end: 'bottom 15%',
+              scrub: true,
+            }
+          }
+        );
+      });
+
+      // Cell background — zoom out from deep inside the cell through prison bars
+      // Fades out by the time 1:2 "To:" is centered in the viewport
+      const cellBg = document.getElementById('cell-bg-1-1');
+      if (cellBg) {
+        const cellImg = cellBg.querySelector('img');
+        const v1sections = document.querySelectorAll('.phrase-section[data-verse="1:1"]');
+        const firstV2 = document.querySelector('.phrase-section[data-verse="1:2"]');
+        const endTrigger = firstV2 || v1sections[v1sections.length - 1];
+        if (v1sections.length) {
+          const firstEl = v1sections[0];
+
+          // Start zoomed deep into the cell
+          gsap.set(cellImg, { scale: 2.5 });
+
+          gsap.timeline({
+            scrollTrigger: {
+              trigger: firstEl,
+              endTrigger: endTrigger,
+              start: 'top 90%',
+              end: 'center center',
+              scrub: 1.5,
+            }
+          })
+          // Fade in
+          .to(cellBg, { opacity: 0.18, duration: 0.1, ease: 'power1.out' })
+          // Zoom out across 1:1
+          .to(cellImg, { scale: 1.0, duration: 0.7, ease: 'power1.inOut' }, 0)
+          // Fade out before 1:2 "To:" reaches center
+          .to(cellBg, { opacity: 0, duration: 0.25, ease: 'power1.in' }, 0.75);
+        }
+      }
+
+      // Colossae parallax — clouds cover city, zoom out and part to reveal
+      const colBg = document.getElementById('colossae-bg');
+      if (colBg) {
+        const v2sections = document.querySelectorAll('.phrase-section[data-verse="1:2"]');
+        const v3section = document.querySelector('.phrase-section[data-verse="1:3"]');
+        if (v2sections.length && v3section) {
+          const firstV2 = v2sections[0];
+
+          const cityLayer = colBg.querySelector('.layer-city');
+          const cloudImgs = colBg.querySelectorAll('.layer-clouds img');
+
+          // Start: city zoomed in tight so only the mountain peak is visible
+          gsap.set(cityLayer, { scale: 3, transformOrigin: '50% 15%' });
+          // Clouds start large to fully cover the scene
+          gsap.set(cloudImgs, { scale: 1.6 });
+
+          const colTl = gsap.timeline({
+            scrollTrigger: {
+              trigger: firstV2,
+              endTrigger: v3section,
+              start: 'top 80%',
+              end: 'top center',
+              scrub: 1.5,
+            }
+          });
+
+          // Fade in
+          colTl.to(colBg, { opacity: 0.2, duration: 0.08, ease: 'power1.out' }, 0);
+
+          // City zooms out fully to reveal the whole scene (first 60% of timeline)
+          colTl.to(cityLayer, { scale: 1, duration: 0.6, ease: 'power1.inOut' }, 0);
+
+          // Clouds part to the sides and fade gradually (first 70% of timeline)
+          cloudImgs.forEach((cloud, i) => {
+            const isLeft = (i % 2 === 0);
+            const driftX = (isLeft ? -1 : 1) * (120 + i * 25);
+            colTl.to(cloud, {
+              x: driftX,
+              scale: 1.0,
+              opacity: 0,
+              duration: 0.65,
+              ease: 'power2.out',
+            }, 0.1);
+          });
+
+          // Fade out right at verse 1:3
+          colTl.to(colBg, { opacity: 0, duration: 0.12, ease: 'power1.in' }, 0.88);
+        }
+      }
+
+      // Faith / Love / Hope wireframe animations
+      document.querySelectorAll('.wireframe-icon').forEach(icon => {
+        const section = icon.closest('.svg-block');
+        if (!section) return;
+
+        // Determine animation style per icon
+        const isFaith = icon.classList.contains('wireframe-faith');
+        const isLove = icon.classList.contains('wireframe-love');
+        const isHope = icon.classList.contains('wireframe-hope');
+
+        // Start state: invisible, slightly scaled down, rotated
+        gsap.set(icon, { opacity: 0, scale: 0.5, rotation: isFaith ? -15 : isLove ? 10 : -10 });
+
+        const wireTl = gsap.timeline({
+          scrollTrigger: {
+            trigger: section,
+            start: 'top 70%',
+            end: 'bottom 20%',
+            scrub: 1,
+          }
+        });
+
+        // Phase 1: shimmer in with scale and rotation
+        wireTl.to(icon, {
+          opacity: 0.85,
+          scale: 1,
+          rotation: 0,
+          duration: 0.4,
+          ease: 'power2.out',
+        }, 0);
+
+        // Phase 2: gentle floating drift through the phrase
+        if (isFaith) {
+          // Cross drifts upward through the text
+          wireTl.to(icon, { y: -30, duration: 0.6, ease: 'sine.inOut' }, 0.2);
+        } else if (isLove) {
+          // Heart pulses and drifts slightly right
+          wireTl.to(icon, { x: 15, y: -15, scale: 1.08, duration: 0.5, ease: 'sine.inOut' }, 0.2);
+        } else if (isHope) {
+          // Anchor rises upward
+          wireTl.to(icon, { y: -40, duration: 0.6, ease: 'sine.inOut' }, 0.2);
+        }
+
+        // Phase 3: shimmer out as user scrolls past
+        wireTl.to(icon, {
+          opacity: 0,
+          scale: 0.7,
+          duration: 0.25,
+          ease: 'power1.in',
+        }, 0.75);
+      });
+
+      // Gold-glow keywords — toggle class when scrolled into view
+      document.querySelectorAll('.gold-word').forEach(word => {
+        const section = word.closest('.phrase-section');
+        if (!section) return;
+        ScrollTrigger.create({
+          trigger: section,
+          start: 'top 55%',
+          end: 'bottom 30%',
+          onEnter: () => word.classList.add('glow-active'),
+          onLeave: () => word.classList.remove('glow-active'),
+          onEnterBack: () => word.classList.add('glow-active'),
+          onLeaveBack: () => word.classList.remove('glow-active'),
+        });
+      });
+
+      // ── Map dots (Israel → Turkey → Africa → Italy) ──
+      const mapContainer = document.querySelector('.map-container');
+      if (mapContainer) {
+        const mapImg = mapContainer.querySelector('.map-img');
+        const mapBlock = mapContainer.closest('.svg-block');
+        const dots = mapContainer.querySelectorAll('.map-dot');
+        if (mapBlock && dots.length) {
+          // Fade map in
+          gsap.set(mapImg, { opacity: 0 });
+          const mapTl = gsap.timeline({
+            scrollTrigger: {
+              trigger: mapBlock,
+              start: 'top 80%',
+              end: 'bottom 10%',
+              scrub: 1,
+            }
+          });
+          mapTl.to(mapImg, { opacity: 0.85, duration: 0.12 }, 0);
+          // Dots appear in waves radiating outward from Colossae
+          dots.forEach(dot => {
+            const order = parseInt(dot.dataset.order);
+            const start = 0.12 + order * 0.1;
+            mapTl.to(dot, { opacity: 1, scale: 1, duration: 0.08, ease: 'back.out(2)' }, start);
+          });
+          // Fade out at end
+          mapTl.to(mapImg, { opacity: 0, duration: 0.1 }, 0.88);
+          mapTl.to(dots, { opacity: 0, duration: 0.1 }, 0.88);
+        }
+      }
+
+      // ── Hand-drawn SVG reveal (clip-path wipe left→right) ──
+      document.querySelectorAll('.hand-drawn').forEach(icon => {
+        const section = icon.closest('.svg-block');
+        if (!section) return;
+        gsap.set(icon, { opacity: 0.85, clipPath: 'inset(0 100% 0 0)' });
+        const hdTl = gsap.timeline({
+          scrollTrigger: {
+            trigger: section,
+            start: 'top 60%',
+            end: 'top 10%',
+            scrub: 1,
+          }
+        });
+        hdTl.to(icon, { clipPath: 'inset(0 0% 0 0)', duration: 0.7, ease: 'power2.out' }, 0);
+        hdTl.to(icon, { opacity: 0, duration: 0.2 }, 0.8);
+      });
+
+      // ── Empowered flexing SVG ──
+      document.querySelectorAll('.svg-empowered').forEach(icon => {
+        const section = icon.closest('.svg-block');
+        if (!section) return;
+        gsap.set(icon, { opacity: 0, scale: 0.5 });
+        const empTl = gsap.timeline({
+          scrollTrigger: {
+            trigger: section,
+            start: 'top 70%',
+            end: 'bottom 20%',
+            scrub: 1,
+            onEnter: () => icon.classList.add('flexing'),
+            onLeave: () => icon.classList.remove('flexing'),
+            onEnterBack: () => icon.classList.add('flexing'),
+            onLeaveBack: () => icon.classList.remove('flexing'),
+          }
+        });
+        empTl.to(icon, { opacity: 0.85, scale: 1, duration: 0.4 }, 0);
+        empTl.to(icon, { opacity: 0, scale: 0.7, duration: 0.25 }, 0.75);
+      });
+
+      // ── Walking figure — Diaco walk cycle (GSAP v3) + scroll-driven left→right ──
+      // Based on a Pen by Diaco m.lotfollahi: https://diacodesign.com
+      const walkEl = document.getElementById('walk-fixed');
+      if (walkEl) {
+        const wSvg = walkEl.querySelector('#walkSvg');
+        const v10sections = document.querySelectorAll('.phrase-section[data-verse="1:10"]');
+
+        if (wSvg && v10sections.length >= 3) {
+          const wB = wSvg.querySelector('#wB');
+          const wUB = wSvg.querySelector('#wUB');
+          const wFF = wSvg.querySelector('#wFF');
+          const wHF = wSvg.querySelector('#wHF');
+
+          // Initial transforms and gold fills
+          gsap.set(wB, { y: 10 });
+          gsap.set(wUB, { fill: '#c9952a', transformOrigin: '50% 100%' });
+          gsap.set(wHF, { transformOrigin: '-5px 0px', rotation: -10, fill: '#d4a76a', y: -1 });
+          gsap.set(wFF, { transformOrigin: '55% 10px', rotation: -37, fill: '#e8b730' });
+          gsap.set('#walkSvg #wH', { transformOrigin: '5px 50px', fill: '#d4a76a', scale: 0.967, rotation: -5 });
+          gsap.set('#walkSvg .wH1', { rotation: -20, transformOrigin: '0px 5px', y: -5 });
+          gsap.set('#walkSvg .wH2', { transformOrigin: '10% 0%', rotation: -10, y: -1.5, scaleY: 1.03 });
+          gsap.set('#walkSvg .wF1', { transformOrigin: '21px 2px' });
+          gsap.set('#walkSvg .wF2', { transformOrigin: '25px 0px' });
+          gsap.set('#walkSvg .wF3', { transformOrigin: '4.2px 4.2px' });
+
+          // Clone front limbs → back limbs (inserted behind the body)
+          const wF2 = wFF.cloneNode(true);
+          const wH2c = wHF.cloneNode(true);
+          wF2.id = 'wFB';
+          wH2c.id = 'wHB';
+          wB.insertBefore(wF2, wUB);
+          wB.insertBefore(wH2c, wF2);
+
+          gsap.set('#walkSvg .wFB', { fill: '#e8b730' });
+          gsap.set('#walkSvg #wFB', { fill: '#9a7209' });
+          gsap.set('#walkSvg #wHB', { y: -3, fill: '#8b6914' });
+
+          // Walk cycle function — animates one leg + opposite arm
+          function walkM(p1, p2) {
+            const tl = gsap.timeline({ repeat: -1 });
+            tl.addLabel('l1', 0).addLabel('l2', 0.25).addLabel('l3', 0.5).addLabel('l4', 0.75);
+            tl.to(p1, { rotation: 27, duration: 0.5, ease: 'sine.inOut' }, 'l1')
+              .to(p1, { rotation: -37, duration: 0.25, ease: 'sine.in' }, 'l3')
+              .to(`${p1} .wF1`, { rotation: 15, duration: 0.25, ease: 'sine.inOut' }, 'l2')
+              .to(`${p1} .wF1`, { rotation: 80, duration: 0.25, ease: 'sine.in' }, 'l3')
+              .to(`${p1} .wF1`, { rotation: 0, duration: 0.25, ease: 'sine.out' }, 'l4')
+              .to(`${p1} .wF2`, { rotation: 45, duration: 0.25, repeat: 1, yoyo: true }, 'l3')
+              .to(`${p1} .wF3`, { rotation: -35, duration: 0.25, repeat: 1, yoyo: true, scaleX: 0.925 }, 'l2')
+              .to(p2, { rotation: 25, duration: 0.5, ease: 'sine.inOut', yoyo: true, repeat: 1 }, 'l1')
+              .to(`${p2} .wH1`, { rotation: 15, duration: 0.5, ease: 'sine.inOut', yoyo: true, repeat: 1 }, 'l1')
+              .to(`${p2} .wH2`, { rotation: 0, duration: 0.5, ease: 'sine.inOut', yoyo: true, repeat: 1 }, 'l1');
+            return tl;
+          }
+
+          // Master walk cycle — two phased strides + body bounce + head bob
+          const walkMaster = gsap.timeline({ paused: true });
+          walkMaster.add(walkM('#walkSvg #wFF', '#walkSvg #wHB'));
+          walkMaster.add(walkM('#walkSvg #wFB', '#walkSvg #wHF'), 0.5);
+          walkMaster.to(wB, { y: '-=20', duration: 0.25, repeat: -1, yoyo: true, ease: 'sine.inOut' }, 0);
+          walkMaster.to('#walkSvg #wH', { rotation: 1, duration: 0.25, repeat: -1, yoyo: true, ease: 'sine.inOut' }, 0);
+          walkMaster.to('#walkSvg #wmSH', { scaleX: 0.6, duration: 0.25, repeat: -1, yoyo: true, ease: 'sine.in', transformOrigin: 'center' }, 0);
+          walkMaster.time(0.5);
+
+          // Scroll-driven horizontal movement across viewport
+          gsap.set(wSvg, { x: '-10vw' });
+          const walkScrollTl = gsap.timeline({
+            scrollTrigger: {
+              trigger: v10sections[0],
+              endTrigger: v10sections[2],
+              start: 'top 70%',
+              end: 'top 30%',
+              scrub: 1.5,
+              onEnter: () => walkMaster.play(),
+              onLeave: () => walkMaster.pause(),
+              onEnterBack: () => walkMaster.play(),
+              onLeaveBack: () => walkMaster.pause(),
+            }
+          });
+          walkScrollTl.to(walkEl, { opacity: 0.9, duration: 0.1 }, 0);
+          walkScrollTl.to(wSvg, { x: '95vw', duration: 0.8, ease: 'none' }, 0);
+          walkScrollTl.to(walkEl, { opacity: 0, duration: 0.1 }, 0.9);
+        }
+      }
+
+      // ── Fruit scatter (visible with "bearing fruit" text, fades when it leaves) ──
+      const fruitEl = document.getElementById('fruit-fixed');
+      if (fruitEl) {
+        const v10sections = document.querySelectorAll('.phrase-section[data-verse="1:10"]');
+        if (v10sections.length >= 4) {
+          const fruitTl = gsap.timeline({
+            scrollTrigger: {
+              trigger: v10sections[2],
+              endTrigger: v10sections[2],
+              start: 'top 70%',
+              end: 'bottom 10%',
+              scrub: 1,
+            }
+          });
+          fruitTl.to(fruitEl, { opacity: 1, duration: 0.15 }, 0);
+          fruitTl.to(fruitEl, { opacity: 0, duration: 0.15 }, 0.85);
+        }
+      }
+
+      // ── Glory swap (bright background for blinding glory) ──
+      document.querySelectorAll('.glory-swap').forEach(section => {
+        ScrollTrigger.create({
+          trigger: section,
+          start: 'top 60%',
+          end: 'bottom 30%',
+          onEnter: () => section.classList.add('bright'),
+          onLeave: () => section.classList.remove('bright'),
+          onEnterBack: () => section.classList.add('bright'),
+          onLeaveBack: () => section.classList.remove('bright'),
+        });
+      });
+
+      // ── Dotted underlines (patience, endurance) ──
+      document.querySelectorAll('.dotted-word').forEach(word => {
+        const section = word.closest('.phrase-section');
+        if (!section) return;
+        ScrollTrigger.create({
+          trigger: section,
+          start: 'top 50%',
+          end: 'bottom 30%',
+          onEnter: () => word.classList.add('underline-active'),
+          onLeave: () => word.classList.remove('underline-active'),
+          onEnterBack: () => word.classList.add('underline-active'),
+          onLeaveBack: () => word.classList.remove('underline-active'),
+        });
+      });
+
+      // ── Joy emphasis (bright + larger) ──
+      document.querySelectorAll('.joy-word').forEach(word => {
+        const section = word.closest('.phrase-section');
+        if (!section) return;
+        ScrollTrigger.create({
+          trigger: section,
+          start: 'top 45%',
+          end: 'bottom 30%',
+          onEnter: () => word.classList.add('joy-active'),
+          onLeave: () => word.classList.remove('joy-active'),
+          onEnterBack: () => word.classList.add('joy-active'),
+          onLeaveBack: () => word.classList.remove('joy-active'),
+        });
+      });
+
+      // ── Kingdoms (dark castle burns red, light castle glows bright) ──
+      document.querySelectorAll('.kingdoms-container').forEach(container => {
+        const section = container.closest('.svg-block');
+        if (!section) return;
+        const dark = container.querySelector('.kingdoms-dark');
+        const light = container.querySelector('.kingdoms-light');
+        const kTl = gsap.timeline({
+          scrollTrigger: {
+            trigger: section,
+            start: 'top 70%',
+            end: 'bottom 20%',
+            scrub: 1,
+          }
+        });
+        // Dark castle appears with red glow
+        kTl.to(dark, { opacity: 0.9, duration: 0.2 }, 0);
+        // Dark castle burns (scale up + fade out = fire effect)
+        kTl.to(dark, { opacity: 0, scale: 1.5, duration: 0.3, ease: 'power2.in' }, 0.3);
+        // Light castle fades in bright
+        kTl.to(light, { opacity: 1, scale: 1, duration: 0.4, ease: 'power2.out' }, 0.4);
+        // Light castle fades out at end
+        kTl.to(light, { opacity: 0, duration: 0.2 }, 0.8);
+      });
+
+      // ── Forgiveness (eraser rubs out the mark) ──
+      document.querySelectorAll('.forgiveness-container').forEach(container => {
+        const section = container.closest('.svg-block');
+        if (!section) return;
+        const mark = container.querySelector('.forgiveness-mark');
+        const eraser = container.querySelector('.forgiveness-eraser');
+        const fTl = gsap.timeline({
+          scrollTrigger: {
+            trigger: section,
+            start: 'top 70%',
+            end: 'bottom 15%',
+            scrub: 1,
+          }
+        });
+        // Both appear
+        fTl.to(mark, { opacity: 0.85, duration: 0.15 }, 0);
+        fTl.to(eraser, { opacity: 0.85, duration: 0.15 }, 0.05);
+        // Eraser slides left over the mark (scrubbing motion)
+        fTl.to(eraser, { x: '-120%', duration: 0.25, ease: 'sine.inOut' }, 0.25);
+        // Small back-and-forth scrub
+        fTl.to(eraser, { x: '-100%', duration: 0.1, ease: 'sine.inOut' }, 0.5);
+        fTl.to(eraser, { x: '-130%', duration: 0.1, ease: 'sine.inOut' }, 0.6);
+        // Mark fades as eraser passes over it
+        fTl.to(mark, { opacity: 0, scale: 0.95, duration: 0.35 }, 0.3);
+        // Everything fades out
+        fTl.to(eraser, { opacity: 0, duration: 0.12 }, 0.8);
+      });
+
+      // Phrase sections — scroll-scrubbed word-by-word reveal
+      document.querySelectorAll('.phrase-section').forEach(section => {
+        const ref = section.querySelector('.phrase-ref');
+        const words = section.querySelectorAll('.word');
+
+        // Hide elements via JS so they're visible if GSAP fails
+        if (ref) gsap.set(ref, { opacity: 0, x: -20 });
+        gsap.set(words, { opacity: 0 });
+
+        const tl = gsap.timeline({
+          scrollTrigger: {
+            trigger: section,
+            start: 'top 95%',
+            end: 'top 75%',
+            scrub: true,
+          }
+        });
+
+        // Reference fades in first
+        if (ref) {
+          tl.to(ref,
+            { opacity: 1, x: 0, duration: 0.2, ease: 'power2.out' }
+          );
+        }
+
+        // Words reveal with stagger
+        tl.to(words,
+          { opacity: 1, duration: 0.08, stagger: 0.015, ease: 'power1.out' },
+          ref ? '-=0.05' : '0'
+        );
+
+        // Parallax: slight upward drift
+        gsap.fromTo(section.querySelector('.phrase-container'),
+          { y: 40 },
+          {
+            y: -40,
+            ease: 'none',
+            scrollTrigger: {
+              trigger: section,
+              start: 'top bottom',
+              end: 'bottom top',
+              scrub: true,
+            }
+          }
+        );
+      });
+
+      // Divider glow pulse
+      document.querySelectorAll('.divider-glow').forEach(glow => {
+        gsap.fromTo(glow,
+          { opacity: 0, scale: 0.8 },
+          {
+            opacity: 0.3,
+            scale: 1,
+            ease: 'power2.out',
+            scrollTrigger: {
+              trigger: glow,
+              start: 'top 80%',
+              end: 'top 30%',
+              scrub: true,
+            }
+          }
+        );
+      });
+
+      // Progress bar
+      ScrollTrigger.create({
+        trigger: document.body,
+        start: 'top top',
+        end: 'bottom bottom',
+        onUpdate: (self) => {
+          document.getElementById('progressFill').style.width = `${self.progress * 100}%`;
+        }
+      });
+
+      // Chapter dot tracking
+      document.querySelectorAll('.chapter-header').forEach(header => {
+        const chNum = header.id.replace('chapter-', '');
+        ScrollTrigger.create({
+          trigger: header,
+          start: 'top center',
+          end: 'bottom center',
+          onEnter: () => setActiveDot(chNum),
+          onEnterBack: () => setActiveDot(chNum),
+        });
+      });
+    }
+
+    function setActiveDot(chNum) {
+      document.querySelectorAll('.chapter-dot').forEach(dot => {
+        dot.classList.toggle('active', dot.dataset.chapter === String(chNum));
+      });
+    }
+
+    // Chapter dot click navigation
+    document.querySelectorAll('.chapter-dot').forEach(dot => {
+      dot.addEventListener('click', () => {
+        const target = document.getElementById(`chapter-${dot.dataset.chapter}`);
+        if (target) target.scrollIntoView({ behavior: 'smooth' });
+      });
+    });
+
+    // ────────────────────────────────────────
+    // INIT
+    // ────────────────────────────────────────
+    renderAll();
+  </script>
+</body>
+</html>
