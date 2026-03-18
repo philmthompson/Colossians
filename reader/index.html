@@ -1627,8 +1627,8 @@
         const tl = gsap.timeline({
           scrollTrigger: {
             trigger: section,
-            start: 'top 65%',
-            end: 'top 15%',
+            start: 'top 95%',
+            end: 'top 75%',
             scrub: true,
           }
         });
@@ -1636,14 +1636,14 @@
         // Reference fades in first
         if (ref) {
           tl.to(ref,
-            { opacity: 1, x: 0, duration: 0.3, ease: 'power2.out' }
+            { opacity: 1, x: 0, duration: 0.2, ease: 'power2.out' }
           );
         }
 
         // Words reveal with stagger
         tl.to(words,
-          { opacity: 1, duration: 0.1, stagger: 0.02, ease: 'power1.out' },
-          ref ? '-=0.1' : '0'
+          { opacity: 1, duration: 0.08, stagger: 0.015, ease: 'power1.out' },
+          ref ? '-=0.05' : '0'
         );
 
         // Parallax: slight upward drift
