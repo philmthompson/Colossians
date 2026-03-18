@@ -563,8 +563,8 @@
       align-items: center;
       opacity: 0;
     }
-    .walk-fixed img {
-      width: clamp(80px, 15vw, 180px);
+    .walker-svg {
+      width: clamp(50px, 8vw, 100px);
       height: auto;
     }
 
@@ -930,12 +930,54 @@
               reader.appendChild(createSvgBlock('<img src="images/1_9-knowledge.svg" alt="" class="wireframe-icon gold-filter" />'));
             }
 
-            // ── 1:10 walk (fixed), fruit (scattered fixed), children (hand-drawn) ──
+            // ── 1:10 walk (inline SVG stickman with GSAP walk cycle) ──
             if (verse.chapter === 1 && verse.verse === 10 && i === 0) {
               const walkEl = document.createElement('div');
               walkEl.className = 'walk-fixed';
               walkEl.id = 'walk-fixed';
-              walkEl.innerHTML = '<img src="images/1_10-walk.svg" alt="" class="gold-filter" />';
+              walkEl.innerHTML = `
+                <svg class="walker-svg" viewBox="0 0 100 200">
+                  <defs>
+                    <linearGradient id="wg" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#f6d365"/>
+                      <stop offset="50%" stop-color="#fde68a"/>
+                      <stop offset="100%" stop-color="#e8b730"/>
+                    </linearGradient>
+                    <filter id="wglow">
+                      <feGaussianBlur stdDeviation="2.5" result="blur"/>
+                      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                    </filter>
+                  </defs>
+                  <g filter="url(#wglow)">
+                    <!-- Head -->
+                    <circle cx="50" cy="28" r="10" stroke="url(#wg)" stroke-width="2.5" fill="none"/>
+                    <!-- Torso -->
+                    <line x1="50" y1="38" x2="50" y2="95" stroke="url(#wg)" stroke-width="2.5"/>
+                    <!-- Left arm -->
+                    <g class="w-larm">
+                      <line x1="50" y1="50" x2="50" y2="80" stroke="url(#wg)" stroke-width="2" stroke-linecap="round"/>
+                    </g>
+                    <!-- Right arm -->
+                    <g class="w-rarm">
+                      <line x1="50" y1="50" x2="50" y2="80" stroke="url(#wg)" stroke-width="2" stroke-linecap="round"/>
+                    </g>
+                    <!-- Left leg -->
+                    <g class="w-lleg">
+                      <line x1="50" y1="95" x2="50" y2="140" stroke="url(#wg)" stroke-width="2.5" stroke-linecap="round"/>
+                      <g class="w-lshin">
+                        <line x1="50" y1="140" x2="50" y2="185" stroke="url(#wg)" stroke-width="2.5" stroke-linecap="round"/>
+                      </g>
+                    </g>
+                    <!-- Right leg -->
+                    <g class="w-rleg">
+                      <line x1="50" y1="95" x2="50" y2="140" stroke="url(#wg)" stroke-width="2.5" stroke-linecap="round"/>
+                      <g class="w-rshin">
+                        <line x1="50" y1="140" x2="50" y2="185" stroke="url(#wg)" stroke-width="2.5" stroke-linecap="round"/>
+                      </g>
+                    </g>
+                  </g>
+                </svg>
+              `;
               document.body.appendChild(walkEl);
             }
             if (verse.chapter === 1 && verse.verse === 10 && i === 2) {
@@ -1331,13 +1373,30 @@
         empTl.to(icon, { opacity: 0, scale: 0.7, duration: 0.25 }, 0.75);
       });
 
-      // ── Walking figure (left→right across viewport) ──
+      // ── Walking figure — GSAP walk cycle + scroll-driven left→right ──
       const walkEl = document.getElementById('walk-fixed');
       if (walkEl) {
-        const walkImg = walkEl.querySelector('img');
+        const walkerSvg = walkEl.querySelector('.walker-svg');
         const v10sections = document.querySelectorAll('.phrase-section[data-verse="1:10"]');
-        if (v10sections.length >= 3) {
-          gsap.set(walkImg, { x: '-20vw' });
+
+        if (walkerSvg && v10sections.length >= 3) {
+          // Set rotation pivots (svgOrigin = point in SVG coordinate space)
+          gsap.set('.w-larm, .w-rarm', { svgOrigin: '50 50' });
+          gsap.set('.w-lleg, .w-rleg', { svgOrigin: '50 95' });
+          gsap.set('.w-lshin, .w-rshin', { svgOrigin: '50 140' });
+
+          // Walk cycle — yoyo creates alternating stride
+          const walkCycle = gsap.timeline({ repeat: -1, yoyo: true, paused: true });
+          walkCycle
+            .to('.w-larm', { rotation: -30, duration: 0.35, ease: 'sine.inOut' }, 0)
+            .to('.w-rarm', { rotation: 30, duration: 0.35, ease: 'sine.inOut' }, 0)
+            .to('.w-lleg', { rotation: 30, duration: 0.35, ease: 'sine.inOut' }, 0)
+            .to('.w-rleg', { rotation: -30, duration: 0.35, ease: 'sine.inOut' }, 0)
+            .to('.w-lshin', { rotation: 25, duration: 0.35, ease: 'sine.inOut' }, 0)
+            .to('.w-rshin', { rotation: 5, duration: 0.35, ease: 'sine.inOut' }, 0);
+
+          // Scroll-driven horizontal movement across viewport
+          gsap.set(walkerSvg, { x: '-10vw' });
           const walkTl = gsap.timeline({
             scrollTrigger: {
               trigger: v10sections[0],
@@ -1345,10 +1404,14 @@
               start: 'top 70%',
               end: 'top 30%',
               scrub: 1.5,
+              onEnter: () => walkCycle.play(),
+              onLeave: () => walkCycle.pause(),
+              onEnterBack: () => walkCycle.play(),
+              onLeaveBack: () => walkCycle.pause(),
             }
           });
-          walkTl.to(walkEl, { opacity: 0.8, duration: 0.1 }, 0);
-          walkTl.to(walkImg, { x: '110vw', duration: 0.8, ease: 'none' }, 0);
+          walkTl.to(walkEl, { opacity: 0.9, duration: 0.1 }, 0);
+          walkTl.to(walkerSvg, { x: '95vw', duration: 0.8, ease: 'none' }, 0);
           walkTl.to(walkEl, { opacity: 0, duration: 0.1 }, 0.9);
         }
       }
