@@ -876,20 +876,16 @@
             if (verse.chapter === 1 && verse.verse === 4 && i === 0) {
               reader.appendChild(createSvgBlock('<img src="images/1_3-faith.svg" alt="" class="wireframe-icon wireframe-faith" />'));
               // Connector: faith → love
-              const c1 = document.createElement('svg');
-              c1.className = 'word-connector';
-              c1.setAttribute('viewBox', '0 0 60 80');
-              c1.innerHTML = '<path class="connector-path" d="M30,0 C45,15 15,30 35,45 C55,60 20,70 30,80" />';
-              reader.appendChild(c1);
+              const w1 = document.createElement('div');
+              w1.innerHTML = '<svg class="word-connector" viewBox="0 0 60 80"><path class="connector-path" d="M30,0 C45,15 15,30 35,45 C55,60 20,70 30,80" /></svg>';
+              reader.appendChild(w1.firstElementChild);
             }
             if (verse.chapter === 1 && verse.verse === 4 && i === 1) {
               reader.appendChild(createSvgBlock('<img src="images/1_3-love.svg" alt="" class="wireframe-icon wireframe-love" />'));
               // Connector: love → confidence
-              const c2 = document.createElement('svg');
-              c2.className = 'word-connector';
-              c2.setAttribute('viewBox', '0 0 60 80');
-              c2.innerHTML = '<path class="connector-path" d="M30,0 C10,18 50,35 25,50 C0,65 45,72 30,80" />';
-              reader.appendChild(c2);
+              const w2 = document.createElement('div');
+              w2.innerHTML = '<svg class="word-connector" viewBox="0 0 60 80"><path class="connector-path" d="M30,0 C10,18 50,35 25,50 C0,65 45,72 30,80" /></svg>';
+              reader.appendChild(w2.firstElementChild);
             }
             if (verse.chapter === 1 && verse.verse === 5 && i === 0) {
               reader.appendChild(createSvgBlock('<img src="images/1_3-hope.svg" alt="" class="wireframe-icon wireframe-hope" />'));
