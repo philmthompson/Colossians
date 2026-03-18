@@ -848,9 +848,9 @@
       const colBg = document.getElementById('colossae-bg');
       if (colBg) {
         const v2sections = document.querySelectorAll('.phrase-section[data-verse="1:2"]');
-        if (v2sections.length) {
+        const v3section = document.querySelector('.phrase-section[data-verse="1:3"]');
+        if (v2sections.length && v3section) {
           const firstV2 = v2sections[0];
-          const lastV2 = v2sections[v2sections.length - 1];
 
           const cityLayer = colBg.querySelector('.layer-city');
           const cloudImgs = colBg.querySelectorAll('.layer-clouds img');
@@ -863,20 +863,20 @@
           const colTl = gsap.timeline({
             scrollTrigger: {
               trigger: firstV2,
-              endTrigger: lastV2,
+              endTrigger: v3section,
               start: 'top 80%',
-              end: 'bottom center',
+              end: 'top center',
               scrub: 1.5,
             }
           });
 
           // Fade in
-          colTl.to(colBg, { opacity: 0.2, duration: 0.12, ease: 'power1.out' }, 0);
+          colTl.to(colBg, { opacity: 0.2, duration: 0.08, ease: 'power1.out' }, 0);
 
-          // City zooms out fully to reveal the whole scene
-          colTl.to(cityLayer, { scale: 1, duration: 1, ease: 'power1.inOut' }, 0);
+          // City zooms out fully to reveal the whole scene (first 60% of timeline)
+          colTl.to(cityLayer, { scale: 1, duration: 0.6, ease: 'power1.inOut' }, 0);
 
-          // Clouds part to the sides and fade gradually
+          // Clouds part to the sides and fade gradually (first 70% of timeline)
           cloudImgs.forEach((cloud, i) => {
             const isLeft = (i % 2 === 0);
             const driftX = (isLeft ? -1 : 1) * (120 + i * 25);
@@ -884,13 +884,13 @@
               x: driftX,
               scale: 1.0,
               opacity: 0,
-              duration: 1,
+              duration: 0.65,
               ease: 'power2.out',
-            }, 0.15);
+            }, 0.1);
           });
 
-          // Fade out after 1:2 ends
-          colTl.to(colBg, { opacity: 0, duration: 0.1, ease: 'power1.in' }, 0.9);
+          // Fade out right at verse 1:3
+          colTl.to(colBg, { opacity: 0, duration: 0.12, ease: 'power1.in' }, 0.88);
         }
       }
 
