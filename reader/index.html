@@ -658,23 +658,26 @@
         );
       });
 
-      // Scene images — subtle fade up and out as they scroll by
+      // Scene images — smooth fade in, hold, fade out
       document.querySelectorAll('.scene-img-wrapper').forEach(wrapper => {
         const img = wrapper.querySelector('img');
 
-        gsap.set(img, { y: 20 });
+        gsap.set(img, { y: 30, scale: 0.97 });
 
         gsap.timeline({
           scrollTrigger: {
             trigger: wrapper,
-            start: 'top 85%',
-            end: 'bottom 20%',
-            scrub: 0.8,
+            start: 'top 90%',
+            end: 'bottom 10%',
+            scrub: 0.6,
           }
         })
-        .to(wrapper, { opacity: 0.35, duration: 0.4, ease: 'power1.out' })
-        .to(img, { y: -10, duration: 0.6, ease: 'none' }, 0)
-        .to(wrapper, { opacity: 0, duration: 0.3, ease: 'power1.in' }, 0.6);
+        // Fade in smoothly
+        .to(wrapper, { opacity: 0.75, duration: 0.3, ease: 'power2.out' })
+        // Gentle drift and scale while visible
+        .to(img, { y: -15, scale: 1, duration: 0.8, ease: 'none' }, 0)
+        // Hold at peak briefly, then fade out
+        .to(wrapper, { opacity: 0, duration: 0.25, ease: 'power2.in' }, 0.7);
       });
 
       // Cell background — zoom out from deep inside the cell through prison bars
