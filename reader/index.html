@@ -273,14 +273,12 @@
       justify-content: center;
       padding: 2rem 2rem;
       position: relative;
-      overflow: visible;
     }
 
     .phrase-container {
-      max-width: 700px;
+      max-width: 800px;
       width: 100%;
       position: relative;
-      will-change: transform;
     }
 
     .phrase-ref {
@@ -368,40 +366,19 @@
     /* ── Inline Scene Images ── */
     .scene-img-wrapper {
       display: flex;
+      align-items: center;
+      justify-content: center;
       padding: 1rem 2rem;
       position: relative;
       z-index: 2;
       pointer-events: none;
-      overflow: visible;
-    }
-
-    /* Alternate sides: odd images drift right, even drift left */
-    .scene-img-wrapper.side-right {
-      justify-content: flex-end;
-      padding-right: 4vw;
-    }
-    .scene-img-wrapper.side-left {
-      justify-content: flex-start;
-      padding-left: 4vw;
     }
 
     .scene-img-wrapper img {
-      max-width: min(70vw, 500px);
+      max-width: min(85vw, 680px);
       height: auto;
       border-radius: 6px;
       will-change: transform;
-    }
-
-    @media (max-width: 768px) {
-      .scene-img-wrapper.side-right,
-      .scene-img-wrapper.side-left {
-        justify-content: center;
-        padding-left: 1rem;
-        padding-right: 1rem;
-      }
-      .scene-img-wrapper img {
-        max-width: min(85vw, 400px);
-      }
     }
 
     /* ── Verse Background Layer ── */
@@ -503,13 +480,9 @@
     }
 
     // Helper: create an inline scene image element
-    // side: 'left' or 'right' — which edge the image hugs
-    let sceneImgIndex = 0;
-    function createSceneImg(src, side) {
-      const s = side || (sceneImgIndex % 2 === 0 ? 'right' : 'left');
-      sceneImgIndex++;
+    function createSceneImg(src) {
       const wrapper = document.createElement('div');
-      wrapper.className = `scene-img-wrapper side-${s}`;
+      wrapper.className = 'scene-img-wrapper';
       wrapper.innerHTML = `<img src="${src}" alt="" />`;
       return wrapper;
     }
@@ -687,20 +660,16 @@
         );
       });
 
-      // Scene images — parallax drift from the sides
-      // Images enter from their assigned side and float upward
+      // Scene images — parallax drift
       document.querySelectorAll('.scene-img-wrapper').forEach(wrapper => {
         const img = wrapper.querySelector('img');
-        const isRight = wrapper.classList.contains('side-right');
-        const sideX = isRight ? 60 : -60; // drift inward from the edge
 
         gsap.fromTo(img,
-          { y: 100, x: sideX, scale: 0.94, rotation: isRight ? -1 : 1 },
+          { y: 120, scale: 0.96, rotation: -0.5 },
           {
-            y: -100,
-            x: 0,
+            y: -120,
             scale: 1,
-            rotation: 0,
+            rotation: 0.5,
             ease: 'none',
             scrollTrigger: {
               trigger: wrapper,
@@ -745,17 +714,10 @@
         }
       }
 
-      // Phrase sections — scroll-scrubbed word-by-word reveal with meandering path
-      const phraseSections = document.querySelectorAll('.phrase-section');
-      phraseSections.forEach((section, idx) => {
+      // Phrase sections — scroll-scrubbed word-by-word reveal
+      document.querySelectorAll('.phrase-section').forEach(section => {
         const ref = section.querySelector('.phrase-ref');
         const words = section.querySelectorAll('.word');
-        const container = section.querySelector('.phrase-container');
-
-        // Meandering pattern: gentle sinusoidal left-right drift
-        // Each phrase nudges a bit further along a wave
-        const amplitude = Math.min(window.innerWidth * 0.12, 140); // cap at 140px
-        const xOffset = Math.sin(idx * 0.7) * amplitude;
 
         // Hide elements via JS so they're visible if GSAP fails
         if (ref) gsap.set(ref, { opacity: 0, x: -20 });
@@ -783,12 +745,11 @@
           ref ? '-=0.1' : '0'
         );
 
-        // Parallax: vertical drift + horizontal meander
-        gsap.fromTo(container,
-          { y: 50, x: xOffset * 0.6 },
+        // Parallax: slight upward drift
+        gsap.fromTo(section.querySelector('.phrase-container'),
+          { y: 40 },
           {
-            y: -50,
-            x: xOffset,
+            y: -40,
             ease: 'none',
             scrollTrigger: {
               trigger: section,
