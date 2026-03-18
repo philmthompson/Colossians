@@ -51,6 +51,10 @@
       -webkit-font-smoothing: antialiased;
     }
 
+    main {
+      position: relative;
+    }
+
     /* ── Version Selector ── */
     /* ── Progress Bar ── */
     .progress-track {
@@ -551,36 +555,28 @@
       transform-origin: center bottom;
     }
 
-    /* Faith → Love → Hope meandering dotted trail */
-    .icon-with-trail {
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+    /* Faith → Love → Confidence meandering dotted trail overlay */
+    #word-trail-svg {
+      position: absolute;
+      top: 0;
+      left: 0;
       width: 100%;
-    }
-    .trail-svg {
-      display: block;
-      width: clamp(120px, 30vw, 320px);
-      height: auto;
+      height: 100%;
+      pointer-events: none;
+      z-index: 2;
       overflow: visible;
-      margin-top: -10px;
     }
-    .trail-svg .trail-path {
+    #word-trail-svg .word-trail-path {
       fill: none;
-      stroke: rgba(232, 183, 48, 0.6);
+      stroke: rgba(232, 183, 48, 0.55);
       stroke-width: 2;
-      stroke-dasharray: 6 8;
       stroke-linecap: round;
-      filter: drop-shadow(0 0 4px rgba(232, 183, 48, 0.35));
     }
-    .trail-svg .trail-circle {
+    #word-trail-svg .word-trail-circle {
       fill: none;
       stroke: rgba(232, 183, 48, 0.5);
       stroke-width: 1.5;
-      stroke-dasharray: 5 6;
       stroke-linecap: round;
-      filter: drop-shadow(0 0 3px rgba(232, 183, 48, 0.3));
     }
 
     /* Kingdoms — two halves */
@@ -834,7 +830,7 @@
               if (/^\s+$/.test(w)) return w;
               const bare = w.replace(/[,;:.!?]/g, '');
               if (goldWords && goldWords.test(bare)) {
-                return `<span class="word gold-word">${w}</span>`;
+                return `<span class="word gold-word" data-keyword="${bare.toLowerCase()}">${w}</span>`;
               }
               if (specialWordMap) {
                 const cls = specialWordMap[bare.toLowerCase()];
@@ -863,42 +859,15 @@
               reader.appendChild(paulImg);
             }
 
-            // Insert gold wireframe SVGs with meandering dotted trail
+            // Insert gold wireframe SVGs between phrases
             if (verse.chapter === 1 && verse.verse === 4 && i === 0) {
-              reader.appendChild(createSvgBlock(
-                '<div class="icon-with-trail">' +
-                  '<svg class="trail-svg trail-circle-above" viewBox="0 0 200 200" preserveAspectRatio="xMidYMid meet">' +
-                    '<ellipse class="trail-circle trail-circle-faith" cx="100" cy="100" rx="85" ry="80" />' +
-                    '<image href="images/1_3-faith.svg" x="25" y="25" width="150" height="150" class="wireframe-icon wireframe-faith" />' +
-                  '</svg>' +
-                  '<svg class="trail-svg trail-connector" viewBox="0 0 100 120" preserveAspectRatio="xMidYMid meet">' +
-                    '<path class="trail-path trail-path-1" d="M50,0 C65,20 30,40 55,60 C80,80 35,100 50,120" />' +
-                  '</svg>' +
-                '</div>'
-              ));
+              reader.appendChild(createSvgBlock('<img src="images/1_3-faith.svg" alt="" class="wireframe-icon wireframe-faith" />'));
             }
             if (verse.chapter === 1 && verse.verse === 4 && i === 1) {
-              reader.appendChild(createSvgBlock(
-                '<div class="icon-with-trail">' +
-                  '<svg class="trail-svg trail-circle-above" viewBox="0 0 200 200" preserveAspectRatio="xMidYMid meet">' +
-                    '<ellipse class="trail-circle trail-circle-love" cx="100" cy="100" rx="85" ry="80" />' +
-                    '<image href="images/1_3-love.svg" x="25" y="25" width="150" height="150" class="wireframe-icon wireframe-love" />' +
-                  '</svg>' +
-                  '<svg class="trail-svg trail-connector" viewBox="0 0 100 120" preserveAspectRatio="xMidYMid meet">' +
-                    '<path class="trail-path trail-path-2" d="M50,0 C20,25 75,50 40,75 C5,100 60,110 50,120" />' +
-                  '</svg>' +
-                '</div>'
-              ));
+              reader.appendChild(createSvgBlock('<img src="images/1_3-love.svg" alt="" class="wireframe-icon wireframe-love" />'));
             }
             if (verse.chapter === 1 && verse.verse === 5 && i === 0) {
-              reader.appendChild(createSvgBlock(
-                '<div class="icon-with-trail">' +
-                  '<svg class="trail-svg trail-circle-above" viewBox="0 0 200 200" preserveAspectRatio="xMidYMid meet">' +
-                    '<ellipse class="trail-circle trail-circle-hope" cx="100" cy="100" rx="85" ry="80" />' +
-                    '<image href="images/1_3-hope.svg" x="25" y="25" width="150" height="150" class="wireframe-icon wireframe-hope" />' +
-                  '</svg>' +
-                '</div>'
-              ));
+              reader.appendChild(createSvgBlock('<img src="images/1_3-hope.svg" alt="" class="wireframe-icon wireframe-hope" />'));
             }
 
             // ── 1:6 SVG blocks ──
@@ -1287,16 +1256,18 @@
         }
       }
 
-      // Faith / Love / Hope wireframe animations + meandering dotted trail
+      // Faith / Love / Hope wireframe animations
       document.querySelectorAll('.wireframe-icon').forEach(icon => {
         const section = icon.closest('.svg-block');
         if (!section) return;
 
+        // Determine animation style per icon
         const isFaith = icon.classList.contains('wireframe-faith');
         const isLove = icon.classList.contains('wireframe-love');
         const isHope = icon.classList.contains('wireframe-hope');
 
-        gsap.set(icon, { opacity: 0 });
+        // Start state: invisible, slightly scaled down, rotated
+        gsap.set(icon, { opacity: 0, scale: 0.5, rotation: isFaith ? -15 : isLove ? 10 : -10 });
 
         const wireTl = gsap.timeline({
           scrollTrigger: {
@@ -1307,57 +1278,31 @@
           }
         });
 
-        // Phase 1: icon fades in
+        // Phase 1: shimmer in with scale and rotation
         wireTl.to(icon, {
           opacity: 0.85,
-          duration: 0.35,
+          scale: 1,
+          rotation: 0,
+          duration: 0.4,
           ease: 'power2.out',
         }, 0);
 
-        // Phase 2: shimmer out
+        // Phase 2: gentle floating drift through the phrase
+        if (isFaith) {
+          wireTl.to(icon, { y: -30, duration: 0.6, ease: 'sine.inOut' }, 0.2);
+        } else if (isLove) {
+          wireTl.to(icon, { x: 15, y: -15, scale: 1.08, duration: 0.5, ease: 'sine.inOut' }, 0.2);
+        } else if (isHope) {
+          wireTl.to(icon, { y: -40, duration: 0.6, ease: 'sine.inOut' }, 0.2);
+        }
+
+        // Phase 3: shimmer out as user scrolls past
         wireTl.to(icon, {
           opacity: 0,
+          scale: 0.7,
           duration: 0.25,
           ease: 'power1.in',
         }, 0.75);
-      });
-
-      // Animate the encircling dotted ellipses (draw-on)
-      document.querySelectorAll('.trail-circle').forEach(circle => {
-        const section = circle.closest('.svg-block');
-        if (!section) return;
-        const len = circle.getTotalLength ? circle.getTotalLength() : 540;
-        gsap.set(circle, { strokeDasharray: len, strokeDashoffset: len, opacity: 0 });
-        const cTl = gsap.timeline({
-          scrollTrigger: {
-            trigger: section,
-            start: 'top 70%',
-            end: 'bottom 20%',
-            scrub: 1,
-          }
-        });
-        cTl.to(circle, { opacity: 1, duration: 0.1 }, 0);
-        cTl.to(circle, { strokeDashoffset: 0, duration: 0.6, ease: 'none' }, 0.05);
-        cTl.to(circle, { opacity: 0, duration: 0.2 }, 0.8);
-      });
-
-      // Animate the meandering connector paths (draw-on)
-      document.querySelectorAll('.trail-path').forEach(path => {
-        const section = path.closest('.svg-block');
-        if (!section) return;
-        const len = path.getTotalLength ? path.getTotalLength() : 200;
-        gsap.set(path, { strokeDasharray: len, strokeDashoffset: len, opacity: 0 });
-        const pTl = gsap.timeline({
-          scrollTrigger: {
-            trigger: section,
-            start: 'top 50%',
-            end: 'bottom 30%',
-            scrub: 1,
-          }
-        });
-        pTl.to(path, { opacity: 0.7, duration: 0.1 }, 0);
-        pTl.to(path, { strokeDashoffset: 0, duration: 0.8, ease: 'none' }, 0);
-        pTl.to(path, { opacity: 0, duration: 0.2 }, 0.8);
       });
 
       // Gold-glow keywords — toggle class when scrolled into view
@@ -1747,6 +1692,157 @@
     // INIT
     // ────────────────────────────────────────
     renderAll();
+
+    // ────────────────────────────────────────
+    // WORD TRAIL — meandering dotted line: faith → love → confidence
+    // ────────────────────────────────────────
+    function buildWordTrail() {
+      // Remove previous trail if any
+      const old = document.getElementById('word-trail-svg');
+      if (old) old.remove();
+
+      const reader = document.getElementById('reader');
+      const readerRect = reader.getBoundingClientRect();
+      const scrollY = window.scrollY || document.documentElement.scrollTop;
+      const readerTop = readerRect.top + scrollY;
+      const readerLeft = readerRect.left;
+
+      // Find the three gold-word spans
+      const faithEl = reader.querySelector('.gold-word[data-keyword="faith"]');
+      const loveEl = reader.querySelector('.gold-word[data-keyword="love"]');
+      const confEl = reader.querySelector('.gold-word[data-keyword="confidence"]');
+      if (!faithEl || !loveEl || !confEl) return;
+
+      function wordCenter(el) {
+        const r = el.getBoundingClientRect();
+        return {
+          x: r.left + r.width / 2 - readerLeft,
+          y: r.top + r.height / 2 + scrollY - readerTop,
+          w: r.width,
+          h: r.height
+        };
+      }
+
+      const f = wordCenter(faithEl);
+      const l = wordCenter(loveEl);
+      const c = wordCenter(confEl);
+
+      const svgNS = 'http://www.w3.org/2000/svg';
+      const svg = document.createElementNS(svgNS, 'svg');
+      svg.id = 'word-trail-svg';
+      svg.setAttribute('viewBox', `0 0 ${readerRect.width} ${reader.scrollHeight}`);
+      svg.setAttribute('preserveAspectRatio', 'none');
+
+      // Encircling ellipses around each word
+      const pad = 10;
+      [[f, 'faith'], [l, 'love'], [c, 'confidence']].forEach(([pt, name]) => {
+        const ellipse = document.createElementNS(svgNS, 'ellipse');
+        ellipse.setAttribute('cx', pt.x);
+        ellipse.setAttribute('cy', pt.y);
+        ellipse.setAttribute('rx', pt.w / 2 + pad);
+        ellipse.setAttribute('ry', pt.h / 2 + pad * 0.8);
+        ellipse.classList.add('word-trail-circle');
+        ellipse.dataset.name = name;
+        svg.appendChild(ellipse);
+      });
+
+      // Meandering path from faith → love
+      function meander(start, end) {
+        const dx = end.x - start.x;
+        const dy = end.y - start.y;
+        const midY = start.y + dy * 0.5;
+        // S-curve: drift right then left (or vice versa)
+        const drift = Math.min(80, Math.abs(dx) + 50);
+        return `M${start.x},${start.y + start.h / 2 + pad}` +
+               ` C${start.x + drift},${start.y + dy * 0.25}` +
+               ` ${end.x - drift},${midY}` +
+               ` ${(start.x + end.x) / 2},${midY}` +
+               ` S${end.x + drift * 0.5},${end.y - dy * 0.15}` +
+               ` ${end.x},${end.y - end.h / 2 - pad}`;
+      }
+
+      const path1 = document.createElementNS(svgNS, 'path');
+      path1.setAttribute('d', meander(f, l));
+      path1.classList.add('word-trail-path');
+      path1.id = 'trail-faith-love';
+      svg.appendChild(path1);
+
+      const path2 = document.createElementNS(svgNS, 'path');
+      path2.setAttribute('d', meander(l, c));
+      path2.classList.add('word-trail-path');
+      path2.id = 'trail-love-confidence';
+      svg.appendChild(path2);
+
+      reader.appendChild(svg);
+
+      // Set up stroke-dasharray for draw-on animation
+      [path1, path2].forEach(p => {
+        const len = p.getTotalLength();
+        gsap.set(p, { strokeDasharray: `6 8`, strokeDashoffset: len, opacity: 0 });
+      });
+
+      svg.querySelectorAll('.word-trail-circle').forEach(el => {
+        const len = el.getTotalLength();
+        gsap.set(el, { strokeDasharray: `5 7`, strokeDashoffset: len, opacity: 0 });
+      });
+
+      // Scroll-triggered: draw circle around "faith", then path to "love"
+      const faithSection = faithEl.closest('.phrase-section');
+      const loveSection = loveEl.closest('.phrase-section');
+      const confSection = confEl.closest('.phrase-section');
+
+      // Circle around faith draws on
+      const circFaith = svg.querySelector('[data-name="faith"]');
+      gsap.timeline({
+        scrollTrigger: { trigger: faithSection, start: 'top 55%', end: 'bottom 35%', scrub: 1 }
+      }).to(circFaith, { opacity: 0.8, strokeDashoffset: 0, duration: 1, ease: 'none' });
+
+      // Path from faith → love draws on
+      gsap.timeline({
+        scrollTrigger: { trigger: faithSection, start: 'bottom 60%', endTrigger: loveSection, end: 'top 50%', scrub: 1 }
+      }).to(path1, { opacity: 0.6, duration: 0.05 }, 0)
+        .to(path1, { strokeDashoffset: 0, duration: 0.95, ease: 'none' }, 0.05);
+
+      // Circle around love draws on
+      const circLove = svg.querySelector('[data-name="love"]');
+      gsap.timeline({
+        scrollTrigger: { trigger: loveSection, start: 'top 55%', end: 'bottom 35%', scrub: 1 }
+      }).to(circLove, { opacity: 0.8, strokeDashoffset: 0, duration: 1, ease: 'none' });
+
+      // Path from love → confidence draws on
+      gsap.timeline({
+        scrollTrigger: { trigger: loveSection, start: 'bottom 60%', endTrigger: confSection, end: 'top 50%', scrub: 1 }
+      }).to(path2, { opacity: 0.6, duration: 0.05 }, 0)
+        .to(path2, { strokeDashoffset: 0, duration: 0.95, ease: 'none' }, 0.05);
+
+      // Circle around confidence draws on
+      const circConf = svg.querySelector('[data-name="confidence"]');
+      gsap.timeline({
+        scrollTrigger: { trigger: confSection, start: 'top 55%', end: 'bottom 35%', scrub: 1 }
+      }).to(circConf, { opacity: 0.8, strokeDashoffset: 0, duration: 1, ease: 'none' });
+
+      // Fade everything out after confidence
+      const hopeSvgBlock = confSection.nextElementSibling;
+      if (hopeSvgBlock) {
+        gsap.timeline({
+          scrollTrigger: { trigger: hopeSvgBlock, start: 'top 50%', end: 'bottom 30%', scrub: 1 }
+        }).to(svg, { opacity: 0, duration: 1 });
+      }
+    }
+
+    // Build after layout is complete
+    requestAnimationFrame(() => requestAnimationFrame(buildWordTrail));
+    // Rebuild on resize (positions shift)
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        ScrollTrigger.getAll().forEach(st => {
+          if (st.trigger && st.trigger.closest && st.trigger.closest('#word-trail-svg')) st.kill();
+        });
+        buildWordTrail();
+      }, 300);
+    });
   </script>
 </body>
 </html>
