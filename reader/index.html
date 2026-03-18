@@ -551,6 +551,38 @@
       transform-origin: center bottom;
     }
 
+    /* Faith → Love → Hope meandering dotted trail */
+    .icon-with-trail {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+    }
+    .trail-svg {
+      display: block;
+      width: clamp(120px, 30vw, 320px);
+      height: auto;
+      overflow: visible;
+      margin-top: -10px;
+    }
+    .trail-svg .trail-path {
+      fill: none;
+      stroke: rgba(232, 183, 48, 0.6);
+      stroke-width: 2;
+      stroke-dasharray: 6 8;
+      stroke-linecap: round;
+      filter: drop-shadow(0 0 4px rgba(232, 183, 48, 0.35));
+    }
+    .trail-svg .trail-circle {
+      fill: none;
+      stroke: rgba(232, 183, 48, 0.5);
+      stroke-width: 1.5;
+      stroke-dasharray: 5 6;
+      stroke-linecap: round;
+      filter: drop-shadow(0 0 3px rgba(232, 183, 48, 0.3));
+    }
+
     /* Kingdoms — two halves */
     .kingdoms-container {
       position: relative;
@@ -831,15 +863,42 @@
               reader.appendChild(paulImg);
             }
 
-            // Insert gold wireframe SVGs between phrases
+            // Insert gold wireframe SVGs with meandering dotted trail
             if (verse.chapter === 1 && verse.verse === 4 && i === 0) {
-              reader.appendChild(createSvgBlock('<img src="images/1_3-faith.svg" alt="" class="wireframe-icon wireframe-faith" />'));
+              reader.appendChild(createSvgBlock(
+                '<div class="icon-with-trail">' +
+                  '<svg class="trail-svg trail-circle-above" viewBox="0 0 200 200" preserveAspectRatio="xMidYMid meet">' +
+                    '<ellipse class="trail-circle trail-circle-faith" cx="100" cy="100" rx="85" ry="80" />' +
+                    '<image href="images/1_3-faith.svg" x="25" y="25" width="150" height="150" class="wireframe-icon wireframe-faith" />' +
+                  '</svg>' +
+                  '<svg class="trail-svg trail-connector" viewBox="0 0 100 120" preserveAspectRatio="xMidYMid meet">' +
+                    '<path class="trail-path trail-path-1" d="M50,0 C65,20 30,40 55,60 C80,80 35,100 50,120" />' +
+                  '</svg>' +
+                '</div>'
+              ));
             }
             if (verse.chapter === 1 && verse.verse === 4 && i === 1) {
-              reader.appendChild(createSvgBlock('<img src="images/1_3-love.svg" alt="" class="wireframe-icon wireframe-love" />'));
+              reader.appendChild(createSvgBlock(
+                '<div class="icon-with-trail">' +
+                  '<svg class="trail-svg trail-circle-above" viewBox="0 0 200 200" preserveAspectRatio="xMidYMid meet">' +
+                    '<ellipse class="trail-circle trail-circle-love" cx="100" cy="100" rx="85" ry="80" />' +
+                    '<image href="images/1_3-love.svg" x="25" y="25" width="150" height="150" class="wireframe-icon wireframe-love" />' +
+                  '</svg>' +
+                  '<svg class="trail-svg trail-connector" viewBox="0 0 100 120" preserveAspectRatio="xMidYMid meet">' +
+                    '<path class="trail-path trail-path-2" d="M50,0 C20,25 75,50 40,75 C5,100 60,110 50,120" />' +
+                  '</svg>' +
+                '</div>'
+              ));
             }
             if (verse.chapter === 1 && verse.verse === 5 && i === 0) {
-              reader.appendChild(createSvgBlock('<img src="images/1_3-hope.svg" alt="" class="wireframe-icon wireframe-hope" />'));
+              reader.appendChild(createSvgBlock(
+                '<div class="icon-with-trail">' +
+                  '<svg class="trail-svg trail-circle-above" viewBox="0 0 200 200" preserveAspectRatio="xMidYMid meet">' +
+                    '<ellipse class="trail-circle trail-circle-hope" cx="100" cy="100" rx="85" ry="80" />' +
+                    '<image href="images/1_3-hope.svg" x="25" y="25" width="150" height="150" class="wireframe-icon wireframe-hope" />' +
+                  '</svg>' +
+                '</div>'
+              ));
             }
 
             // ── 1:6 SVG blocks ──
@@ -1228,18 +1287,16 @@
         }
       }
 
-      // Faith / Love / Hope wireframe animations
+      // Faith / Love / Hope wireframe animations + meandering dotted trail
       document.querySelectorAll('.wireframe-icon').forEach(icon => {
         const section = icon.closest('.svg-block');
         if (!section) return;
 
-        // Determine animation style per icon
         const isFaith = icon.classList.contains('wireframe-faith');
         const isLove = icon.classList.contains('wireframe-love');
         const isHope = icon.classList.contains('wireframe-hope');
 
-        // Start state: invisible, slightly scaled down, rotated
-        gsap.set(icon, { opacity: 0, scale: 0.5, rotation: isFaith ? -15 : isLove ? 10 : -10 });
+        gsap.set(icon, { opacity: 0 });
 
         const wireTl = gsap.timeline({
           scrollTrigger: {
@@ -1250,34 +1307,57 @@
           }
         });
 
-        // Phase 1: shimmer in with scale and rotation
+        // Phase 1: icon fades in
         wireTl.to(icon, {
           opacity: 0.85,
-          scale: 1,
-          rotation: 0,
-          duration: 0.4,
+          duration: 0.35,
           ease: 'power2.out',
         }, 0);
 
-        // Phase 2: gentle floating drift through the phrase
-        if (isFaith) {
-          // Cross drifts upward through the text
-          wireTl.to(icon, { y: -30, duration: 0.6, ease: 'sine.inOut' }, 0.2);
-        } else if (isLove) {
-          // Heart pulses and drifts slightly right
-          wireTl.to(icon, { x: 15, y: -15, scale: 1.08, duration: 0.5, ease: 'sine.inOut' }, 0.2);
-        } else if (isHope) {
-          // Anchor rises upward
-          wireTl.to(icon, { y: -40, duration: 0.6, ease: 'sine.inOut' }, 0.2);
-        }
-
-        // Phase 3: shimmer out as user scrolls past
+        // Phase 2: shimmer out
         wireTl.to(icon, {
           opacity: 0,
-          scale: 0.7,
           duration: 0.25,
           ease: 'power1.in',
         }, 0.75);
+      });
+
+      // Animate the encircling dotted ellipses (draw-on)
+      document.querySelectorAll('.trail-circle').forEach(circle => {
+        const section = circle.closest('.svg-block');
+        if (!section) return;
+        const len = circle.getTotalLength ? circle.getTotalLength() : 540;
+        gsap.set(circle, { strokeDasharray: len, strokeDashoffset: len, opacity: 0 });
+        const cTl = gsap.timeline({
+          scrollTrigger: {
+            trigger: section,
+            start: 'top 70%',
+            end: 'bottom 20%',
+            scrub: 1,
+          }
+        });
+        cTl.to(circle, { opacity: 1, duration: 0.1 }, 0);
+        cTl.to(circle, { strokeDashoffset: 0, duration: 0.6, ease: 'none' }, 0.05);
+        cTl.to(circle, { opacity: 0, duration: 0.2 }, 0.8);
+      });
+
+      // Animate the meandering connector paths (draw-on)
+      document.querySelectorAll('.trail-path').forEach(path => {
+        const section = path.closest('.svg-block');
+        if (!section) return;
+        const len = path.getTotalLength ? path.getTotalLength() : 200;
+        gsap.set(path, { strokeDasharray: len, strokeDashoffset: len, opacity: 0 });
+        const pTl = gsap.timeline({
+          scrollTrigger: {
+            trigger: section,
+            start: 'top 50%',
+            end: 'bottom 30%',
+            scrub: 1,
+          }
+        });
+        pTl.to(path, { opacity: 0.7, duration: 0.1 }, 0);
+        pTl.to(path, { strokeDashoffset: 0, duration: 0.8, ease: 'none' }, 0);
+        pTl.to(path, { opacity: 0, duration: 0.2 }, 0.8);
       });
 
       // Gold-glow keywords — toggle class when scrolled into view
