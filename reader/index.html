@@ -52,48 +52,6 @@
     }
 
     /* ── Version Selector ── */
-    .version-selector {
-      position: fixed;
-      top: 1.5rem;
-      right: 1.5rem;
-      z-index: 100;
-      display: flex;
-      gap: 0.5rem;
-      opacity: 0;
-      transition: opacity 0.4s ease;
-    }
-
-    .version-selector.visible {
-      opacity: 1;
-    }
-
-    .version-btn {
-      font-family: var(--font-sans);
-      font-size: 0.7rem;
-      font-weight: 500;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      padding: 0.4rem 0.8rem;
-      border: 1px solid var(--warm-dim);
-      border-radius: 2rem;
-      background: rgba(26, 20, 16, 0.85);
-      backdrop-filter: blur(10px);
-      color: var(--warm-muted);
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-
-    .version-btn:hover {
-      border-color: var(--warm-accent);
-      color: var(--warm-cream);
-    }
-
-    .version-btn.active {
-      border-color: var(--warm-gold);
-      color: var(--warm-gold);
-      background: rgba(212, 167, 106, 0.1);
-    }
-
     /* ── Progress Bar ── */
     .progress-track {
       position: fixed;
@@ -354,12 +312,6 @@
     /* ── Mobile ── */
     @media (max-width: 768px) {
       .chapter-nav { display: none; }
-      .version-selector {
-        top: auto;
-        bottom: 1rem;
-        right: 50%;
-        transform: translateX(50%);
-      }
       .phrase-section { padding: 1rem 1.5rem; min-height: 15vh; }
       .colossae-layer.layer-clouds img {
         min-width: 110% !important;
@@ -705,12 +657,6 @@
     <div class="progress-fill" id="progressFill"></div>
   </div>
 
-  <!-- Version Selector -->
-  <div class="version-selector" id="versionSelector">
-    <button class="version-btn active" data-version="ppv">PPV</button>
-    <button class="version-btn" data-version="esv" disabled title="Coming soon">ESV</button>
-    <button class="version-btn" data-version="greek" disabled title="Coming soon">Greek</button>
-  </div>
 
   <!-- Chapter Navigation -->
   <nav class="chapter-nav" id="chapterNav">
@@ -724,7 +670,7 @@
   <section class="hero" id="hero">
     <div class="hero-bg"></div>
     <h1 class="hero-title">Colossians</h1>
-    <p class="hero-subtitle">Phil's Paraphrase Version</p>
+    <p class="hero-subtitle">A Paraphrase</p>
     <div class="hero-line"></div>
     <div class="hero-scroll-cue">Scroll to begin</div>
   </section>
@@ -741,7 +687,7 @@
     // registered on window.ColossiansPPV[chapterNumber].
     // To add chapters: create data/chapter2.js, add a <script> tag, etc.
     const reader = document.getElementById('reader');
-    let currentVersion = 'ppv';
+
 
     // Thematic groupings for visual sections (verse ranges → theme)
     const sectionMap = {
@@ -1135,11 +1081,9 @@
         trigger: '.hero',
         start: 'bottom 80%',
         onEnter: () => {
-          document.getElementById('versionSelector').classList.add('visible');
           document.getElementById('chapterNav').classList.add('visible');
         },
         onLeaveBack: () => {
-          document.getElementById('versionSelector').classList.remove('visible');
           document.getElementById('chapterNav').classList.remove('visible');
         }
       });
@@ -1708,21 +1652,6 @@
         dot.classList.toggle('active', dot.dataset.chapter === String(chNum));
       });
     }
-
-    // ────────────────────────────────────────
-    // VERSION SWITCHING
-    // ────────────────────────────────────────
-    document.querySelectorAll('.version-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        if (btn.disabled) return;
-        document.querySelectorAll('.version-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        currentVersion = btn.dataset.version;
-        // Future: reload with different version data
-        renderAll();
-        window.scrollTo(0, 0);
-      });
-    });
 
     // Chapter dot click navigation
     document.querySelectorAll('.chapter-dot').forEach(dot => {
