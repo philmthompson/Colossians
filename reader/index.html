@@ -267,7 +267,7 @@
 
     /* ── Phrase Sections ── */
     .phrase-section {
-      min-height: 40vh;
+      min-height: 20vh;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -322,7 +322,7 @@
 
     /* ── Parallax Divider ── */
     .divider {
-      height: 25vh;
+      height: 10vh;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -360,7 +360,7 @@
         right: 50%;
         transform: translateX(50%);
       }
-      .phrase-section { padding: 1rem 1.5rem; min-height: 35vh; }
+      .phrase-section { padding: 1rem 1.5rem; min-height: 15vh; }
       .colossae-layer.layer-clouds img {
         min-width: 110% !important;
       }
@@ -378,7 +378,7 @@
     }
 
     .scene-img-wrapper img {
-      max-width: min(85vw, 680px);
+      max-width: min(92vw, 850px);
       height: auto;
       border-radius: 6px;
       will-change: transform;
@@ -475,7 +475,7 @@
     }
 
     .wireframe-overlay img {
-      width: clamp(100px, 22vw, 260px);
+      width: clamp(160px, 35vw, 420px);
       height: auto;
       opacity: 0;
       filter: drop-shadow(0 0 12px rgba(232, 183, 48, 0.5));
@@ -484,7 +484,7 @@
     /* SVG block — fills the space between phrases */
     .svg-block {
       width: 100%;
-      min-height: 60vh;
+      min-height: 25vh;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -492,7 +492,7 @@
       overflow: visible;
     }
     .svg-block > img {
-      width: clamp(180px, 50vw, 600px);
+      width: clamp(220px, 60vw, 720px);
       height: auto;
       opacity: 0;
       filter: drop-shadow(0 0 12px rgba(232, 183, 48, 0.5));
@@ -501,7 +501,7 @@
     /* Map — enlarged with animated dots */
     .map-container {
       position: relative;
-      width: clamp(320px, 92vw, 1100px);
+      width: clamp(360px, 95vw, 1200px);
     }
     .map-container > img {
       width: 100%;
@@ -563,7 +563,7 @@
       opacity: 0;
     }
     .walker-svg {
-      width: clamp(80px, 12vw, 150px);
+      width: clamp(120px, 18vw, 220px);
       height: auto;
     }
 
@@ -579,7 +579,7 @@
     }
     .fruit-fixed img {
       position: absolute;
-      width: clamp(30px, 6vw, 70px);
+      width: clamp(45px, 9vw, 100px);
       height: auto;
     }
 
@@ -597,8 +597,8 @@
     /* Kingdoms — two halves */
     .kingdoms-container {
       position: relative;
-      width: clamp(220px, 55vw, 650px);
-      height: clamp(180px, 44vw, 520px);
+      width: clamp(280px, 65vw, 800px);
+      height: clamp(220px, 52vw, 640px);
     }
     .kingdoms-container img {
       position: absolute;
@@ -624,11 +624,11 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: clamp(10px, 4vw, 50px);
-      width: clamp(280px, 65vw, 750px);
+      gap: clamp(12px, 5vw, 60px);
+      width: clamp(340px, 75vw, 900px);
     }
     .forgiveness-container img {
-      width: clamp(100px, 25vw, 320px);
+      width: clamp(130px, 30vw, 380px);
       height: auto;
       opacity: 0;
     }
@@ -1054,7 +1054,7 @@
 
       // Spacer at end
       const spacer = document.createElement('div');
-      spacer.style.height = '50vh';
+      spacer.style.height = '30vh';
       reader.appendChild(spacer);
 
       initAnimations();
