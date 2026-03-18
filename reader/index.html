@@ -1000,7 +1000,9 @@
 
             // ── 1:13 kingdoms block (left red, right bright) ──
             if (verse.chapter === 1 && verse.verse === 13 && i === 0) {
-              reader.appendChild(createSvgBlock('<div class="kingdoms-container"><img src="images/1_13-kingdoms.svg" alt="" class="kingdoms-dark" /><img src="images/1_13-kingdoms.svg" alt="" class="kingdoms-light" /></div>'));
+              const kb = createSvgBlock('<div class="kingdoms-container"><img src="images/1_13-kingdoms.svg" alt="" class="kingdoms-dark" /><img src="images/1_13-kingdoms.svg" alt="" class="kingdoms-light" /></div>');
+              kb.style.minHeight = '0';
+              reader.appendChild(kb);
             }
 
             // ── 1:14 chains + forgiveness blocks ──
