@@ -363,6 +363,30 @@
       .phrase-section { padding: 3rem 1.5rem; }
     }
 
+    /* ── Writing Scene (image-based) ── */
+    .writing-scene {
+      height: 250vh;
+      position: relative;
+    }
+
+    .writing-scene-sticky {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .writing-scene-img {
+      width: min(90vw, 900px);
+      height: auto;
+      border-radius: 4px;
+      will-change: transform, opacity;
+    }
+
     /* ── Smooth Scroll Snap (optional enhancement) ── */
     @media (prefers-reduced-motion: no-preference) {
       .phrase-text .word {
@@ -466,6 +490,18 @@
           <div class="chapter-label">Chapter ${chNum === 1 ? 'One' : chNum === 2 ? 'Two' : chNum === 3 ? 'Three' : 'Four'}</div>
         `;
         reader.appendChild(chHeader);
+
+        // Insert writing image scene after chapter 1 header
+        if (chNum === 1) {
+          const scene = document.createElement('div');
+          scene.className = 'writing-scene';
+          scene.innerHTML = `
+            <div class="writing-scene-sticky">
+              <img class="writing-scene-img" src="images/writing.jpg" alt="A hand writing on a first-century manuscript" />
+            </div>
+          `;
+          reader.appendChild(scene);
+        }
 
         // Render each verse phrase-by-phrase
         data.verses.forEach(verse => {
@@ -581,6 +617,41 @@
           '-=0.3'
         );
       });
+
+      // Writing image scene animation
+      const writingScene = document.querySelector('.writing-scene');
+      if (writingScene) {
+        const sticky = writingScene.querySelector('.writing-scene-sticky');
+        const img = writingScene.querySelector('.writing-scene-img');
+
+        gsap.set(sticky, { opacity: 0 });
+        gsap.set(img, { scale: 1.15, x: 30, y: 20 });
+
+        const writeTl = gsap.timeline({
+          scrollTrigger: {
+            trigger: writingScene,
+            start: 'top top',
+            end: 'bottom top',
+            scrub: 0.6,
+          }
+        });
+
+        // Fade in
+        writeTl.to(sticky, {
+          opacity: 1, duration: 0.15, ease: 'power2.out'
+        });
+
+        // Slow pan across the image — simulates camera following the hand
+        writeTl.to(img, {
+          x: -30, y: -10, scale: 1.25,
+          duration: 0.55, ease: 'none'
+        }, 0.1);
+
+        // Fade out
+        writeTl.to(sticky, {
+          opacity: 0, duration: 0.15, ease: 'power2.in'
+        }, 0.75);
+      }
 
       // Phrase sections — scroll-scrubbed word-by-word reveal
       document.querySelectorAll('.phrase-section').forEach(section => {
