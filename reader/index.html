@@ -363,26 +363,20 @@
       .phrase-section { padding: 3rem 1.5rem; }
     }
 
-    /* ── Writing Scene (subtle background) ── */
+    /* ── Writing Scene (inline object) ── */
     .writing-scene {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100vh;
-      pointer-events: none;
-      z-index: 0;
       display: flex;
       align-items: center;
       justify-content: center;
+      padding: 2rem 2rem;
       opacity: 0;
     }
 
     .writing-scene-img {
-      width: min(110vw, 1200px);
+      max-width: min(85vw, 680px);
       height: auto;
+      border-radius: 6px;
       will-change: transform, opacity;
-      filter: sepia(0.2) brightness(0.9);
     }
 
     /* ── Smooth Scroll Snap (optional enhancement) ── */
@@ -489,12 +483,12 @@
         `;
         reader.appendChild(chHeader);
 
-        // Insert writing image as fixed background layer (chapter 1 only)
+        // Insert writing image inline between chapter header and first verse
         if (chNum === 1) {
           const scene = document.createElement('div');
           scene.className = 'writing-scene';
           scene.innerHTML = `<img class="writing-scene-img" src="images/1_0-writing.png" alt="" />`;
-          document.body.appendChild(scene);
+          reader.appendChild(scene);
         }
 
         // Render each verse phrase-by-phrase
@@ -612,40 +606,24 @@
         );
       });
 
-      // Writing image — subtle background that breathes in and out
+      // Writing image — subtle fade up and out as it scrolls by
       const writingScene = document.querySelector('.writing-scene');
-      const ch1Sections = document.querySelectorAll('.chapter-header, .phrase-section');
-      if (writingScene && ch1Sections.length > 1) {
+      if (writingScene) {
         const img = writingScene.querySelector('.writing-scene-img');
-        // Use first several phrase sections as the trigger range
-        const firstSection = ch1Sections[0];
 
-        gsap.set(img, { scale: 1.08, y: 15 });
+        gsap.set(img, { y: 20 });
 
-        const writeTl = gsap.timeline({
+        gsap.timeline({
           scrollTrigger: {
-            trigger: firstSection,
-            start: 'top 80%',
-            end: '+=2000',
-            scrub: 1.2,
+            trigger: writingScene,
+            start: 'top 85%',
+            end: 'bottom 20%',
+            scrub: 0.8,
           }
-        });
-
-        // Gentle fade up to low opacity
-        writeTl.to(writingScene, {
-          opacity: 0.3, duration: 0.3, ease: 'power1.out'
-        });
-
-        // Slow drift while visible
-        writeTl.to(img, {
-          y: -10, scale: 1.12,
-          duration: 0.5, ease: 'none'
-        }, 0);
-
-        // Fade back out
-        writeTl.to(writingScene, {
-          opacity: 0, duration: 0.3, ease: 'power1.in'
-        }, 0.5);
+        })
+        .to(writingScene, { opacity: 0.35, duration: 0.4, ease: 'power1.out' })
+        .to(img, { y: -10, duration: 0.6, ease: 'none' }, 0)
+        .to(writingScene, { opacity: 0, duration: 0.3, ease: 'power1.in' }, 0.6);
       }
 
       // Phrase sections — scroll-scrubbed word-by-word reveal
