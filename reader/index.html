@@ -453,32 +453,18 @@
       return sections.some(s => s.start === verse);
     }
 
-    // Resolve data paths relative to the HTML file location
-    const basePath = document.currentScript
-      ? document.currentScript.src.substring(0, document.currentScript.src.lastIndexOf('/') + 1)
-      : window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
-
     async function loadChapter(num) {
       if (loadedChapters[num]) return loadedChapters[num];
       const file = chapterFiles[num];
       if (!file) return null;
       try {
-        // Try relative path first, then absolute from base
-        let resp = await fetch(file);
-        if (!resp.ok) {
-          resp = await fetch(new URL(file, basePath).href);
-        }
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const resp = await fetch(file);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status} for ${file}`);
         const data = await resp.json();
         loadedChapters[num] = data;
         return data;
       } catch (err) {
         console.error(`Failed to load chapter ${num}:`, err);
-        reader.innerHTML = `<div style="color:var(--warm-accent);text-align:center;padding:4rem 2rem;font-family:var(--font-sans);font-size:0.9rem;">
-          Could not load chapter data. If viewing as a local file, run:<br>
-          <code style="color:var(--warm-gold);margin-top:0.5rem;display:inline-block;">python3 -m http.server</code><br>
-          from the <code>reader/</code> directory.
-        </div>`;
         return null;
       }
     }
@@ -544,12 +530,23 @@
         });
       }
 
+      // If nothing rendered, show debug info
+      if (!reader.querySelector('.phrase-section')) {
+        reader.innerHTML = `<div style="color:var(--warm-accent);text-align:center;padding:4rem 2rem;font-family:var(--font-sans);font-size:0.9rem;">
+          No chapter data loaded. Check the browser console for errors.<br>
+          <span style="color:var(--warm-muted);font-size:0.75rem;">Attempted to fetch: ${Object.values(chapterFiles).join(', ')}</span>
+        </div>`;
+        return;
+      }
+
       // Spacer at end
       const spacer = document.createElement('div');
       spacer.style.height = '50vh';
       reader.appendChild(spacer);
 
       initAnimations();
+      // Ensure ScrollTrigger recalculates after async DOM insertion
+      ScrollTrigger.refresh();
     }
 
     // ────────────────────────────────────────
