@@ -481,19 +481,18 @@
       filter: drop-shadow(0 0 12px rgba(232, 183, 48, 0.5));
     }
 
-    /* SVG block — sits between phrases in its own scroll space */
+    /* SVG block — fills the space between phrases */
     .svg-block {
       width: 100%;
-      min-height: 6vh;
+      min-height: 60vh;
       display: flex;
       align-items: center;
       justify-content: center;
       pointer-events: none;
       overflow: visible;
-      padding: 1rem 0;
     }
     .svg-block > img {
-      width: clamp(150px, 40vw, 500px);
+      width: clamp(180px, 50vw, 600px);
       height: auto;
       opacity: 0;
       filter: drop-shadow(0 0 12px rgba(232, 183, 48, 0.5));
@@ -502,7 +501,7 @@
     /* Map — enlarged with animated dots */
     .map-container {
       position: relative;
-      width: clamp(320px, 90vw, 1000px);
+      width: clamp(320px, 92vw, 1100px);
     }
     .map-container > img {
       width: 100%;
@@ -598,8 +597,8 @@
     /* Kingdoms — two halves */
     .kingdoms-container {
       position: relative;
-      width: clamp(180px, 45vw, 520px);
-      height: clamp(140px, 36vw, 420px);
+      width: clamp(220px, 55vw, 650px);
+      height: clamp(180px, 44vw, 520px);
     }
     .kingdoms-container img {
       position: absolute;
@@ -625,11 +624,11 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: clamp(10px, 3vw, 40px);
-      width: clamp(240px, 55vw, 640px);
+      gap: clamp(10px, 4vw, 50px);
+      width: clamp(280px, 65vw, 750px);
     }
     .forgiveness-container img {
-      width: clamp(80px, 20vw, 260px);
+      width: clamp(100px, 25vw, 320px);
       height: auto;
       opacity: 0;
     }
