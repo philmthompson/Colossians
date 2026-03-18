@@ -419,6 +419,52 @@
       will-change: transform;
     }
 
+    /* ── Colossae Parallax Background ── */
+    .colossae-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+      opacity: 0;
+    }
+
+    .colossae-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      will-change: transform;
+    }
+
+    .colossae-layer img {
+      position: absolute;
+      will-change: transform;
+    }
+
+    .colossae-layer.layer-city img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .colossae-layer.layer-mountain img {
+      width: 50%;
+      left: 25%;
+      bottom: 30%;
+      position: absolute;
+    }
+
+    .colossae-layer.layer-clouds img {
+      position: absolute;
+      width: 20%;
+      opacity: 0.7;
+    }
+
     /* ── Smooth Scroll Snap (optional enhancement) ── */
     @media (prefers-reduced-motion: no-preference) {
       .phrase-text .word {
@@ -595,16 +641,26 @@
               reader.appendChild(paulImg);
             }
 
-            // Insert map image after the "To:" phrase
+            // Create Colossae parallax background when 1:2 begins
             if (verse.chapter === 1 && verse.verse === 2 && i === 0) {
-              reader.appendChild(createSceneImg('images/1_2-map.png'));
+              const colBg = document.createElement('div');
+              colBg.className = 'colossae-bg';
+              colBg.id = 'colossae-bg';
+              colBg.innerHTML = `
+                <div class="colossae-layer layer-city"><img src="images/1_2-city.png" alt="" /></div>
+                <div class="colossae-layer layer-mountain"><img src="images/1_2-mountain.png" alt="" /></div>
+                <div class="colossae-layer layer-clouds">
+                  <img src="images/1_2-cloud1.png" alt="" style="top:8%;left:5%;" />
+                  <img src="images/1_2-cloud2.png" alt="" style="top:5%;right:8%;left:auto;" />
+                  <img src="images/1_2-cloud3.png" alt="" style="top:18%;left:35%;width:25%;" />
+                  <img src="images/1_2-cloud4.png" alt="" style="top:2%;left:55%;width:22%;" />
+                </div>
+              `;
+              document.body.appendChild(colBg);
             }
           });
 
-          // Insert Colossian image after all of 1:2, before 1:3
-          if (verse.chapter === 1 && verse.verse === 2) {
-            reader.appendChild(createSceneImg('images/1_2-Colossian.png'));
-          }
+          // (1_2-Colossian removed — replaced by Colossae parallax background)
         });
       });
 
@@ -718,16 +774,15 @@
       });
 
       // Cell background — zoom out from deep inside the cell through prison bars
-      // Continues zooming all the way through 1:2, fades out when 1:2 hits center
+      // Fades out by the time 1:2 "To:" is centered in the viewport
       const cellBg = document.getElementById('cell-bg-1-1');
       if (cellBg) {
         const cellImg = cellBg.querySelector('img');
         const v1sections = document.querySelectorAll('.phrase-section[data-verse="1:1"]');
-        const v2sections = document.querySelectorAll('.phrase-section[data-verse="1:2"]');
-        const endSections = v2sections.length ? v2sections : v1sections;
+        const firstV2 = document.querySelector('.phrase-section[data-verse="1:2"]');
+        const endTrigger = firstV2 || v1sections[v1sections.length - 1];
         if (v1sections.length) {
           const firstEl = v1sections[0];
-          const lastV2 = endSections[endSections.length - 1];
 
           // Start zoomed deep into the cell
           gsap.set(cellImg, { scale: 2.5 });
@@ -735,7 +790,7 @@
           gsap.timeline({
             scrollTrigger: {
               trigger: firstEl,
-              endTrigger: lastV2,
+              endTrigger: endTrigger,
               start: 'top 90%',
               end: 'center center',
               scrub: 1.5,
@@ -743,10 +798,65 @@
           })
           // Fade in
           .to(cellBg, { opacity: 0.18, duration: 0.1, ease: 'power1.out' })
-          // Zoom out continuously across the entire span (1:1 through 1:2)
-          .to(cellImg, { scale: 0.9, duration: 0.85, ease: 'power1.inOut' }, 0)
-          // Fade out only at the very end, when 1:2 is centered
-          .to(cellBg, { opacity: 0, duration: 0.15, ease: 'power1.in' }, 0.85);
+          // Zoom out across 1:1
+          .to(cellImg, { scale: 1.0, duration: 0.7, ease: 'power1.inOut' }, 0)
+          // Fade out before 1:2 "To:" reaches center
+          .to(cellBg, { opacity: 0, duration: 0.25, ease: 'power1.in' }, 0.75);
+        }
+      }
+
+      // Colossae parallax — clouds and mountain over city, camera zooms out
+      const colBg = document.getElementById('colossae-bg');
+      if (colBg) {
+        const v2sections = document.querySelectorAll('.phrase-section[data-verse="1:2"]');
+        if (v2sections.length) {
+          const firstV2 = v2sections[0];
+          const lastV2 = v2sections[v2sections.length - 1];
+
+          const cityLayer = colBg.querySelector('.layer-city');
+          const mountainLayer = colBg.querySelector('.layer-mountain');
+          const cloudImgs = colBg.querySelectorAll('.layer-clouds img');
+
+          // Start zoomed in — only clouds and mountain visible
+          gsap.set(cityLayer, { scale: 2.2 });
+          gsap.set(mountainLayer, { scale: 1.8, y: '15%' });
+
+          const colTl = gsap.timeline({
+            scrollTrigger: {
+              trigger: firstV2,
+              endTrigger: lastV2,
+              start: 'top 80%',
+              end: 'bottom center',
+              scrub: 1.5,
+            }
+          });
+
+          // Fade in the whole composite
+          colTl.to(colBg, { opacity: 0.2, duration: 0.12, ease: 'power1.out' }, 0);
+
+          // City zooms out to reveal the full scene
+          colTl.to(cityLayer, { scale: 1, duration: 1, ease: 'power1.inOut' }, 0);
+
+          // Mountain zooms out and settles
+          colTl.to(mountainLayer, { scale: 1, y: '0%', duration: 0.9, ease: 'power1.inOut' }, 0);
+
+          // Clouds drift outward and fade as we zoom out
+          cloudImgs.forEach((cloud, i) => {
+            const driftX = (i % 2 === 0 ? -1 : 1) * (40 + i * 15);
+            const driftY = -(20 + i * 10);
+            gsap.set(cloud, { scale: 1.5 });
+            colTl.to(cloud, {
+              x: driftX,
+              y: driftY,
+              scale: 0.8,
+              opacity: 0.2,
+              duration: 1,
+              ease: 'power1.inOut',
+            }, 0);
+          });
+
+          // Fade out after 1:2 ends
+          colTl.to(colBg, { opacity: 0, duration: 0.1, ease: 'power1.in' }, 0.9);
         }
       }
 
