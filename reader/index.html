@@ -267,11 +267,11 @@
 
     /* ── Phrase Sections ── */
     .phrase-section {
-      min-height: 100vh;
+      min-height: 70vh;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 4rem 2rem;
+      padding: 2rem 2rem;
       position: relative;
     }
 
@@ -322,7 +322,7 @@
 
     /* ── Parallax Divider ── */
     .divider {
-      height: 40vh;
+      height: 25vh;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -360,7 +360,7 @@
         right: 50%;
         transform: translateX(50%);
       }
-      .phrase-section { padding: 3rem 1.5rem; }
+      .phrase-section { padding: 1.5rem 1.5rem; min-height: 60vh; }
     }
 
     /* ── Inline Scene Images ── */
@@ -368,15 +368,17 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 2rem 2rem;
-      opacity: 0;
+      padding: 1rem 2rem;
+      position: relative;
+      z-index: 2;
+      pointer-events: none;
     }
 
     .scene-img-wrapper img {
       max-width: min(85vw, 680px);
       height: auto;
       border-radius: 6px;
-      will-change: transform, opacity;
+      will-change: transform;
     }
 
     /* ── Verse Background Layer ── */
@@ -658,26 +660,28 @@
         );
       });
 
-      // Scene images — smooth fade in, hold, fade out
+      // Scene images — parallax drift: images move up faster than scroll
+      // creating a floating-over-text effect inspired by ScrollSmoother data-speed
       document.querySelectorAll('.scene-img-wrapper').forEach(wrapper => {
         const img = wrapper.querySelector('img');
 
-        gsap.set(img, { y: 30, scale: 0.97 });
-
-        gsap.timeline({
-          scrollTrigger: {
-            trigger: wrapper,
-            start: 'top 90%',
-            end: 'bottom 10%',
-            scrub: 0.6,
+        // Parallax: image travels from +120px to -120px (240px total) while
+        // the wrapper scrolls through the viewport, making it feel faster
+        gsap.fromTo(img,
+          { y: 120, scale: 0.96, rotation: -0.5 },
+          {
+            y: -120,
+            scale: 1,
+            rotation: 0.5,
+            ease: 'none',
+            scrollTrigger: {
+              trigger: wrapper,
+              start: 'top bottom',
+              end: 'bottom top',
+              scrub: true,
+            }
           }
-        })
-        // Fade in smoothly
-        .to(wrapper, { opacity: 0.75, duration: 0.3, ease: 'power2.out' })
-        // Gentle drift and scale while visible
-        .to(img, { y: -15, scale: 1, duration: 0.8, ease: 'none' }, 0)
-        // Hold at peak briefly, then fade out
-        .to(wrapper, { opacity: 0, duration: 0.25, ease: 'power2.in' }, 0.7);
+        );
       });
 
       // Cell background — zoom out from deep inside the cell through prison bars
