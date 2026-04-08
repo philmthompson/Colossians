@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <defs>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f6d365"/>
+      <stop offset="30%" stop-color="#e8b730"/>
+      <stop offset="50%" stop-color="#fde68a"/>
+      <stop offset="70%" stop-color="#e8b730"/>
+      <stop offset="100%" stop-color="#f6d365"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <!-- Safe / vault — hope -->
+  <g filter="url(#glow)">
+    <!-- Outer body -->
+    <rect x="35" y="30" width="130" height="140" rx="6" stroke="url(#gold)" stroke-width="2.5" fill="none"/>
+    <!-- Inner body wireframe -->
+    <rect x="45" y="40" width="110" height="120" rx="4" stroke="url(#gold)" stroke-width="1" fill="none" opacity="0.35"/>
+    <!-- Door frame -->
+    <rect x="55" y="50" width="90" height="100" rx="3" stroke="url(#gold)" stroke-width="1.5" fill="none"/>
+    <!-- Combination dial — outer ring -->
+    <circle cx="100" cy="95" r="22" stroke="url(#gold)" stroke-width="2" fill="none"/>
+    <!-- Combination dial — inner ring -->
+    <circle cx="100" cy="95" r="14" stroke="url(#gold)" stroke-width="1" fill="none" opacity="0.5"/>
+    <!-- Dial tick marks -->
+    <line x1="100" y1="73" x2="100" y2="78" stroke="url(#gold)" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="100" y1="112" x2="100" y2="117" stroke="url(#gold)" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="78" y1="95" x2="83" y2="95" stroke="url(#gold)" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="117" y1="95" x2="122" y2="95" stroke="url(#gold)" stroke-width="1.5" stroke-linecap="round"/>
+    <!-- Dial center dot -->
+    <circle cx="100" cy="95" r="3" stroke="url(#gold)" stroke-width="1.5" fill="none"/>
+    <!-- Handle -->
+    <line x1="130" y1="88" x2="138" y2="88" stroke="url(#gold)" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="130" y1="102" x2="138" y2="102" stroke="url(#gold)" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="138" y1="88" x2="138" y2="102" stroke="url(#gold)" stroke-width="2.5" stroke-linecap="round"/>
+    <!-- Hinges -->
+    <rect x="55" y="60" width="4" height="12" rx="1" stroke="url(#gold)" stroke-width="1" fill="none" opacity="0.5"/>
+    <rect x="55" y="125" width="4" height="12" rx="1" stroke="url(#gold)" stroke-width="1" fill="none" opacity="0.5"/>
+    <!-- Top edge detail -->
+    <line x1="50" y1="30" x2="150" y2="30" stroke="url(#gold)" stroke-width="0.8" opacity="0.4"/>
+    <!-- Feet -->
+    <rect x="42" y="170" width="16" height="6" rx="2" stroke="url(#gold)" stroke-width="1.2" fill="none"/>
+    <rect x="142" y="170" width="16" height="6" rx="2" stroke="url(#gold)" stroke-width="1.2" fill="none"/>
+  </g>
+</svg>
