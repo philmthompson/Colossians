@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Colossae, AD 52</title>
+  <link rel="stylesheet" href="/src/styles.css" />
+</head>
+<body>
+  <div id="app">
+    <canvas id="c"></canvas>
+
+    <!-- Intro screen -->
+    <div id="intro">
+      <div id="intro-inner">
+        <div class="intro-eyebrow">Phrygia · Asia Minor</div>
+        <h1>COLOSSAE</h1>
+        <div class="intro-sub">AD 52</div>
+        <p class="intro-body">
+          Eight years before the great earthquake.<br>
+          Walk the Lycus valley as it was.
+        </p>
+        <button id="intro-btn">BEGIN</button>
+        <div class="intro-note">WASD + mouse to move &nbsp;·&nbsp; E to examine &nbsp;·&nbsp; M for map &nbsp;·&nbsp; Esc to pause</div>
+      </div>
+    </div>
+
+    <!-- HUD -->
+    <div id="reticle"></div>
+    <div id="compass-wrap"><div id="compass-strip"></div></div>
+    <div id="prompt-box" class="hidden"></div>
+
+    <!-- Banner -->
+    <div id="banner" class="hidden">
+      <div id="banner-rule-top"></div>
+      <div id="banner-title"></div>
+      <div id="banner-sub"></div>
+      <div id="banner-rule-bot"></div>
+    </div>
+
+    <!-- Letterbox -->
+    <div id="lb-top" class="letterbox hidden"></div>
+    <div id="lb-bot" class="letterbox hidden"></div>
+
+    <!-- Info card -->
+    <div id="card" class="hidden">
+      <div id="card-inner">
+        <div id="card-era"></div>
+        <h2 id="card-title"></h2>
+        <div id="card-body"></div>
+        <div id="card-accuracy"></div>
+        <div id="card-close">[E] Close</div>
+      </div>
+    </div>
+
+    <!-- Map -->
+    <div id="map-overlay" class="hidden">
+      <canvas id="map-canvas" width="700" height="500"></canvas>
+      <div id="map-close">[M] Close</div>
+    </div>
+
+    <!-- Vignette -->
+    <div id="vignette"></div>
+  </div>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
