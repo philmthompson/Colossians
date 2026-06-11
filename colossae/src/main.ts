@@ -14,6 +14,9 @@ import {
 import { initHUD, updateHUD, isCardOpen, setReticleActive, hidePrompt } from './ui/hud';
 import { updateRegions } from './game/regions';
 import { updateInteract, tryInteract, registerAllSites } from './game/interact';
+import { buildFlock, updateFlock } from './actors/sheep';
+import { buildNPCs } from './actors/npc';
+import { initWind } from './audio/wind';
 
 // ─── Renderer ────────────────────────────────────────────────────────────────
 const canvas = document.getElementById('c') as HTMLCanvasElement;
@@ -92,6 +95,13 @@ buildMilestone(scene);
 // ─── HUD + interaction ───────────────────────────────────────────────────────
 initHUD();
 registerAllSites();
+
+// ─── Actors ──────────────────────────────────────────────────────────────────
+buildFlock(scene);
+buildNPCs(scene);
+
+// ─── Audio ───────────────────────────────────────────────────────────────────
+initWind();
 
 // ─── Controls ────────────────────────────────────────────────────────────────
 initControls(camera, canvas);
@@ -261,6 +271,7 @@ function loop() {
 
   const locked = isPointerLocked(canvas);
   updateControls(camera, dt, locked);
+  updateFlock(dt);
   updateShadow();
   updateHUD(camera);
   if (!isCardOpen()) {
