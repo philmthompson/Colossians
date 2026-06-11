@@ -42,7 +42,7 @@ camera.position.set(-150, 0, -92);
 
 // ─── Lights ──────────────────────────────────────────────────────────────────
 // Warm afternoon sun from the west (low, golden)
-const sun = new THREE.DirectionalLight(0xffd58a, 2.2);
+const sun = new THREE.DirectionalLight(0xffd58a, 1.8);
 sun.position.set(-280, 120, 80);
 sun.castShadow = true;
 sun.shadow.mapSize.set(2048, 2048);
@@ -57,11 +57,11 @@ scene.add(sun);
 scene.add(sun.target);
 
 // Hemisphere fill — warm sky / cool earth
-const hemi = new THREE.HemisphereLight(0xd4b88a, 0x5a6040, 0.8);
+const hemi = new THREE.HemisphereLight(0xd4b88a, 0x5a6040, 1.0);
 scene.add(hemi);
 
 // Ambient
-const amb = new THREE.AmbientLight(0x8a7060, 0.35);
+const amb = new THREE.AmbientLight(0x8a7060, 0.5);
 scene.add(amb);
 
 // ─── World ───────────────────────────────────────────────────────────────────

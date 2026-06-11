@@ -29,6 +29,27 @@ function bridgeDeckY(x: number, z: number): number | null {
   return DECK_TOP;
 }
 
+// ─── Theatre step height (eastern arc cavea is climbable) ───────────────────
+// Constants must match theatre.ts exactly.
+const THEATRE_TX = 224, THEATRE_TZ = -48;
+const T_R_START  = 12;
+const T_TIER_W   = 2.2;
+const T_TIER_H   = 0.9;
+const T_TIERS    = 8;
+
+function theatreStepH(x: number, z: number): number | null {
+  const dx = x - THEATRE_TX;
+  const dz = z - THEATRE_TZ;
+  const r  = Math.sqrt(dx * dx + dz * dz);
+  if (r < T_R_START || r > T_R_START + T_TIERS * T_TIER_W) return null;
+  // Eastern arc: angle from +X axis within ±(PI*0.55)
+  if (Math.abs(Math.atan2(dz, dx)) >= Math.PI * 0.55) return null;
+  const tier = Math.floor((r - T_R_START) / T_TIER_W);
+  const clampedTier = Math.max(0, Math.min(T_TIERS - 1, tier));
+  const baseY = terrainH(THEATRE_TX, THEATRE_TZ);
+  return baseY + clampedTier * T_TIER_H;
+}
+
 // ─── Circle colliders (set by city/theatre builders) ─────────────────────────
 export interface Collider { x: number; z: number; r: number; }
 const colliders: Collider[] = [];
@@ -244,11 +265,13 @@ export function updateControls(
     }
   }
 
-  // Ground clamp + bridge override
+  // Ground clamp + bridge + theatre steps
   const gy = terrainH(nx, nz);
-  const bridge = bridgeDeckY(nx, nz);
+  const bridge  = bridgeDeckY(nx, nz);
+  const theatre = theatreStepH(nx, nz);
   let groundY = gy;
-  if (bridge !== null) groundY = Math.max(gy, bridge);
+  if (bridge  !== null) groundY = Math.max(groundY, bridge);
+  if (theatre !== null) groundY = Math.max(groundY, theatre);
 
   // Head bob
   const moving = move.lengthSq() > 0;

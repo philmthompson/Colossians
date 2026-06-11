@@ -10,9 +10,9 @@ export function buildTheatre(scene: THREE.Scene): void {
   const TX = 224, TZ = -48;
   const baseY = terrainH(TX, TZ);
 
-  const stoneMat  = new THREE.MeshLambertMaterial({ color: 0x9a8c78 });
-  const seatMat   = new THREE.MeshLambertMaterial({ color: 0xb0a488 });
-  const scaenaMat = new THREE.MeshLambertMaterial({ color: 0xc8b898 });
+  const stoneMat  = new THREE.MeshStandardMaterial({ color: 0x9a8c78, roughness: 0.88, metalness: 0 });
+  const seatMat   = new THREE.MeshStandardMaterial({ color: 0xb0a488, roughness: 0.88, metalness: 0 });
+  const scaenaMat = new THREE.MeshStandardMaterial({ color: 0xc8b898, roughness: 0.88, metalness: 0 });
 
   // Cavea: 8 stepped tiers, each a partial cylinder arc
   // Opening toward -X (west): theta start = Math.PI * 0.5, theta length = Math.PI
@@ -21,7 +21,7 @@ export function buildTheatre(scene: THREE.Scene): void {
   const TIER_H   = 0.9;
   const TIER_W   = 2.2; // radial depth per step
   const R_START  = 12;  // inner radius (orchestra edge)
-  const THETA_START = Math.PI * 0.5;   // start angle (south)
+  const THETA_START = -Math.PI * 0.5;  // start angle: eastern arc opening west
   const THETA_LEN   = Math.PI;         // half-circle arc
 
   for (let t = 0; t < TIERS; t++) {
@@ -49,20 +49,20 @@ export function buildTheatre(scene: THREE.Scene): void {
   // Orchestra floor (half-circle, level)
   const orchGeo = new THREE.CircleGeometry(R_START, 24, THETA_START, THETA_LEN);
   orchGeo.rotateX(-Math.PI / 2);
-  const orchMat = new THREE.MeshLambertMaterial({ color: 0xc0b090 });
+  const orchMat = new THREE.MeshStandardMaterial({ color: 0xc0b090, roughness: 0.88, metalness: 0 });
   const orch = new THREE.Mesh(orchGeo, orchMat);
   orch.position.set(TX, baseY + 0.05, TZ);
   orch.receiveShadow = true;
   scene.add(orch);
 
-  // Scaenae (low back wall on the EAST side — opposite the opening)
-  // The cavea opens west, so the scaena is on the east (+X) of center
-  const scaenaX = TX + R_START + 3;
+  // Scaenae (low back wall on the WEST side — behind the opening)
+  // The cavea opens west, so the scaena is on the west (-X) of center
+  const scaenaX = TX - R_START - 3;
   const scaena = new THREE.Mesh(new THREE.BoxGeometry(4, 6, 22), scaenaMat);
   scaena.position.set(scaenaX, baseY + 3, TZ);
   scaena.castShadow = true; scaena.receiveShadow = true;
   scene.add(scaena);
-  addCollider({ x: scaenaX, z: TZ, r: 4 });
+  addCollider({ x: scaenaX, z: TZ, r: 4 }); // scaenae only — no orchestra collider (climbable steps)
 
   // Outer retaining wall (curved back of cavea)
   const outerR = R_START + TIERS * TIER_W + 1;
@@ -73,5 +73,4 @@ export function buildTheatre(scene: THREE.Scene): void {
   retain.castShadow = true; retain.receiveShadow = true;
   scene.add(retain);
 
-  addCollider({ x: TX, z: TZ, r: 6 }); // loose collider around orchestra center
 }
