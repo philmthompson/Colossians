@@ -3,6 +3,8 @@ import { buildTerrain } from './world/terrain';
 import { buildSunDisc, buildClouds, buildNature } from './world/nature';
 import { buildWater } from './world/water';
 import { buildCity } from './world/city';
+import { buildTheatre } from './world/theatre';
+import { buildNecropolis, buildMilestone } from './world/necropolis';
 import {
   initControls,
   updateControls,
@@ -80,6 +82,9 @@ buildClouds(scene);
 buildNature(scene);
 buildWater(scene);
 buildCity(scene);
+buildTheatre(scene);
+buildNecropolis(scene);
+buildMilestone(scene);
 
 // ─── Controls ────────────────────────────────────────────────────────────────
 initControls(camera, canvas);
