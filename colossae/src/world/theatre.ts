@@ -8,101 +8,96 @@ import { addCollider } from '../player/controls';
 export function buildTheatre(scene: THREE.Scene): void {
   const TX = 224, TZ = -48;
   const baseY = terrainH(TX, TZ);
-  const SINK  = 8.0;
+  const SINK   = 8.0;
   const bottom = baseY - SINK;
 
-  const TIERS      = 8;
-  const TIER_H     = 0.9;
-  const TIER_W     = 2.2;
-  const R_START    = 12;
+  const TIERS       = 8;
+  const TIER_H      = 0.9;
+  const TIER_W      = 2.2;
+  const R_START     = 12;
   const THETA_START = -Math.PI * 0.5;
   const THETA_LEN   = Math.PI;
-  const SEG        = 32;
+  const SEG         = 36;
 
-  // Materials — light limestone against the sandy terrain
-  const baseMat   = new THREE.MeshStandardMaterial({ color: 0x8a7e6e, roughness: 0.92, metalness: 0 });
-  const seatMat   = new THREE.MeshStandardMaterial({ color: 0xe0d4b0, roughness: 0.85, metalness: 0, side: THREE.DoubleSide });
-  // BackSide: riser faces inward so they're visible from the orchestra / audience side
-  const riserMat  = new THREE.MeshStandardMaterial({ color: 0xb4a888, roughness: 0.90, metalness: 0, side: THREE.BackSide });
-  const wallMat   = new THREE.MeshStandardMaterial({ color: 0x9a8c7a, roughness: 0.90, metalness: 0, side: THREE.DoubleSide });
-  const orchMat   = new THREE.MeshStandardMaterial({ color: 0xd4c8a0, roughness: 0.88, metalness: 0 });
-  const scaenaMat = new THREE.MeshStandardMaterial({ color: 0xd0c8a8, roughness: 0.88, metalness: 0 });
+  // ── Wedding-cake solid tiers ─────────────────────────────────────────────────
+  // Layer t = solid half-cylinder from `bottom` (underground) to baseY + t*TIER_H.
+  // DoubleSide makes inner curved faces (the risers visible from orchestra) render.
+  // Alternating light/dark stone makes steps read clearly.
+  const lightSeat = new THREE.MeshStandardMaterial({ color: 0xddd4b4, roughness: 0.85, metalness: 0, side: THREE.DoubleSide });
+  const darkSeat  = new THREE.MeshStandardMaterial({ color: 0xa89870, roughness: 0.90, metalness: 0, side: THREE.DoubleSide });
 
-  // ── Solid grounded base ──────────────────────────────────────────────────────
-  // One large half-cylinder from `bottom` (8 m underground) to orchestra level.
-  // This mass sits firmly in the hillside — no floating.
-  const fullR     = R_START + TIERS * TIER_W + 2;
-  const baseTotalH = baseY + 0.1 - bottom;
-  const baseGeo   = new THREE.CylinderGeometry(fullR, fullR, baseTotalH, SEG, 1, false, THETA_START, THETA_LEN);
-  const baseMesh  = new THREE.Mesh(baseGeo, baseMat);
-  baseMesh.position.set(TX, bottom + baseTotalH * 0.5, TZ);
-  baseMesh.receiveShadow = true;
-  scene.add(baseMesh);
+  for (let t = TIERS; t >= 0; t--) {
+    const r      = R_START + t * TIER_W;
+    const topY   = baseY + t * TIER_H;
+    const totalH = topY - bottom;
+    const mat    = t === 0
+      ? new THREE.MeshStandardMaterial({ color: 0xc8bc96, roughness: 0.88, metalness: 0, side: THREE.DoubleSide })
+      : (t % 2 === 0 ? lightSeat : darkSeat);
 
-  // ── Orchestra floor ──────────────────────────────────────────────────────────
+    const geo  = new THREE.CylinderGeometry(r, r, totalH, SEG, 1, false, THETA_START, THETA_LEN);
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(TX, bottom + totalH * 0.5, TZ);
+    mesh.castShadow   = true;
+    mesh.receiveShadow = true;
+    scene.add(mesh);
+  }
+
+  // ── Orchestra paving ─────────────────────────────────────────────────────────
+  const orchMat = new THREE.MeshStandardMaterial({ color: 0xe8e0c0, roughness: 0.82, metalness: 0 });
   const orchGeo = new THREE.CircleGeometry(R_START, SEG, THETA_START, THETA_LEN);
   orchGeo.rotateX(-Math.PI / 2);
   const orch = new THREE.Mesh(orchGeo, orchMat);
-  orch.position.set(TX, baseY + 0.06, TZ);
+  orch.position.set(TX, baseY + 0.07, TZ);
   orch.receiveShadow = true;
   scene.add(orch);
 
-  // ── Seating tiers ────────────────────────────────────────────────────────────
-  // Each tier = flat TREAD ring (faces up, visible from front) +
-  //             RISER cylinder (BackSide = faces inward, visible from audience side)
-  for (let t = 0; t < TIERS; t++) {
-    const rInner = R_START + t * TIER_W;
-    const rOuter = R_START + (t + 1) * TIER_W;
-    const tierY  = baseY + t * TIER_H;
-
-    // Tread — flat ring, horizontal
-    const treadGeo = new THREE.RingGeometry(rInner, rOuter, SEG, 1, THETA_START, THETA_LEN);
-    treadGeo.rotateX(-Math.PI / 2);
-    const tread = new THREE.Mesh(treadGeo, seatMat);
-    tread.position.set(TX, tierY + 0.05, TZ);
-    tread.receiveShadow = true;
-    scene.add(tread);
-
-    // Riser — vertical cylinder, BackSide so it faces the audience
-    const riserH = TIER_H + 0.05;
-    const riserGeo = new THREE.CylinderGeometry(rInner, rInner, riserH, SEG, 1, true, THETA_START, THETA_LEN);
-    const riser = new THREE.Mesh(riserGeo, riserMat);
-    riser.position.set(TX, tierY + riserH * 0.5, TZ);
-    riser.castShadow = true;
-    scene.add(riser);
-  }
-
   // ── Outer retaining wall ─────────────────────────────────────────────────────
-  const outerR   = R_START + (TIERS + 1) * TIER_W;
-  const wallTopY = baseY + TIERS * TIER_H + 2.5;
-  const wallH    = wallTopY - bottom;
+  // Modest height — just clears the top tier by ~1.5 m.
+  const outerR    = R_START + (TIERS + 1) * TIER_W;
+  const wallTopY  = baseY + TIERS * TIER_H + 1.5;
+  const wallH     = wallTopY - bottom;
+  const wallMat   = new THREE.MeshStandardMaterial({ color: 0x9a8c78, roughness: 0.92, metalness: 0, side: THREE.DoubleSide });
   const retainGeo = new THREE.CylinderGeometry(outerR, outerR, wallH, SEG, 1, true, THETA_START, THETA_LEN);
-  const retain   = new THREE.Mesh(retainGeo, wallMat);
+  const retain    = new THREE.Mesh(retainGeo, wallMat);
   retain.position.set(TX, bottom + wallH * 0.5, TZ);
   retain.castShadow = true; retain.receiveShadow = true;
   scene.add(retain);
 
-  // ── Outer wall colliders (arc of circles) ────────────────────────────────────
-  const COL_R = outerR + 0.5;
+  // Solid end-caps at the two straight sides of the arc (plugs the open arc ends)
+  for (const side of [-1, 1]) {
+    const a    = THETA_START + (side > 0 ? THETA_LEN : 0);
+    const ex   = TX + outerR * 0.5 * Math.cos(a);
+    const ez   = TZ + outerR * 0.5 * Math.sin(a);
+    const capH = wallH;
+    const capGeo = new THREE.BoxGeometry(outerR, capH, 1.8);
+    const cap    = new THREE.Mesh(capGeo, wallMat);
+    cap.position.set(ex, bottom + capH * 0.5, ez);
+    cap.rotation.y = -a;
+    cap.castShadow = true; cap.receiveShadow = true;
+    scene.add(cap);
+  }
+
+  // ── Colliders: outer wall arc ────────────────────────────────────────────────
+  const colR = outerR + 0.5;
   for (let i = 0; i <= 24; i++) {
     const a = THETA_START + (i / 24) * THETA_LEN;
-    addCollider({ x: TX + COL_R * Math.cos(a), z: TZ + COL_R * Math.sin(a), r: 2.0 });
+    addCollider({ x: TX + colR * Math.cos(a), z: TZ + colR * Math.sin(a), r: 2.0 });
   }
 
   // ── Scaenae frons ────────────────────────────────────────────────────────────
-  const scaenaX = TX - R_START - 2;
-  const scaenaMinY = Math.min(
+  const scaenaMat = new THREE.MeshStandardMaterial({ color: 0xd4caa8, roughness: 0.88, metalness: 0 });
+  const scaenaX   = TX - R_START - 2;
+  const sMinY = Math.min(
     terrainH(scaenaX - 2, TZ - 11), terrainH(scaenaX - 2, TZ + 11),
     terrainH(scaenaX + 2, TZ - 11), terrainH(scaenaX + 2, TZ + 11),
     terrainH(scaenaX, TZ),
   );
-  const scaenaBottom = scaenaMinY - SINK;
-  const scaenaTop    = Math.max(
+  const sMaxY = Math.max(
     terrainH(scaenaX, TZ - 11), terrainH(scaenaX, TZ + 11), terrainH(scaenaX, TZ),
-  ) + 6.0;
-  const scaenaH = scaenaTop - scaenaBottom;
+  );
+  const scaenaH = (sMaxY + 5.5) - (sMinY - SINK);
   const scaena  = new THREE.Mesh(new THREE.BoxGeometry(4, scaenaH, 22), scaenaMat);
-  scaena.position.set(scaenaX, scaenaBottom + scaenaH * 0.5, TZ);
+  scaena.position.set(scaenaX, (sMinY - SINK) + scaenaH * 0.5, TZ);
   scaena.castShadow = true; scaena.receiveShadow = true;
   scene.add(scaena);
   for (let dz = -10; dz <= 10; dz += 4) {
@@ -110,11 +105,16 @@ export function buildTheatre(scene: THREE.Scene): void {
   }
 
   // ── Stage platform ────────────────────────────────────────────────────────────
-  const stageMinY  = Math.min(terrainH(scaenaX + 6, TZ - 5), terrainH(scaenaX + 6, TZ + 5)) - SINK;
-  const stageTopY  = baseY + 0.3;
-  const stageH     = stageTopY - stageMinY;
-  const stage      = new THREE.Mesh(new THREE.BoxGeometry(12, stageH, 22), scaenaMat);
-  stage.position.set(scaenaX + 6, stageMinY + stageH * 0.5, TZ);
+  const stx       = scaenaX + 6;
+  const stMinY    = Math.min(
+    terrainH(stx - 5, TZ - 5), terrainH(stx - 5, TZ + 5),
+    terrainH(stx + 5, TZ - 5), terrainH(stx + 5, TZ + 5),
+    terrainH(stx, TZ),
+  ) - SINK;
+  const stTopY    = baseY + 0.4;
+  const stageH    = stTopY - stMinY;
+  const stage     = new THREE.Mesh(new THREE.BoxGeometry(12, stageH, 22), scaenaMat);
+  stage.position.set(stx, stMinY + stageH * 0.5, TZ);
   stage.castShadow = true; stage.receiveShadow = true;
   scene.add(stage);
 }
