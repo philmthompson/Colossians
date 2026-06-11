@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite';
 
-const buildDate = new Date().toISOString().slice(0, 16).replace('T', ' ') + ' UTC';
+const buildDate = new Date().toISOString().slice(0, 16).replace('T', ' ') + ' UTC'; // workflow test
 
 export default defineConfig({
   define: {
