@@ -4,73 +4,95 @@ import { addCollider } from '../player/controls';
 
 // Theatre at (224, -48) on hill h≈13
 // Cavea on the EAST slope, opening WEST toward the city.
-// Sector centered on -X direction (west = -X in three.js +X=east space).
 
 export function buildTheatre(scene: THREE.Scene): void {
   const TX = 224, TZ = -48;
   const baseY = terrainH(TX, TZ);
 
-  const stoneMat  = new THREE.MeshStandardMaterial({ color: 0x9a8c78, roughness: 0.88, metalness: 0 });
-  const seatMat   = new THREE.MeshStandardMaterial({ color: 0xb0a488, roughness: 0.88, metalness: 0 });
-  const scaenaMat = new THREE.MeshStandardMaterial({ color: 0xc8b898, roughness: 0.88, metalness: 0 });
+  // Sink deeply enough to stay grounded on the hill slope
+  const SINK = 8.0;
+  const bottom = baseY - SINK;
 
-  // Cavea: 8 stepped tiers, each a partial cylinder arc
-  // Opening toward -X (west): theta start = Math.PI * 0.5, theta length = Math.PI
-  // This gives a semicircle opening in the -X direction
+  const stoneMat  = new THREE.MeshStandardMaterial({ color: 0x9a8c78, roughness: 0.9,  metalness: 0 });
+  const seatMat   = new THREE.MeshStandardMaterial({ color: 0xb8ac90, roughness: 0.88, metalness: 0 });
+  const orchMat   = new THREE.MeshStandardMaterial({ color: 0xc8b888, roughness: 0.88, metalness: 0 });
+  const scaenaMat = new THREE.MeshStandardMaterial({ color: 0xd0c4a0, roughness: 0.88, metalness: 0 });
+
   const TIERS = 8;
   const TIER_H   = 0.9;
-  const TIER_W   = 2.2; // radial depth per step
-  const R_START  = 12;  // inner radius (orchestra edge)
-  const THETA_START = -Math.PI * 0.5;  // start angle: eastern arc opening west
-  const THETA_LEN   = Math.PI;         // half-circle arc
+  const TIER_W   = 2.2;
+  const R_START  = 12;
+  const THETA_START = -Math.PI * 0.5;
+  const THETA_LEN   = Math.PI;
+  const RADIAL_SEGS = 32;
 
-  for (let t = 0; t < TIERS; t++) {
-    const r0 = R_START + t * TIER_W;
-    const r1 = r0 + TIER_W;
-    const tierY = baseY + t * TIER_H;
+  // ── Wedding-cake approach ────────────────────────────────────────────────────
+  // Each layer is a SOLID half-cylinder extending from `bottom` (underground)
+  // to its tier's top. Layers go from outermost (tallest) down to orchestra.
+  // Because every layer shares the same buried base, nothing can float.
+  //
+  // Layer count = TIERS + 1 (layers 0..TIERS where 0 = orchestra disc).
+  // Layer t has:
+  //   radius = R_START + t * TIER_W
+  //   topY   = baseY   + t * TIER_H
+  //
+  // The visible "seat" of seating-tier t is the top cap of layer t.
+  // The visible "riser" is the outer curved surface of layer t+1 above layer t.
 
-    // Use RingGeometry rotated flat for each tier platform
-    const geo = new THREE.RingGeometry(r0, r1, 24, 1, THETA_START, THETA_LEN);
-    geo.rotateX(-Math.PI / 2);
-    const platform = new THREE.Mesh(geo, seatMat);
-    platform.position.set(TX, tierY, TZ);
-    platform.receiveShadow = true;
-    scene.add(platform);
+  for (let t = TIERS; t >= 0; t--) {
+    const r   = R_START + t * TIER_W;
+    const topY = baseY + t * TIER_H;
+    const totalH = topY - bottom;
+    const mat = t === 0 ? orchMat : (t % 2 === 0 ? seatMat : stoneMat);
 
-    // Riser (vertical face)
-    const riserGeo = new THREE.CylinderGeometry(r0, r0, TIER_H, 24, 1, true,
-      THETA_START, THETA_LEN);
-    const riser = new THREE.Mesh(riserGeo, stoneMat);
-    riser.position.set(TX, tierY - TIER_H / 2, TZ);
-    riser.castShadow = true; riser.receiveShadow = true;
-    scene.add(riser);
+    const geo = new THREE.CylinderGeometry(r, r, totalH, RADIAL_SEGS, 1, false, THETA_START, THETA_LEN);
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(TX, bottom + totalH * 0.5, TZ);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    scene.add(mesh);
   }
 
-  // Orchestra floor (half-circle, level)
-  const orchGeo = new THREE.CircleGeometry(R_START, 24, THETA_START, THETA_LEN);
-  orchGeo.rotateX(-Math.PI / 2);
-  const orchMat = new THREE.MeshStandardMaterial({ color: 0xc0b090, roughness: 0.88, metalness: 0 });
-  const orch = new THREE.Mesh(orchGeo, orchMat);
-  orch.position.set(TX, baseY + 0.05, TZ);
-  orch.receiveShadow = true;
-  scene.add(orch);
-
-  // Scaenae (low back wall on the WEST side — behind the opening)
-  // The cavea opens west, so the scaena is on the west (-X) of center
-  const scaenaX = TX - R_START - 3;
-  const scaena = new THREE.Mesh(new THREE.BoxGeometry(4, 6, 22), scaenaMat);
-  scaena.position.set(scaenaX, baseY + 3, TZ);
-  scaena.castShadow = true; scaena.receiveShadow = true;
-  scene.add(scaena);
-  addCollider({ x: scaenaX, z: TZ, r: 4 }); // scaenae only — no orchestra collider (climbable steps)
-
-  // Outer retaining wall (curved back of cavea)
-  const outerR = R_START + TIERS * TIER_W + 1;
-  const retainGeo = new THREE.CylinderGeometry(outerR, outerR, 2, 24, 1, true,
-    THETA_START, THETA_LEN);
+  // ── Outer retaining wall ─────────────────────────────────────────────────────
+  // Curved stone wall behind the top tier, rising above the hillside.
+  const outerR  = R_START + (TIERS + 1) * TIER_W;
+  const wallTopY = baseY + TIERS * TIER_H + 2.5;
+  const wallH    = wallTopY - bottom;
+  const retainGeo = new THREE.CylinderGeometry(outerR, outerR, wallH, RADIAL_SEGS, 1, true, THETA_START, THETA_LEN);
   const retain = new THREE.Mesh(retainGeo, stoneMat);
-  retain.position.set(TX, baseY + TIERS * TIER_H - 1, TZ);
+  retain.position.set(TX, bottom + wallH * 0.5, TZ);
   retain.castShadow = true; retain.receiveShadow = true;
   scene.add(retain);
 
+  // ── Scaenae frons ────────────────────────────────────────────────────────────
+  // Stage building on the WEST side (in front of the opening).
+  const scaenaX  = TX - R_START - 2;
+  const scaenaMinY = Math.min(
+    terrainH(scaenaX - 2, TZ - 11),
+    terrainH(scaenaX - 2, TZ + 11),
+    terrainH(scaenaX + 2, TZ - 11),
+    terrainH(scaenaX + 2, TZ + 11),
+    terrainH(scaenaX, TZ),
+  );
+  const scaenaBottom = scaenaMinY - SINK;
+  const scaenaTop    = Math.max(
+    terrainH(scaenaX, TZ - 11),
+    terrainH(scaenaX, TZ + 11),
+    terrainH(scaenaX, TZ),
+  ) + 6.0;
+  const scaenaH = scaenaTop - scaenaBottom;
+  const scaena = new THREE.Mesh(new THREE.BoxGeometry(4, scaenaH, 22), scaenaMat);
+  scaena.position.set(scaenaX, scaenaBottom + scaenaH * 0.5, TZ);
+  scaena.castShadow = true; scaena.receiveShadow = true;
+  scene.add(scaena);
+  addCollider({ x: scaenaX, z: TZ, r: 4 });
+
+  // ── Stage platform ────────────────────────────────────────────────────────────
+  const stageY = baseY + 0.3;
+  const stageBottom = Math.min(terrainH(scaenaX + 6, TZ - 5), terrainH(scaenaX + 6, TZ + 5)) - SINK;
+  const stageH = stageY - stageBottom;
+  const stage = new THREE.Mesh(new THREE.BoxGeometry(12, stageH, 22), scaenaMat);
+  stage.position.set(scaenaX + 6, stageBottom + stageH * 0.5, TZ);
+  stage.castShadow = true; stage.receiveShadow = true;
+  scene.add(stage);
 }
