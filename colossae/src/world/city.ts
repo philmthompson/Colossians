@@ -17,22 +17,35 @@ function jitterMat(base: THREE.MeshStandardMaterial): THREE.MeshStandardMaterial
 }
 
 // ─── Terrain sampling helpers ─────────────────────────────────────────────────
-function footprintMinY(cx: number, cz: number, w: number, d: number): number {
+// 9-point grid: 4 corners + 4 edge midpoints + center
+function sampleFootprint(cx: number, cz: number, w: number, d: number): number[] {
   const hw = w * 0.5, hd = d * 0.5;
-  return Math.min(
+  return [
     terrainH(cx - hw, cz - hd),
+    terrainH(cx,      cz - hd),
     terrainH(cx + hw, cz - hd),
+    terrainH(cx - hw, cz),
+    terrainH(cx,      cz),
+    terrainH(cx + hw, cz),
     terrainH(cx - hw, cz + hd),
+    terrainH(cx,      cz + hd),
     terrainH(cx + hw, cz + hd),
-    terrainH(cx, cz),
-  );
+  ];
+}
+
+function footprintMinY(cx: number, cz: number, w: number, d: number): number {
+  return Math.min(...sampleFootprint(cx, cz, w, d));
+}
+
+function footprintMaxY(cx: number, cz: number, w: number, d: number): number {
+  return Math.max(...sampleFootprint(cx, cz, w, d));
 }
 
 // ─── Core grounded box builder ────────────────────────────────────────────────
-// Places a box so its visible top is at terrainH(cx,cz)+h+yOff and
-// its bottom extends below the lowest footprint corner by SINK metres.
-// On any slope the box is always buried — never hovering.
-const SINK = 3.0; // metres the base always goes below the lowest corner
+// bottom = minY - SINK  (always buried into ground on the downhill side)
+// top    = maxY + h     (always clears the ground on the uphill side)
+// This guarantees no gap and no floating on any slope.
+const SINK = 5.0;
 
 function groundedBox(
   scene: THREE.Scene,
@@ -43,11 +56,11 @@ function groundedBox(
   rot  = 0,
   shadow = true,
 ): THREE.Mesh {
-  const centerY = terrainH(cx, cz);
-  const minY    = footprintMinY(cx, cz, w, d);
-  const bottom  = minY - SINK;
-  const top     = centerY + h + yOff;
-  const totalH  = Math.max(top - bottom, h + SINK); // never shorter than original
+  const minY   = footprintMinY(cx, cz, w, d);
+  const maxY   = footprintMaxY(cx, cz, w, d);
+  const bottom = minY - SINK;
+  const top    = maxY + h + yOff;
+  const totalH = top - bottom;
 
   const geo  = new THREE.BoxGeometry(w, totalH, d);
   const mesh = new THREE.Mesh(geo, mat);
@@ -65,10 +78,15 @@ function column(
   r = 0.45, h = 4.5, yOff = 0,
   mat = columnMat,
 ): void {
-  const ty = terrainH(x, z);
-  const geo  = new THREE.CylinderGeometry(r, r * 1.08, h + SINK, 10);
+  // Sample a small footprint around the column base
+  const minY = footprintMinY(x, z, r * 3, r * 3);
+  const maxY = footprintMaxY(x, z, r * 3, r * 3);
+  const bottom = minY - SINK;
+  const top    = maxY + h + yOff;
+  const totalH = top - bottom;
+  const geo  = new THREE.CylinderGeometry(r, r * 1.08, totalH, 10);
   const mesh = new THREE.Mesh(geo, mat);
-  mesh.position.set(x, ty + h * 0.5 + yOff - SINK * 0.5, z);
+  mesh.position.set(x, bottom + totalH * 0.5, z);
   mesh.castShadow = true; mesh.receiveShadow = true;
   scene.add(mesh);
   addCollider({ x, z, r: r + 0.3 });
@@ -82,11 +100,11 @@ function house(
   rot = 0,
   collide = true,
 ): void {
-  const centerY = terrainH(x, z);
-  const minY    = footprintMinY(x, z, w, d);
-  const bottom  = minY - SINK;
-  const top     = centerY + wallH;
-  const totalH  = top - bottom;
+  const minY   = footprintMinY(x, z, w, d);
+  const maxY   = footprintMaxY(x, z, w, d);
+  const bottom = minY - SINK;
+  const top    = maxY + wallH;
+  const totalH = top - bottom;
 
   const walls = new THREE.Mesh(new THREE.BoxGeometry(w, totalH, d), jitterMat(stuccoMat));
   walls.position.set(x, bottom + totalH * 0.5, z);
@@ -124,21 +142,23 @@ function buildAcropolisWall(scene: THREE.Scene): void {
     const wx = CX + R * Math.cos(aMid);
     const wz = CZ + R * Math.sin(aMid);
 
-    // Sample terrain at both arc endpoints and segment center
-    const ty0  = terrainH(CX + R * Math.cos(a0), CZ + R * Math.sin(a0));
-    const ty1  = terrainH(CX + R * Math.cos(a1), CZ + R * Math.sin(a1));
-    const tyM  = terrainH(wx, wz);
-    const minY = Math.min(ty0, ty1, tyM);
-    const maxY = Math.max(ty0, ty1, tyM);
-
-    const bottom  = minY - SINK;
-    const top     = maxY + WALL_H;  // top clears the highest ground point
-    const totalH  = top - bottom;
+    // Sample terrain at both arc endpoints, midpoint, and inward/outward points
+    const pts = [
+      terrainH(CX + R * Math.cos(a0), CZ + R * Math.sin(a0)),
+      terrainH(CX + R * Math.cos(a1), CZ + R * Math.sin(a1)),
+      terrainH(wx, wz),
+      terrainH(CX + (R - WALL_W) * Math.cos(aMid), CZ + (R - WALL_W) * Math.sin(aMid)),
+      terrainH(CX + (R + WALL_W) * Math.cos(aMid), CZ + (R + WALL_W) * Math.sin(aMid)),
+    ];
+    const minY = Math.min(...pts) - SINK;
+    const maxY = Math.max(...pts);
+    const top    = maxY + WALL_H;
+    const totalH = top - minY;
     const segLen  = R * (Math.PI * 2 / SEGS) + 0.5;
 
     const geo  = new THREE.BoxGeometry(segLen, totalH, WALL_W);
     const mesh = new THREE.Mesh(geo, stoneMat);
-    mesh.position.set(wx, bottom + totalH * 0.5, wz);
+    mesh.position.set(wx, minY + totalH * 0.5, wz);
     mesh.rotation.y = -(aMid + Math.PI / 2);
     mesh.castShadow = true; mesh.receiveShadow = true;
     scene.add(mesh);
@@ -194,14 +214,10 @@ function buildCardo(scene: THREE.Scene): void {
 // ─── Agora ────────────────────────────────────────────────────────────────────
 function buildAgora(scene: THREE.Scene): void {
   const AX = 120, AZ = -44;
-  const ty  = terrainH(AX, AZ);
 
-  // Paved plaza
+  // Paved plaza — grounded slab so it hugs the terrain on slopes
   const plazaMat = new THREE.MeshStandardMaterial({ color: 0xb0a080, roughness: 0.88, metalness: 0 });
-  const plaza    = new THREE.Mesh(new THREE.CylinderGeometry(17, 17, 0.25, 24), plazaMat);
-  plaza.position.set(AX, ty + 0.1, AZ);
-  plaza.receiveShadow = true;
-  scene.add(plaza);
+  groundedBox(scene, plazaMat, AX, AZ, 34, 0.3, 34);
 
   // Stalls
   const stallDefs: [number, number, number][] = [
@@ -215,15 +231,15 @@ function buildAgora(scene: THREE.Scene): void {
   ];
   for (const [sx, sz, rot] of stallDefs) {
     groundedBox(scene, woodMat, sx, sz, 5, 2.8, 3.5, 0, rot);
-    // Awning
     const awningMat = new THREE.MeshStandardMaterial({
       color: Math.random() > 0.5 ? 0xaa3322 : 0x886633,
       side: THREE.DoubleSide, roughness: 0.9, metalness: 0,
     });
+    const maxY = footprintMaxY(sx, sz, 5, 3.5);
     const awning = new THREE.Mesh(new THREE.PlaneGeometry(5.5, 3), awningMat);
     awning.rotation.x = -Math.PI / 2;
     awning.rotation.z = rot;
-    awning.position.set(sx, terrainH(sx, sz) + 2.9, sz);
+    awning.position.set(sx, maxY + 2.9, sz);
     scene.add(awning);
     addCollider({ x: sx, z: sz, r: 2.8 });
   }
@@ -251,9 +267,10 @@ function buildBaths(scene: THREE.Scene): void {
   const BX = 156, BZ = -18;
   groundedBox(scene, stoneMat, BX, BZ, 22, 7, 15);
 
+  const maxY = footprintMaxY(BX, BZ, 22, 15);
   const domeGeo = new THREE.SphereGeometry(8, 14, 8, 0, Math.PI);
   const dome    = new THREE.Mesh(domeGeo, stoneMat);
-  dome.position.set(BX, terrainH(BX, BZ) + 7, BZ - 3);
+  dome.position.set(BX, maxY + 7, BZ - 3);
   dome.rotation.y = Math.PI;
   dome.castShadow = true;
   scene.add(dome);
@@ -263,29 +280,37 @@ function buildBaths(scene: THREE.Scene): void {
 // ─── Tyche Protogeneia sanctuary ──────────────────────────────────────────────
 function buildTemple(scene: THREE.Scene): void {
   const TX = 70, TZ = -10;
-  const ty = terrainH(TX, TZ);
 
-  // Podium — grounded
+  // Podium — grounded; top clears highest footprint corner
   groundedBox(scene, stoneMat, TX, TZ, 18, 1.2, 12);
+  const podiumTop = footprintMaxY(TX, TZ, 18, 12) + 1.2;
 
-  // Columns
+  // Columns rise from the podium top
   for (let c = 0; c < 4; c++) {
     for (const row of [-1, 1]) {
-      column(scene, TX - 6 + c * 4, TZ + row * 4, 0.4, 5.5, 1.2);
+      const cx = TX - 6 + c * 4, cz = TZ + row * 4;
+      const colBase = footprintMaxY(cx, cz, 0.9, 0.9);
+      const bottom = colBase - SINK;
+      const colH   = 5.5;
+      const top    = podiumTop + colH;
+      const totalH = top - bottom;
+      const geo  = new THREE.CylinderGeometry(0.4, 0.43, totalH, 10);
+      const mesh = new THREE.Mesh(geo, columnMat);
+      mesh.position.set(cx, bottom + totalH * 0.5, cz);
+      mesh.castShadow = true; mesh.receiveShadow = true;
+      scene.add(mesh);
+      addCollider({ x: cx, z: cz, r: 0.7 });
     }
   }
 
-  // Entablature
-  const entab = new THREE.Mesh(
-    new THREE.BoxGeometry(18, 0.9, 12),
-    stoneMat,
-  );
-  entab.position.set(TX, ty + 1.2 + 5.5 + 0.45, TZ);
+  // Entablature — sits on column tops
+  const entab = new THREE.Mesh(new THREE.BoxGeometry(18, 0.9, 12), stoneMat);
+  entab.position.set(TX, podiumTop + 5.5 + 0.45, TZ);
   entab.castShadow = true; scene.add(entab);
 
   // Pediment
   const ped = new THREE.Mesh(new THREE.CylinderGeometry(0, 10, 2.5, 3), stoneMat);
-  ped.position.set(TX, ty + 1.2 + 5.5 + 0.9 + 1.25, TZ);
+  ped.position.set(TX, podiumTop + 5.5 + 0.9 + 1.25, TZ);
   ped.rotation.y = Math.PI / 6;
   ped.scale.set(1, 1, 0.5);
   ped.castShadow = true; scene.add(ped);
@@ -293,10 +318,10 @@ function buildTemple(scene: THREE.Scene): void {
   // Cult statue
   const statMat  = new THREE.MeshStandardMaterial({ color: 0xd0c8a8, roughness: 0.88, metalness: 0 });
   const statBody = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.45, 2.8, 8), statMat);
-  statBody.position.set(TX, ty + 1.2 + 1.4, TZ);
+  statBody.position.set(TX, podiumTop + 1.4, TZ);
   statBody.castShadow = true; scene.add(statBody);
   const statHead = new THREE.Mesh(new THREE.SphereGeometry(0.3, 8, 6), statMat);
-  statHead.position.set(TX, ty + 1.2 + 2.8 + 0.3, TZ);
+  statHead.position.set(TX, podiumTop + 2.8 + 0.3, TZ);
   scene.add(statHead);
 
   addCollider({ x: TX, z: TZ, r: 10 });
@@ -323,10 +348,11 @@ function buildLowerCity(scene: THREE.Scene): void {
 // ─── House of Philemon ────────────────────────────────────────────────────────
 function buildPhilemonHouse(scene: THREE.Scene): void {
   const PX = 141, PZ = -86;
-  const ty  = terrainH(PX, PZ);
-  const minY = footprintMinY(PX, PZ, 18, 16);
+
+  const minY   = footprintMinY(PX, PZ, 18, 16);
+  const maxY   = footprintMaxY(PX, PZ, 18, 16);
   const bottom = minY - SINK;
-  const top    = ty + 4.5;
+  const top    = maxY + 4.5;
   const totalH = top - bottom;
 
   const walls = new THREE.Mesh(new THREE.BoxGeometry(18, totalH, 16), stuccoMat);
@@ -339,15 +365,13 @@ function buildPhilemonHouse(scene: THREE.Scene): void {
   roof.rotation.y = Math.PI / 4;
   roof.castShadow = true; scene.add(roof);
 
-  // Porch columns (south face)
   for (let i = 0; i < 4; i++) {
     column(scene, PX - 6 + i * 4, PZ + 8, 0.4, 5, 0);
   }
 
-  // Courtyard floor hint
   const courtMat = new THREE.MeshStandardMaterial({ color: 0x9a8068, roughness: 0.9, metalness: 0 });
   const court    = new THREE.Mesh(new THREE.BoxGeometry(10, 0.3, 10), courtMat);
-  court.position.set(PX, ty + 0.15, PZ);
+  court.position.set(PX, terrainH(PX, PZ) + 0.15, PZ);
   scene.add(court);
   addCollider({ x: PX, z: PZ, r: 10 });
 }
@@ -360,12 +384,10 @@ function buildDyeWorks(scene: THREE.Scene): void {
   ];
   for (const [vx, vz] of vatDefs) {
     const vty  = terrainH(vx, vz);
-    // Vat body — grounded
     const vatGeo  = new THREE.CylinderGeometry(1.6, 1.6, 1.5 + SINK, 12);
     const vatMesh = new THREE.Mesh(vatGeo, stoneMat);
     vatMesh.position.set(vx, vty - SINK * 0.5 + 0.75, vz);
     scene.add(vatMesh);
-    // Dye surface
     const dyeMesh = new THREE.Mesh(
       new THREE.CylinderGeometry(1.4, 1.4, 0.22, 12),
       redDyeMat,
@@ -375,7 +397,6 @@ function buildDyeWorks(scene: THREE.Scene): void {
     addCollider({ x: vx, z: vz, r: 2 });
   }
 
-  // Drying racks
   const rackMat = new THREE.MeshStandardMaterial({ color: 0x6a4a28, roughness: 0.92, metalness: 0 });
   const hankMat = new THREE.MeshStandardMaterial({ color: 0x8a1820, roughness: 0.88, metalness: 0 });
   const RACK_Z  = -99;
@@ -383,16 +404,13 @@ function buildDyeWorks(scene: THREE.Scene): void {
   for (let i = 0; i < 4; i++) {
     const rx  = 44 + i * 5;
     const rty = terrainH(rx, RACK_Z);
-    // Pole goes underground
     const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 4.5 + SINK, 6), rackMat);
     pole.position.set(rx, rty - SINK * 0.5 + 2.25, RACK_Z);
     scene.add(pole);
-    // Bar
     const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 4, 6), rackMat);
     bar.rotation.z = Math.PI / 2;
     bar.position.set(rx, rty + 4.0, RACK_Z);
     scene.add(bar);
-    // Hanks
     for (let h = 0; h < 3; h++) {
       const hank = new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.12, 6, 10), hankMat);
       hank.rotation.x = Math.PI / 2;
