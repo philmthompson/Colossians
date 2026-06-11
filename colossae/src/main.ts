@@ -18,6 +18,10 @@ import { buildFlock, updateFlock } from './actors/sheep';
 import { buildNPCs } from './actors/npc';
 import { initWind } from './audio/wind';
 
+// ─── Build version stamp ─────────────────────────────────────────────────────
+const versionEl = document.getElementById('build-version');
+if (versionEl) versionEl.textContent = `build ${__BUILD_DATE__}`;
+
 // ─── Renderer ────────────────────────────────────────────────────────────────
 const canvas = document.getElementById('c') as HTMLCanvasElement;
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });

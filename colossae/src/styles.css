@@ -220,3 +220,12 @@ canvas#c {
 }
 
 .hidden { display: none !important; }
+
+/* Build version stamp on intro screen */
+#build-version {
+  margin-top: 1.4rem;
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  color: rgba(201,165,92,0.45);
+  font-family: monospace;
+}

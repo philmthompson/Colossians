@@ -1,6 +1,11 @@
 import { defineConfig } from 'vite';
 
+const buildDate = new Date().toISOString().slice(0, 16).replace('T', ' ') + ' UTC';
+
 export default defineConfig({
+  define: {
+    __BUILD_DATE__: JSON.stringify(buildDate),
+  },
   base: './',
   build: {
     outDir: 'dist',
