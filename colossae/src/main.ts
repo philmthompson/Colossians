@@ -11,6 +11,8 @@ import {
   isPointerLocked,
   setYaw,
 } from './player/controls';
+import { initHUD, updateHUD, isCardOpen } from './ui/hud';
+import { updateRegions } from './game/regions';
 
 // ─── Renderer ────────────────────────────────────────────────────────────────
 const canvas = document.getElementById('c') as HTMLCanvasElement;
@@ -85,6 +87,9 @@ buildCity(scene);
 buildTheatre(scene);
 buildNecropolis(scene);
 buildMilestone(scene);
+
+// ─── HUD ─────────────────────────────────────────────────────────────────────
+initHUD();
 
 // ─── Controls ────────────────────────────────────────────────────────────────
 initControls(camera, canvas);
@@ -251,6 +256,8 @@ function loop() {
   const locked = isPointerLocked(canvas);
   updateControls(camera, dt, locked);
   updateShadow();
+  updateHUD(camera);
+  if (!isCardOpen()) updateRegions(camera.position);
 
   renderer.render(scene, camera);
 }
