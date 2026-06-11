@@ -1,0 +1,23 @@
+name: Trigger Pages Deploy
+
+on:
+  push:
+    branches: [claude/awesome-shannon-08rxxx]
+    paths: [colossae/**]
+
+permissions:
+  actions: write
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'deploy-colossae.yml',
+              ref: 'main',
+            });
