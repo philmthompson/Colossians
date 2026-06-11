@@ -64,6 +64,17 @@ export function buildTheatre(scene: THREE.Scene): void {
   retain.castShadow = true; retain.receiveShadow = true;
   scene.add(retain);
 
+  // ── Colliders for the outer retaining wall (arc of circles) ─────────────────
+  // Place one collider every ~5° around the eastern arc so the player
+  // can't walk through the curved stone wall.
+  const COL_R = outerR + 0.5; // collider radius sits just outside the wall
+  const COL_STEPS = 24;
+  for (let i = 0; i <= COL_STEPS; i++) {
+    const frac = i / COL_STEPS;
+    const a = THETA_START + frac * THETA_LEN;
+    addCollider({ x: TX + COL_R * Math.cos(a), z: TZ + COL_R * Math.sin(a), r: 2.0 });
+  }
+
   // ── Scaenae frons ────────────────────────────────────────────────────────────
   // Stage building on the WEST side (in front of the opening).
   const scaenaX  = TX - R_START - 2;
@@ -85,7 +96,10 @@ export function buildTheatre(scene: THREE.Scene): void {
   scaena.position.set(scaenaX, scaenaBottom + scaenaH * 0.5, TZ);
   scaena.castShadow = true; scaena.receiveShadow = true;
   scene.add(scaena);
-  addCollider({ x: scaenaX, z: TZ, r: 4 });
+  // Row of colliders spanning the full 22-unit scaena length
+  for (let dz = -10; dz <= 10; dz += 4) {
+    addCollider({ x: scaenaX, z: TZ + dz, r: 3.5 });
+  }
 
   // ── Stage platform ────────────────────────────────────────────────────────────
   const stageY = baseY + 0.3;

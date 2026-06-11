@@ -41,8 +41,8 @@ scene.background = new THREE.Color(FOG_COLOR);
 
 // ─── Camera ──────────────────────────────────────────────────────────────────
 const camera = new THREE.PerspectiveCamera(72, innerWidth / innerHeight, 0.3, 1200);
-// Spawn: western road at (-150, z=-92), y clamped to ground on first frame
-camera.position.set(-150, 0, -92);
+// Spawn: inside the lower city, facing the acropolis
+camera.position.set(100, 0, -50);
 
 // ─── Lights ──────────────────────────────────────────────────────────────────
 // Warm afternoon sun from the west (low, golden)
@@ -94,8 +94,8 @@ initWind();
 
 // ─── Controls ────────────────────────────────────────────────────────────────
 initControls(camera, canvas);
-// Face east on spawn
-setYaw(Math.PI / 2);
+// Face west (toward acropolis) on spawn
+setYaw(-Math.PI / 2);
 
 // ─── Intro screen ────────────────────────────────────────────────────────────
 const intro    = document.getElementById('intro')!;
