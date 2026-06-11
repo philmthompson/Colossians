@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { buildTerrain } from './world/terrain';
 import { buildSunDisc, buildClouds, buildNature } from './world/nature';
+import { buildWater } from './world/water';
 import {
   initControls,
   updateControls,
@@ -76,6 +77,7 @@ scene.add(terrain);
 buildSunDisc(scene);
 buildClouds(scene);
 buildNature(scene);
+buildWater(scene);
 
 // ─── Controls ────────────────────────────────────────────────────────────────
 initControls(camera, canvas);
