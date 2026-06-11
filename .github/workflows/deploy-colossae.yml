@@ -2,9 +2,14 @@ name: Deploy Colossae to GitHub Pages
 
 on:
   push:
-    branches: [claude/awesome-shannon-08rxxx, main]
+    branches: [claude/awesome-shannon-08rxxx]
     paths: [colossae/**]
   workflow_dispatch:
+    inputs:
+      ref:
+        description: Branch to build from
+        default: claude/awesome-shannon-08rxxx
+        required: true
 
 permissions:
   contents: read
@@ -23,12 +28,12 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || 'claude/awesome-shannon-08rxxx' }}
 
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
-          cache-dependency-path: colossae/package-lock.json
 
       - name: Install
         run: npm ci
