@@ -1,15 +1,7 @@
 name: Deploy Colossae to GitHub Pages
 
 on:
-  push:
-    branches: [claude/awesome-shannon-08rxxx]
-    paths: [colossae/**]
   workflow_dispatch:
-    inputs:
-      ref:
-        description: Branch to build from
-        default: claude/awesome-shannon-08rxxx
-        required: true
 
 permissions:
   contents: read
@@ -26,7 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.ref || 'claude/awesome-shannon-08rxxx' }}
+          ref: claude/awesome-shannon-08rxxx
 
       - uses: actions/setup-node@v4
         with:
