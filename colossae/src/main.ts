@@ -11,8 +11,9 @@ import {
   isPointerLocked,
   setYaw,
 } from './player/controls';
-import { initHUD, updateHUD, isCardOpen } from './ui/hud';
+import { initHUD, updateHUD, isCardOpen, setReticleActive, hidePrompt } from './ui/hud';
 import { updateRegions } from './game/regions';
+import { updateInteract, tryInteract, registerAllSites } from './game/interact';
 
 // ─── Renderer ────────────────────────────────────────────────────────────────
 const canvas = document.getElementById('c') as HTMLCanvasElement;
@@ -88,8 +89,9 @@ buildTheatre(scene);
 buildNecropolis(scene);
 buildMilestone(scene);
 
-// ─── HUD ─────────────────────────────────────────────────────────────────────
+// ─── HUD + interaction ───────────────────────────────────────────────────────
 initHUD();
+registerAllSites();
 
 // ─── Controls ────────────────────────────────────────────────────────────────
 initControls(camera, canvas);
@@ -108,6 +110,10 @@ introBtn.addEventListener('click', () => {
 
 // ─── Key events (map, esc) ───────────────────────────────────────────────────
 document.addEventListener('keydown', (e) => {
+  if (e.code === 'KeyE') {
+    if (isCardOpen()) closeCard();
+    else tryInteract();
+  }
   if (e.code === 'KeyM') toggleMap();
   if (e.code === 'Escape') {
     const card = document.getElementById('card');
@@ -257,7 +263,13 @@ function loop() {
   updateControls(camera, dt, locked);
   updateShadow();
   updateHUD(camera);
-  if (!isCardOpen()) updateRegions(camera.position);
+  if (!isCardOpen()) {
+    updateRegions(camera.position);
+    updateInteract(camera, locked);
+  } else {
+    setReticleActive(false);
+    hidePrompt();
+  }
 
   renderer.render(scene, camera);
 }
