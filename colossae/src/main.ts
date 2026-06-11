@@ -37,23 +37,8 @@ scene.background = new THREE.Color(FOG_COLOR);
 
 // ─── Camera ──────────────────────────────────────────────────────────────────
 const camera = new THREE.PerspectiveCamera(72, innerWidth / innerHeight, 0.3, 1200);
-// Spawn: western road, facing east (yaw = 0 = looking toward +X with -Z offset)
-camera.position.set(-150, 0, -92); // y will be ground-clamped on first frame
-setYaw(-Math.PI); // face east (flipped: +Z behind, -Z = north, facing +X = east...
-// three.js default look is -Z. yaw=0 → looking toward -Z (north). yaw=-π → looking +Z (south).
-// Actually for the player: forward = -sin(yaw)*x - cos(yaw)*z in controls.
-// We want to face east (+X). sin(yaw) should give dx forward.
-// Forward = (sin(yaw), 0, cos(yaw)), to face +X: sin(yaw)=1, yaw = PI/2... let me fix.
-// Spawn facing east → yaw such that forward.x > 0.
-// forward = (-sin(yaw), 0, -cos(yaw)) no — let me check controls.ts:
-// forward = (sin(yaw), 0, cos(yaw)), move.sub(forward) for W key.
-// To face east (+X): we want camera to look toward +X.
-// camera.rotation.y = yaw, rotation order YXZ.
-// With order YXZ and rotation.y = yaw, camera looks in direction (sin(yaw), 0, -cos(yaw))
-// To look toward +X: sin(yaw)=1 → yaw = PI/2 ...
-// Hmm but move direction uses: forward = (sin(yaw), 0, cos(yaw))
-// These are the stride vectors not the look direction — camera look is separate.
-// Let me just set a sensible initial yaw and not over-think it.
+// Spawn: western road at (-150, z=-92), y clamped to ground on first frame
+camera.position.set(-150, 0, -92);
 
 // ─── Lights ──────────────────────────────────────────────────────────────────
 // Warm afternoon sun from the west (low, golden)
@@ -270,13 +255,14 @@ function loop() {
   prev = now;
 
   const locked = isPointerLocked(canvas);
+  const active = locked || window.matchMedia('(pointer: coarse)').matches;
   updateControls(camera, dt, locked);
   updateFlock(dt);
   updateShadow();
   updateHUD(camera);
   if (!isCardOpen()) {
     updateRegions(camera.position);
-    updateInteract(camera, locked);
+    updateInteract(camera, active);
   } else {
     setReticleActive(false);
     hidePrompt();

@@ -20,7 +20,7 @@ let nearestId: string | null = null;
 
 export function updateInteract(
   camera: THREE.Camera,
-  locked: boolean,
+  active: boolean,
 ): void {
   const px = camera.position.x;
   const pz = camera.position.z;
@@ -38,7 +38,7 @@ export function updateInteract(
     }
   }
 
-  if (closest && locked) {
+  if (closest && active) {
     nearestId = closest.id;
     const site = getSite(closest.id);
     if (site) {
