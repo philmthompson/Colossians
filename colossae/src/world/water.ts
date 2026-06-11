@@ -7,8 +7,8 @@ const CHASM_X1    = 165;
 const WATER_Y     = -11.5; // sits just above gorge floor
 
 // ─── Animated water material ──────────────────────────────────────────────────
-function waterMat(color: number): THREE.MeshLambertMaterial {
-  return new THREE.MeshLambertMaterial({ color, transparent: true, opacity: 0.78 });
+function waterMat(color: number): THREE.MeshStandardMaterial {
+  return new THREE.MeshStandardMaterial({ color, transparent: true, opacity: 0.78, roughness: 0.88, metalness: 0 });
 }
 
 // ─── West river reach (x: -500 → CHASM_X0) ───────────────────────────────────
@@ -40,14 +40,14 @@ function buildChasmFloor(scene: THREE.Scene): void {
   const len = CHASM_X1 - CHASM_X0; // 105
   const geo = new THREE.PlaneGeometry(len, 18, 1, 1);
   geo.rotateX(-Math.PI / 2);
-  const mat = new THREE.MeshLambertMaterial({ color: 0x1e1a14 });
+  const mat = new THREE.MeshStandardMaterial({ color: 0x1e1a14, roughness: 0.88, metalness: 0 });
   const mesh = new THREE.Mesh(geo, mat);
   mesh.position.set(CHASM_X0 + len / 2, WATER_Y - 2, RIVER_Z);
   mesh.receiveShadow = true;
   scene.add(mesh);
 
   // Travertine blocks scattered in the chasm
-  const blockMat = new THREE.MeshLambertMaterial({ color: 0x8a7a60 });
+  const blockMat = new THREE.MeshStandardMaterial({ color: 0x8a7a60, roughness: 0.88, metalness: 0 });
   const blockPositions: [number, number, number, number, number, number][] = [
     [80,  WATER_Y - 0.5, -118, 6, 2, 4],
     [100, WATER_Y + 0.2, -122, 8, 3, 5],
@@ -70,7 +70,7 @@ function buildChasmFloor(scene: THREE.Scene): void {
 
 // ─── Gorge walls — narrow canyon sides ────────────────────────────────────────
 function buildGorgeWalls(scene: THREE.Scene): void {
-  const wallMat = new THREE.MeshLambertMaterial({ color: 0x6a5c48 });
+  const wallMat = new THREE.MeshStandardMaterial({ color: 0x6a5c48, roughness: 0.88, metalness: 0 });
   // Two long planes either side of the river, extruded down
   const wallLen = 1000;
   const wallH   = 14;
@@ -91,7 +91,7 @@ export function buildBridge(scene: THREE.Scene): void {
   const DECK_Y = -8;
   const DECK_LEN = 42; // z: -140 → -98 (approach ramps included)
 
-  const stoneMat = new THREE.MeshLambertMaterial({ color: 0x9a8870 });
+  const stoneMat = new THREE.MeshStandardMaterial({ color: 0x9a8870, roughness: 0.88, metalness: 0 });
 
   // Deck slab
   const deckGeo = new THREE.BoxGeometry(8, 1.2, DECK_LEN);

@@ -3,12 +3,31 @@ import { terrainH } from './terrain';
 import { addCollider } from '../player/controls';
 
 // ─── Shared materials ─────────────────────────────────────────────────────────
-const stoneMat  = new THREE.MeshLambertMaterial({ color: 0x9a8c78 });
-const stuccoMat = new THREE.MeshLambertMaterial({ color: 0xc8b898 });
-const roofMat   = new THREE.MeshLambertMaterial({ color: 0xa04830 });
-const columnMat = new THREE.MeshLambertMaterial({ color: 0xd4c8a8 });
-const woodMat   = new THREE.MeshLambertMaterial({ color: 0x7a5a38 });
-const redDyeMat = new THREE.MeshLambertMaterial({ color: 0x8a1e1e });
+const stoneMat  = new THREE.MeshStandardMaterial({ color: 0x9a8c78, roughness: 0.88, metalness: 0 });
+const stuccoMat = new THREE.MeshStandardMaterial({ color: 0xc8b898, roughness: 0.88, metalness: 0 });
+const roofMat   = new THREE.MeshStandardMaterial({ color: 0xa04830, roughness: 0.88, metalness: 0 });
+const columnMat = new THREE.MeshStandardMaterial({ color: 0xd4c8a8, roughness: 0.88, metalness: 0 });
+const woodMat   = new THREE.MeshStandardMaterial({ color: 0x7a5a38, roughness: 0.88, metalness: 0 });
+const redDyeMat = new THREE.MeshStandardMaterial({ color: 0x8a1e1e, roughness: 0.88, metalness: 0 });
+
+// ─── Per-building colour jitter (±8% brightness) ──────────────────────────────
+function jitterMat(base: THREE.MeshStandardMaterial): THREE.MeshStandardMaterial {
+  const m = base.clone();
+  const f = 1 + (Math.random() - 0.5) * 0.16; // ±8%
+  m.color.multiplyScalar(f);
+  return m;
+}
+
+// ─── Sample terrain at all 4 footprint corners, return minimum ────────────────
+function footprintMinY(x: number, z: number, w: number, d: number): number {
+  const hw = w / 2, hd = d / 2;
+  return Math.min(
+    terrainH(x - hw, z - hd),
+    terrainH(x + hw, z - hd),
+    terrainH(x - hw, z + hd),
+    terrainH(x + hw, z + hd),
+  );
+}
 
 // ─── Helper: place a box on the terrain surface ───────────────────────────────
 function box(
@@ -21,7 +40,7 @@ function box(
 ): THREE.Mesh {
   const geo = new THREE.BoxGeometry(w, h, d);
   const mesh = new THREE.Mesh(geo, mat);
-  const ty = terrainH(x, z);
+  const ty = footprintMinY(x, z, w, d);
   mesh.position.set(x, ty + h / 2 + yOff, z);
   if (shadow) { mesh.castShadow = true; mesh.receiveShadow = true; }
   scene.add(mesh);
@@ -53,15 +72,16 @@ function house(
   rot = 0,
   collide = true,
 ) {
-  const ty = terrainH(x, z);
-  const walls = new THREE.Mesh(new THREE.BoxGeometry(w, wallH, d), stuccoMat);
+  const ty = footprintMinY(x, z, w, d);
+  const wallsMat = jitterMat(stuccoMat);
+  const walls = new THREE.Mesh(new THREE.BoxGeometry(w, wallH, d), wallsMat);
   walls.position.set(x, ty + wallH / 2, z);
   walls.rotation.y = rot;
   walls.castShadow = true; walls.receiveShadow = true;
   scene.add(walls);
 
   const roofGeo = new THREE.ConeGeometry(Math.max(w, d) * 0.72, wallH * 0.55, 4);
-  const roof = new THREE.Mesh(roofGeo, roofMat);
+  const roof = new THREE.Mesh(roofGeo, jitterMat(roofMat));
   roof.position.set(x, ty + wallH + wallH * 0.2, z);
   roof.rotation.y = Math.PI / 4 + rot;
   roof.castShadow = true; roof.receiveShadow = true;
@@ -138,7 +158,7 @@ function buildSilo(scene: THREE.Scene): void {
 
   // Dark pit floor
   const pitGeo = new THREE.CylinderGeometry(R - 0.2, R - 0.2, 0.2, 16);
-  const pitMat = new THREE.MeshLambertMaterial({ color: 0x1a1410 });
+  const pitMat = new THREE.MeshStandardMaterial({ color: 0x1a1410 });
   const pit = new THREE.Mesh(pitGeo, pitMat);
   pit.position.set(SX, ty - 0.05, SZ);
   scene.add(pit);
@@ -165,7 +185,7 @@ function buildAgora(scene: THREE.Scene): void {
 
   // Paved plaza floor
   const plazaGeo = new THREE.CylinderGeometry(17, 17, 0.25, 20);
-  const plazaMat = new THREE.MeshLambertMaterial({ color: 0xb0a080 });
+  const plazaMat = new THREE.MeshStandardMaterial({ color: 0xb0a080 });
   const plaza = new THREE.Mesh(plazaGeo, plazaMat);
   plaza.position.set(AX, ty + 0.1, AZ);
   plaza.receiveShadow = true;
@@ -191,7 +211,7 @@ function buildAgora(scene: THREE.Scene): void {
     frame.castShadow = true; scene.add(frame);
 
     // Awning (flat plane tilted)
-    const awningMat = new THREE.MeshLambertMaterial({
+    const awningMat = new THREE.MeshStandardMaterial({
       color: (Math.random() > 0.5 ? 0xaa3322 : 0x886633),
       side: THREE.DoubleSide,
     });
@@ -212,7 +232,7 @@ function buildAgora(scene: THREE.Scene): void {
     [AX - 5,  AZ + 4,  0xe0d8c0],
     [AX + 2,  AZ - 6,  0xc03028],
   ];
-  const baleMat0 = new THREE.MeshLambertMaterial({ color: 0 });
+  const baleMat0 = new THREE.MeshStandardMaterial({ color: 0 });
   for (const [bx, bz, col] of balePositions) {
     const bMat = baleMat0.clone();
     bMat.color.set(col);
@@ -274,7 +294,7 @@ function buildTemple(scene: THREE.Scene): void {
   scene.add(ped);
 
   // Cult statue (simplified humanoid)
-  const statMat = new THREE.MeshLambertMaterial({ color: 0xd0c8a8 });
+  const statMat = new THREE.MeshStandardMaterial({ color: 0xd0c8a8 });
   const statBody = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.45, 2.8, 8), statMat);
   statBody.position.set(TX, ty + 1.2 + 1.4, TZ);
   statBody.castShadow = true;
@@ -345,7 +365,7 @@ function buildPhilemonHouse(scene: THREE.Scene): void {
   }
 
   // Peristyle courtyard hint — low inner walls
-  const courtMat = new THREE.MeshLambertMaterial({ color: 0x9a8068 });
+  const courtMat = new THREE.MeshStandardMaterial({ color: 0x9a8068 });
   const courtGeo = new THREE.BoxGeometry(10, 0.3, 10);
   const court = new THREE.Mesh(courtGeo, courtMat);
   court.position.set(PX, ty + 0.15, PZ);
@@ -380,8 +400,8 @@ function buildDyeWorks(scene: THREE.Scene): void {
   }
 
   // Drying racks (horizontal poles with crimson hanks)
-  const rackMat = new THREE.MeshLambertMaterial({ color: 0x6a4a28 });
-  const hankMat = new THREE.MeshLambertMaterial({ color: 0x8a1820 });
+  const rackMat = new THREE.MeshStandardMaterial({ color: 0x6a4a28 });
+  const hankMat = new THREE.MeshStandardMaterial({ color: 0x8a1820 });
   const rackZOffset = -99;
 
   for (let i = 0; i < 4; i++) {

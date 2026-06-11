@@ -4,9 +4,9 @@ import { addCollider } from '../player/controls';
 
 export function buildNecropolis(scene: THREE.Scene): void {
   // ~22 bathtub-type tombs: x -35→95, z -180→-225 (north bank)
-  const travertineMat = new THREE.MeshLambertMaterial({ color: 0xc8b898 });
-  const lidMat        = new THREE.MeshLambertMaterial({ color: 0xb8a888 });
-  const darkMat       = new THREE.MeshLambertMaterial({ color: 0x1a1410 });
+  const travertineMat = new THREE.MeshStandardMaterial({ color: 0xc8b898, roughness: 0.88, metalness: 0 });
+  const lidMat        = new THREE.MeshStandardMaterial({ color: 0xb8a888, roughness: 0.88, metalness: 0 });
+  const darkMat       = new THREE.MeshStandardMaterial({ color: 0x1a1410, roughness: 0.88, metalness: 0 });
 
   const tombPositions: [number, number, boolean][] = [
     [-30, -185, false],
@@ -78,7 +78,7 @@ export function buildNecropolis(scene: THREE.Scene): void {
 export function buildMilestone(scene: THREE.Scene): void {
   const MX = 292, MZ = -89;
   const ty = terrainH(MX, MZ);
-  const mat = new THREE.MeshLambertMaterial({ color: 0x7a7060 });
+  const mat = new THREE.MeshStandardMaterial({ color: 0x7a7060, roughness: 0.88, metalness: 0 });
 
   // Column milestone
   const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.3, 1.6, 10), mat);

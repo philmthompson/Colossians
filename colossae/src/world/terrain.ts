@@ -75,10 +75,10 @@ export function buildTerrain(): THREE.Mesh {
   pos.needsUpdate = true;
   geo.computeVertexNormals();
 
-  // Vertex colours
+  // Vertex colours — uses BOTH height AND slope (normal.y)
   const colors = new Float32Array(count * 3);
-  const colArr = geo.attributes.color as THREE.BufferAttribute | undefined;
-  void colArr; // will set below
+
+  const nrm = geo.attributes.normal as THREE.BufferAttribute;
 
   const ROAD_Z = -92;
   const ROAD_WIDTH = 7;
@@ -89,29 +89,46 @@ export function buildTerrain(): THREE.Mesh {
     const x = pos.getX(i);
     const z = pos.getZ(i);
     const y = pos.getY(i);
+    const ny = nrm.getY(i); // 1 = flat, 0 = vertical cliff
 
     let r: number, g: number, b: number;
 
-    // Snow on Cadmus peaks
-    if (y > 180) {
-      r = 0.92; g = 0.93; b = 0.95;
-    } else if (y > 140) {
-      const t = (y - 140) / 40;
-      r = 0.62 + 0.3 * t; g = 0.58 + 0.35 * t; b = 0.50 + 0.45 * t;
-    } else if (y > 30) {
-      // Rock
-      r = 0.58; g = 0.52; b = 0.44;
-    } else if (y > 12) {
-      // Dry scrub gold
-      r = 0.70; g = 0.62; b = 0.40;
-    } else if (y > 3) {
-      // Valley grass
-      r = 0.46; g = 0.52; b = 0.30;
-    } else if (y < -6) {
-      // Gorge / water shadow
-      r = 0.22; g = 0.26; b = 0.28;
+    // Steep faces → dark rock regardless of height
+    if (ny < 0.55) {
+      r = 0.35; g = 0.30; b = 0.25;
+    } else if (ny < 0.78) {
+      // Moderate slope — blend rock toward height-based colour
+      const blend = (ny - 0.55) / 0.23; // 0→1 as slope eases
+      // height-based target
+      let hr: number, hg: number, hb: number;
+      if (y > 180) {
+        hr = 0.92; hg = 0.93; hb = 0.95;
+      } else if (y > 30) {
+        hr = 0.58; hg = 0.52; hb = 0.44;
+      } else {
+        hr = 0.46; hg = 0.52; hb = 0.30;
+      }
+      r = 0.35 + (hr - 0.35) * blend;
+      g = 0.30 + (hg - 0.30) * blend;
+      b = 0.25 + (hb - 0.25) * blend;
     } else {
-      r = 0.42; g = 0.48; b = 0.28;
+      // Flat — height-based
+      if (y > 180) {
+        r = 0.92; g = 0.93; b = 0.95;
+      } else if (y > 140) {
+        const t = (y - 140) / 40;
+        r = 0.62 + 0.3 * t; g = 0.58 + 0.35 * t; b = 0.50 + 0.45 * t;
+      } else if (y > 30) {
+        r = 0.58; g = 0.52; b = 0.44;
+      } else if (y > 12) {
+        r = 0.70; g = 0.62; b = 0.40;
+      } else if (y > 3) {
+        r = 0.46; g = 0.52; b = 0.30;
+      } else if (y < -6) {
+        r = 0.22; g = 0.26; b = 0.28;
+      } else {
+        r = 0.42; g = 0.48; b = 0.28;
+      }
     }
 
     // Road tint (dusty tan) — E–W trade road
@@ -134,8 +151,10 @@ export function buildTerrain(): THREE.Mesh {
 
   geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
-  const mat = new THREE.MeshLambertMaterial({
+  const mat = new THREE.MeshStandardMaterial({
     vertexColors: true,
+    roughness: 0.88,
+    metalness: 0,
   });
 
   const mesh = new THREE.Mesh(geo, mat);
