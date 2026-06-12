@@ -40,18 +40,24 @@ function theatreStepH(x: number, z: number): number | null {
 
 // ─── Temple podium floor (player can walk on top of the podium steps) ─────────
 const TEMPLE_TX = 70, TEMPLE_TZ = -10;
-const TEMPLE_R_INNER = 9.5, TEMPLE_R_OUTER = 12.0;
+
+// Mirrors footprintMaxY(70,-10,18,12) + 1.2 from city.ts — precomputed once.
+const TEMPLE_PODIUM_TOP: number = (() => {
+  let max = -Infinity;
+  for (const ox of [-9, 0, 9]) for (const oz of [-6, 0, 6]) {
+    max = Math.max(max, terrainH(TEMPLE_TX + ox, TEMPLE_TZ + oz));
+  }
+  return max + 1.2;
+})();
 
 function templeFloorY(x: number, z: number): number | null {
   const dx = x - TEMPLE_TX, dz = z - TEMPLE_TZ;
-  const r  = Math.sqrt(dx * dx + dz * dz);
-  if (r > TEMPLE_R_OUTER) return null;
-  const floorY = terrainH(TEMPLE_TX, TEMPLE_TZ) + 2.0;
-  if (r <= TEMPLE_R_INNER) return floorY;          // inside colonnade
+  // On the podium surface (rectangular footprint: 18 wide × 12 deep)
+  if (Math.abs(dx) <= 9 && Math.abs(dz) <= 6) return TEMPLE_PODIUM_TOP;
   // Step ramps on BOTH ends — east (city) and west (acropolis) approaches.
-  if (Math.abs(dz) < 6.5) {
-    const t = (r - TEMPLE_R_INNER) / (TEMPLE_R_OUTER - TEMPLE_R_INNER);
-    return floorY * (1 - t) + terrainH(x, z) * t;
+  if (Math.abs(dz) <= 6 && Math.abs(dx) <= 12) {
+    const t = (Math.abs(dx) - 9) / 3;
+    return TEMPLE_PODIUM_TOP * (1 - t) + terrainH(x, z) * t;
   }
   return null;
 }
@@ -63,8 +69,8 @@ function templeFloorY(x: number, z: number): number | null {
 // sinking through it.
 function buildingFloorY(x: number, z: number): number | null {
   // Agora plaza slab
-  if (Math.abs(x - 120) < 17 && Math.abs(z + 44) < 17) {
-    return terrainH(120, -44) + 0.3;
+  if (Math.abs(x - 118) < 16 && Math.abs(z + 48) < 18) {
+    return terrainH(118, -48) + 0.3;
   }
   // Baths roof — only when approaching from the hill side (terrain nearly as high)
   {
@@ -342,8 +348,8 @@ export function updateControls(
   } else {
     if (keys['KeyW'] || keys['ArrowUp'])    { moveX -= sinY; moveZ -= cosY; }
     if (keys['KeyS'] || keys['ArrowDown'])  { moveX += sinY; moveZ += cosY; }
-    if (keys['KeyA'] || keys['ArrowLeft'])  { moveX -= cosY; moveZ += sinY; }
-    if (keys['KeyD'] || keys['ArrowRight']) { moveX += cosY; moveZ -= sinY; }
+    if (keys['KeyA'] || keys['ArrowLeft'])  { moveX += cosY; moveZ -= sinY; }
+    if (keys['KeyD'] || keys['ArrowRight']) { moveX -= cosY; moveZ += sinY; }
 
     const len = Math.sqrt(moveX * moveX + moveZ * moveZ);
     if (len > 0) { moveX /= len; moveZ /= len; }
