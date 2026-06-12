@@ -1,6 +1,9 @@
 name: Deploy Colossae to GitHub Pages
 
 on:
+  push:
+    branches: [main]
+    paths: [colossae/**]
   workflow_dispatch:
 
 permissions:
@@ -10,15 +13,13 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: false   # let an in-progress deploy finish; queue next
+  cancel-in-progress: false
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: claude/awesome-shannon-08rxxx
 
       - uses: actions/setup-node@v4
         with:
