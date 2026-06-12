@@ -1,161 +1,113 @@
-import * as THREE from 'three';
+import { Scene, MeshBuilder, StandardMaterial, Color3 } from '@babylonjs/core';
 import { terrainH } from './terrain';
 
-const RIVER_Z     = -120;
-const CHASM_X0    =  60;
-const CHASM_X1    = 165;
-const WATER_Y     = -11.5; // sits just above gorge floor
+const RIVER_Z  = -120;
+const CHASM_X0 =  60;
+const CHASM_X1 = 165;
+const WATER_Y  = -11.5;
 
-// ─── Animated water material ──────────────────────────────────────────────────
-function waterMat(color: number): THREE.MeshStandardMaterial {
-  return new THREE.MeshStandardMaterial({ color, transparent: true, opacity: 0.78, roughness: 0.88, metalness: 0 });
+function wmat(name: string, hex: number, alpha: number, scene: Scene): StandardMaterial {
+  const m = new StandardMaterial(name, scene);
+  m.diffuseColor  = new Color3(((hex >> 16) & 255) / 255, ((hex >> 8) & 255) / 255, (hex & 255) / 255);
+  m.specularColor = Color3.Black();
+  m.alpha = alpha;
+  return m;
 }
 
-// ─── West river reach (x: -500 → CHASM_X0) ───────────────────────────────────
-function buildWestReach(scene: THREE.Scene): void {
-  const len = CHASM_X0 - (-500); // 560
-  const geo = new THREE.PlaneGeometry(len, 16, 1, 1);
-  geo.rotateX(-Math.PI / 2);
-  const mat = waterMat(0x3a6080);
-  const mesh = new THREE.Mesh(geo, mat);
+function smat(name: string, hex: number, scene: Scene): StandardMaterial {
+  const m = new StandardMaterial(name, scene);
+  m.diffuseColor  = new Color3(((hex >> 16) & 255) / 255, ((hex >> 8) & 255) / 255, (hex & 255) / 255);
+  m.specularColor = Color3.Black();
+  return m;
+}
+
+function buildWestReach(scene: Scene): void {
+  const len = CHASM_X0 - (-500);
+  const mesh = MeshBuilder.CreateGround('west-river', { width: len, height: 16, subdivisions: 1 }, scene);
   mesh.position.set(-500 + len / 2, WATER_Y, RIVER_Z);
-  mesh.receiveShadow = true;
-  scene.add(mesh);
+  mesh.material = wmat('ww', 0x3a6080, 0.78, scene);
 }
 
-// ─── East river reach (x: CHASM_X1 → 500) ────────────────────────────────────
-function buildEastReach(scene: THREE.Scene): void {
-  const len = 500 - CHASM_X1; // 335
-  const geo = new THREE.PlaneGeometry(len, 16, 1, 1);
-  geo.rotateX(-Math.PI / 2);
-  const mat = waterMat(0x3a6080);
-  const mesh = new THREE.Mesh(geo, mat);
+function buildEastReach(scene: Scene): void {
+  const len = 500 - CHASM_X1;
+  const mesh = MeshBuilder.CreateGround('east-river', { width: len, height: 16, subdivisions: 1 }, scene);
   mesh.position.set(CHASM_X1 + len / 2, WATER_Y, RIVER_Z);
-  mesh.receiveShadow = true;
-  scene.add(mesh);
+  mesh.material = wmat('ew', 0x3a6080, 0.78, scene);
 }
 
-// ─── Chasm floor (dark rock) ──────────────────────────────────────────────────
-function buildChasmFloor(scene: THREE.Scene): void {
-  const len = CHASM_X1 - CHASM_X0; // 105
-  const geo = new THREE.PlaneGeometry(len, 18, 1, 1);
-  geo.rotateX(-Math.PI / 2);
-  const mat = new THREE.MeshStandardMaterial({ color: 0x1e1a14, roughness: 0.88, metalness: 0 });
-  const mesh = new THREE.Mesh(geo, mat);
-  mesh.position.set(CHASM_X0 + len / 2, WATER_Y - 2, RIVER_Z);
-  mesh.receiveShadow = true;
-  scene.add(mesh);
+function buildChasmFloor(scene: Scene): void {
+  const len = CHASM_X1 - CHASM_X0;
+  const floor = MeshBuilder.CreateGround('chasm-floor', { width: len, height: 18, subdivisions: 1 }, scene);
+  floor.position.set(CHASM_X0 + len / 2, WATER_Y - 2, RIVER_Z);
+  floor.material = smat('cf', 0x1e1a14, scene);
 
-  // Travertine blocks scattered in the chasm
-  const blockMat = new THREE.MeshStandardMaterial({ color: 0x8a7a60, roughness: 0.88, metalness: 0 });
-  const blockPositions: [number, number, number, number, number, number][] = [
-    [80,  WATER_Y - 0.5, -118, 6, 2, 4],
-    [100, WATER_Y + 0.2, -122, 8, 3, 5],
-    [120, WATER_Y - 0.8, -119, 5, 2, 3],
-    [140, WATER_Y + 0.1, -121, 7, 2.5, 4],
-    [155, WATER_Y - 0.3, -118, 4, 1.8, 3],
-    [90,  WATER_Y - 0.4, -124, 5, 1.5, 4],
-    [110, WATER_Y + 0.3, -116, 6, 2, 5],
+  const blockM = smat('blk', 0x8a7a60, scene);
+  const blocks: [number, number, number, number, number, number][] = [
+    [80, WATER_Y-0.5, -118, 6, 2, 4], [100, WATER_Y+0.2, -122, 8, 3, 5],
+    [120, WATER_Y-0.8, -119, 5, 2, 3],[140, WATER_Y+0.1, -121, 7, 2.5, 4],
+    [155, WATER_Y-0.3, -118, 4, 1.8, 3],[90, WATER_Y-0.4, -124, 5, 1.5, 4],
+    [110, WATER_Y+0.3, -116, 6, 2, 5],
   ];
-  for (const [bx, by, bz, bw, bh, bd] of blockPositions) {
-    const bg = new THREE.BoxGeometry(bw, bh, bd);
-    const bm = new THREE.Mesh(bg, blockMat);
+  for (const [bx, by, bz, bw, bh, bd] of blocks) {
+    const bm = MeshBuilder.CreateBox('blk', { width: bw, height: bh, depth: bd }, scene);
     bm.position.set(bx, by, bz);
     bm.rotation.y = Math.random() * 0.6 - 0.3;
-    bm.castShadow = true;
-    bm.receiveShadow = true;
-    scene.add(bm);
+    bm.material = blockM;
   }
 }
 
-// ─── Gorge walls — narrow canyon sides ────────────────────────────────────────
-function buildGorgeWalls(scene: THREE.Scene): void {
-  const wallMat = new THREE.MeshStandardMaterial({ color: 0x6a5c48, roughness: 0.88, metalness: 0 });
-  // Two long planes either side of the river, extruded down
-  const wallLen = 1000;
-  const wallH   = 14;
-
+function buildGorgeWalls(scene: Scene): void {
+  const wallM = smat('gorge', 0x6a5c48, scene);
+  wallM.backFaceCulling = false;
+  const wallLen = 1000, wallH = 14;
   for (const side of [-1, 1]) {
-    const geo = new THREE.PlaneGeometry(wallLen, wallH, 1, 1);
-    geo.rotateY(side > 0 ? Math.PI : 0);
-    const mesh = new THREE.Mesh(geo, wallMat);
+    const mesh = MeshBuilder.CreatePlane('gorge-wall', { width: wallLen, height: wallH }, scene);
+    mesh.rotation.y = side > 0 ? 0 : Math.PI;
     mesh.position.set(0, WATER_Y + wallH / 2 - 1, RIVER_Z + side * 9);
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
-    scene.add(mesh);
+    mesh.material = wallM;
   }
-}
-
-// ─── Bridge at x=22 ───────────────────────────────────────────────────────────
-export function buildBridge(scene: THREE.Scene): void {
-  const DECK_Y = -8;
-  const DECK_LEN = 42; // z: -140 → -98 (approach ramps included)
-
-  const stoneMat = new THREE.MeshStandardMaterial({ color: 0x9a8870, roughness: 0.88, metalness: 0 });
-
-  // Deck slab
-  const deckGeo = new THREE.BoxGeometry(8, 1.2, DECK_LEN);
-  const deck = new THREE.Mesh(deckGeo, stoneMat);
-  deck.position.set(22, DECK_Y, -119);
-  deck.castShadow = true;
-  deck.receiveShadow = true;
-  scene.add(deck);
-
-  // Piers (2 piers straddling gorge)
-  const pierPositions: [number, number][] = [
-    [22, -114],
-    [22, -124],
-  ];
-  const pierH = 8;
-  for (const [px, pz] of pierPositions) {
-    const pg = new THREE.BoxGeometry(2.5, pierH, 2.5);
-    const pm = new THREE.Mesh(pg, stoneMat);
-    pm.position.set(px, DECK_Y - pierH / 2, pz);
-    pm.castShadow = true;
-    pm.receiveShadow = true;
-    scene.add(pm);
-  }
-
-  // Parapet walls along each side of bridge
-  for (const side of [-1, 1]) {
-    const pg = new THREE.BoxGeometry(0.6, 0.9, DECK_LEN - 4);
-    const pm = new THREE.Mesh(pg, stoneMat);
-    pm.position.set(22 + side * 4.2, DECK_Y + 0.9, -119);
-    pm.castShadow = true; pm.receiveShadow = true;
-    scene.add(pm);
-  }
-
-  // Approach ramps — wedge geometry via BoxGeometry + rotation trick
-  // North ramp: z from -140 to -130
-  buildRamp(scene, stoneMat, 22, -135,  DECK_Y, terrainH(22, -140), 10);
-  // South ramp: z from -108 to -98
-  buildRamp(scene, stoneMat, 22, -103, DECK_Y, terrainH(22, -98),  10, true);
 }
 
 function buildRamp(
-  scene: THREE.Scene,
-  mat: THREE.Material,
-  rx: number,
-  rz: number,
-  deckY: number,
-  groundY: number,
-  len: number,
-  flip = false,
-) {
-  const h = Math.abs(deckY - groundY) + 1;
-  const geo = new THREE.BoxGeometry(8, h, len);
-  const mesh = new THREE.Mesh(geo, mat);
-  // Tilt so one end is at deckY and the other at groundY
+  scene: Scene,
+  m: StandardMaterial,
+  rx: number, rz: number,
+  deckY: number, groundY: number,
+  len: number, flip = false,
+): void {
+  const h     = Math.abs(deckY - groundY) + 1;
+  const ramp  = MeshBuilder.CreateBox('ramp', { width: 8, height: h, depth: len }, scene);
   const angle = Math.atan2(deckY - groundY, len) * (flip ? -1 : 1);
-  mesh.rotation.x = angle;
-  mesh.position.set(rx, (deckY + groundY) / 2, rz);
-  mesh.castShadow = true;
-  mesh.receiveShadow = true;
-  scene.add(mesh);
+  ramp.rotation.x = angle;
+  ramp.position.set(rx, (deckY + groundY) / 2, rz);
+  ramp.material = m;
 }
 
-// ─── Main export ──────────────────────────────────────────────────────────────
-export function buildWater(scene: THREE.Scene): void {
+export function buildBridge(scene: Scene): void {
+  const DECK_Y = -8, DECK_LEN = 42;
+  const stoneMat = smat('bridge-s', 0x9a8870, scene);
+
+  const deck = MeshBuilder.CreateBox('deck', { width: 8, height: 1.2, depth: DECK_LEN }, scene);
+  deck.position.set(22, DECK_Y, -119);
+  deck.material = stoneMat;
+
+  for (const pz of [-114, -124]) {
+    const pier = MeshBuilder.CreateBox('pier', { width: 2.5, height: 8, depth: 2.5 }, scene);
+    pier.position.set(22, DECK_Y - 4, pz);
+    pier.material = stoneMat;
+  }
+
+  for (const side of [-1, 1]) {
+    const par = MeshBuilder.CreateBox('par', { width: 0.6, height: 0.9, depth: DECK_LEN - 4 }, scene);
+    par.position.set(22 + side * 4.2, DECK_Y + 0.9, -119);
+    par.material = stoneMat;
+  }
+
+  buildRamp(scene, stoneMat, 22, -135,  DECK_Y, terrainH(22, -140), 10);
+  buildRamp(scene, stoneMat, 22, -103,  DECK_Y, terrainH(22, -98),  10, true);
+}
+
+export function buildWater(scene: Scene): void {
   buildWestReach(scene);
   buildEastReach(scene);
   buildChasmFloor(scene);

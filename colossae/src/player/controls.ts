@@ -1,88 +1,67 @@
-import * as THREE from 'three';
+import { UniversalCamera, Scene } from '@babylonjs/core';
 import { terrainH } from '../world/terrain';
 
-const WALK_SPEED  = 7.5;
-const RUN_SPEED   = 14;
-const PLAYER_H    = 1.75;
-const FOV_WALK    = 72;
-const FOV_RUN     = 76;
+const WALK_SPEED = 7.5;
+const RUN_SPEED  = 14;
+const PLAYER_H   = 1.75;
+const FOV_WALK   = 72 * Math.PI / 180;
+const FOV_RUN    = 76 * Math.PI / 180;
 
-// ─── Bridge deck profile ─────────────────────────────────────────────────────
-// Bridge at x=22, spanning gorge at z≈-120, deck ~6 m above gorge floor
+// ─── Bridge deck ─────────────────────────────────────────────────────────────
 function bridgeDeckY(x: number, z: number): number | null {
-  if (Math.abs(x - 22) > 4.5) return null; // not on bridge width
-  const deckZ0 = -140, deckZ1 = -102; // approach ramp extents
+  if (Math.abs(x - 22) > 4.5) return null;
+  const deckZ0 = -140, deckZ1 = -102;
   if (z < deckZ0 || z > deckZ1) return null;
-  // Deck height: gorge floor at z=-120 is terrainH(22,-120)≈-13
-  // Deck sits ~3 m above that
   const DECK_TOP = -8;
-  // Ramped approaches
-  const rampLen = 10;
+  const rampLen  = 10;
   if (z < deckZ0 + rampLen) {
     const t = (z - deckZ0) / rampLen;
-    return THREE.MathUtils.lerp(terrainH(22, deckZ0), DECK_TOP, t);
+    return terrainH(22, deckZ0) + (DECK_TOP - terrainH(22, deckZ0)) * t;
   }
   if (z > deckZ1 - rampLen) {
     const t = (deckZ1 - z) / rampLen;
-    return THREE.MathUtils.lerp(terrainH(22, deckZ1), DECK_TOP, t);
+    return terrainH(22, deckZ1) + (DECK_TOP - terrainH(22, deckZ1)) * t;
   }
   return DECK_TOP;
 }
 
-// ─── Theatre step height (eastern arc cavea is climbable) ───────────────────
-// Constants must match theatre.ts exactly.
+// ─── Theatre step height ──────────────────────────────────────────────────────
 const THEATRE_TX = 224, THEATRE_TZ = -48;
-const T_R_START  = 12;
-const T_TIER_W   = 2.2;
-const T_TIER_H   = 0.9;
-const T_TIERS    = 8;
+const T_R_START  = 12, T_TIER_W = 2.2, T_TIER_H = 0.9, T_TIERS = 8;
 
 function theatreStepH(x: number, z: number): number | null {
-  const dx = x - THEATRE_TX;
-  const dz = z - THEATRE_TZ;
+  const dx = x - THEATRE_TX, dz = z - THEATRE_TZ;
   const r  = Math.sqrt(dx * dx + dz * dz);
   if (r < T_R_START || r > T_R_START + T_TIERS * T_TIER_W) return null;
-  // Eastern arc: angle from +X axis within ±(PI*0.55)
   if (Math.abs(Math.atan2(dz, dx)) >= Math.PI * 0.55) return null;
-  const tier = Math.floor((r - T_R_START) / T_TIER_W);
-  const clampedTier = Math.max(0, Math.min(T_TIERS - 1, tier));
-  const baseY = terrainH(THEATRE_TX, THEATRE_TZ);
-  return baseY + clampedTier * T_TIER_H;
+  const tier = Math.max(0, Math.min(T_TIERS - 1, Math.floor((r - T_R_START) / T_TIER_W)));
+  return terrainH(THEATRE_TX, THEATRE_TZ) + tier * T_TIER_H;
 }
 
-// ─── Circle colliders (set by city/theatre builders) ─────────────────────────
+// ─── Circle colliders ─────────────────────────────────────────────────────────
 export interface Collider { x: number; z: number; r: number; }
 const colliders: Collider[] = [];
 export function addCollider(c: Collider) { colliders.push(c); }
 
-// ─── State ───────────────────────────────────────────────────────────────────
+// ─── State ────────────────────────────────────────────────────────────────────
 const keys: Record<string, boolean> = {};
-let yaw   = 0; // radians, controlled by mouse
-let pitch = 0;
-let running = false;
-
-let bobPhase = 0;
-let fovCurrent = FOV_WALK;
-
-export const velocity = new THREE.Vector3();
+let yaw = 0, pitch = 0, running = false;
+let bobPhase = 0, fovCurrent = FOV_WALK;
 export let bobOffset = 0;
 
-// ─── Touch state ──────────────────────────────────────────────────────────────
+// ─── Touch ────────────────────────────────────────────────────────────────────
 const touch = {
-  joyId:   -1, joyX: 0,  joyY: 0,   // left joystick
-  lookId:  -1, lookPrevX: 0, lookPrevY: 0, // right half drag-look
+  joyId: -1, joyX: 0, joyY: 0,
+  lookId: -1, lookPrevX: 0, lookPrevY: 0,
   joyOriginX: 0, joyOriginY: 0,
 };
 let touchActive = false;
-// Virtual key state driven by touch
-const touchKeys = { w: false, a: false, s: false, d: false };
 
-// ─── Setup ───────────────────────────────────────────────────────────────────
-export function initControls(
-  camera: THREE.PerspectiveCamera,
-  canvas: HTMLCanvasElement,
-): void {
-  // Detect coarse pointer → show touch UI
+// ─── Init ─────────────────────────────────────────────────────────────────────
+export function initControls(camera: UniversalCamera, canvas: HTMLCanvasElement): void {
+  camera.inputs.clear();
+  camera.minZ = 0.3;
+
   if (window.matchMedia('(pointer: coarse)').matches) {
     touchActive = true;
     buildTouchHUD();
@@ -90,10 +69,6 @@ export function initControls(
 
   canvas.addEventListener('click', () => {
     if (!touchActive) canvas.requestPointerLock();
-  });
-
-  document.addEventListener('pointerlockchange', () => {
-    // nothing special needed
   });
 
   document.addEventListener('mousemove', (e) => {
@@ -106,12 +81,9 @@ export function initControls(
   document.addEventListener('keydown', (e) => { keys[e.code] = true; });
   document.addEventListener('keyup',   (e) => { keys[e.code] = false; });
 
-  // Touch handlers
   canvas.addEventListener('touchstart', onTouchStart, { passive: false });
   canvas.addEventListener('touchmove',  onTouchMove,  { passive: false });
   canvas.addEventListener('touchend',   onTouchEnd,   { passive: false });
-
-  camera.rotation.order = 'YXZ';
 }
 
 function buildTouchHUD(): void {
@@ -132,11 +104,9 @@ function buildTouchHUD(): void {
       letter-spacing:0.1em; border-radius:4px; z-index:50; }
   `;
   document.head.appendChild(style);
-
   const joy = document.createElement('div'); joy.id = 'touch-joy';
   joy.innerHTML = '<div id="touch-joy-dot"></div>';
   document.body.appendChild(joy);
-
   const useBtn = document.createElement('div'); useBtn.id = 'touch-use';
   useBtn.textContent = 'USE';
   document.body.appendChild(useBtn);
@@ -144,7 +114,6 @@ function buildTouchHUD(): void {
     e.preventDefault();
     document.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyE' }));
   });
-
   const mapBtn = document.createElement('div'); mapBtn.id = 'touch-map';
   mapBtn.textContent = 'MAP';
   document.body.appendChild(mapBtn);
@@ -160,13 +129,11 @@ function onTouchStart(e: TouchEvent): void {
     const isLeft = t.clientX < window.innerWidth / 2;
     if (isLeft && touch.joyId === -1) {
       touch.joyId = t.identifier;
-      touch.joyOriginX = t.clientX;
-      touch.joyOriginY = t.clientY;
+      touch.joyOriginX = t.clientX; touch.joyOriginY = t.clientY;
       touch.joyX = 0; touch.joyY = 0;
     } else if (!isLeft && touch.lookId === -1) {
       touch.lookId = t.identifier;
-      touch.lookPrevX = t.clientX;
-      touch.lookPrevY = t.clientY;
+      touch.lookPrevX = t.clientX; touch.lookPrevY = t.clientY;
     }
   }
 }
@@ -180,29 +147,19 @@ function onTouchMove(e: TouchEvent): void {
       const max = 40;
       touch.joyX = Math.max(-1, Math.min(1, dx / max));
       touch.joyY = Math.max(-1, Math.min(1, dy / max));
-      // Update dot
       const dot = document.getElementById('touch-joy-dot');
-      if (dot) {
-        dot.style.left = (32 + touch.joyX * max * 0.6) + 'px';
-        dot.style.top  = (32 + touch.joyY * max * 0.6) + 'px';
-      }
-      touchKeys.w = touch.joyY < -0.3;
-      touchKeys.s = touch.joyY >  0.3;
-      touchKeys.a = touch.joyX < -0.3;
-      touchKeys.d = touch.joyX >  0.3;
-      // Map to virtual keys
-      keys['KeyW'] = touchKeys.w; keys['ArrowUp']    = touchKeys.w;
-      keys['KeyS'] = touchKeys.s; keys['ArrowDown']  = touchKeys.s;
-      keys['KeyA'] = touchKeys.a; keys['ArrowLeft']  = touchKeys.a;
-      keys['KeyD'] = touchKeys.d; keys['ArrowRight'] = touchKeys.d;
+      if (dot) { dot.style.left = (32 + touch.joyX * max * 0.6) + 'px'; dot.style.top = (32 + touch.joyY * max * 0.6) + 'px'; }
+      keys['KeyW'] = touch.joyY < -0.3; keys['ArrowUp']    = keys['KeyW'];
+      keys['KeyS'] = touch.joyY >  0.3; keys['ArrowDown']  = keys['KeyS'];
+      keys['KeyA'] = touch.joyX < -0.3; keys['ArrowLeft']  = keys['KeyA'];
+      keys['KeyD'] = touch.joyX >  0.3; keys['ArrowRight'] = keys['KeyD'];
     } else if (t.identifier === touch.lookId) {
       const dx = t.clientX - touch.lookPrevX;
       const dy = t.clientY - touch.lookPrevY;
       yaw   -= dx * 0.004;
       pitch -= dy * 0.004;
       pitch  = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, pitch));
-      touch.lookPrevX = t.clientX;
-      touch.lookPrevY = t.clientY;
+      touch.lookPrevX = t.clientX; touch.lookPrevY = t.clientY;
     }
   }
 }
@@ -210,8 +167,7 @@ function onTouchMove(e: TouchEvent): void {
 function onTouchEnd(e: TouchEvent): void {
   for (const t of Array.from(e.changedTouches)) {
     if (t.identifier === touch.joyId) {
-      touch.joyId = -1;
-      touch.joyX = 0; touch.joyY = 0;
+      touch.joyId = -1; touch.joyX = 0; touch.joyY = 0;
       keys['KeyW'] = false; keys['ArrowUp']    = false;
       keys['KeyS'] = false; keys['ArrowDown']  = false;
       keys['KeyA'] = false; keys['ArrowLeft']  = false;
@@ -223,9 +179,9 @@ function onTouchEnd(e: TouchEvent): void {
   }
 }
 
-// ─── Per-frame update ────────────────────────────────────────────────────────
+// ─── Per-frame update ─────────────────────────────────────────────────────────
 export function updateControls(
-  camera: THREE.PerspectiveCamera,
+  camera: UniversalCamera,
   dt: number,
   locked: boolean,
 ): void {
@@ -234,27 +190,25 @@ export function updateControls(
   running = keys['ShiftLeft'] || keys['ShiftRight'];
   const speed = running ? RUN_SPEED : WALK_SPEED;
 
-  // Movement direction in camera-yaw space
-  const forward = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw));
-  const right   = new THREE.Vector3(Math.cos(yaw), 0, -Math.sin(yaw));
-  const move    = new THREE.Vector3();
+  const sinY = Math.sin(yaw), cosY = Math.cos(yaw);
+  let moveX = 0, moveZ = 0;
 
-  if (keys['KeyW'] || keys['ArrowUp'])    move.sub(forward);
-  if (keys['KeyS'] || keys['ArrowDown'])  move.add(forward);
-  if (keys['KeyA'] || keys['ArrowLeft'])  move.sub(right);
-  if (keys['KeyD'] || keys['ArrowRight']) move.add(right);
+  if (keys['KeyW'] || keys['ArrowUp'])    { moveX -= sinY; moveZ -= cosY; }
+  if (keys['KeyS'] || keys['ArrowDown'])  { moveX += sinY; moveZ += cosY; }
+  if (keys['KeyA'] || keys['ArrowLeft'])  { moveX -= cosY; moveZ += sinY; }
+  if (keys['KeyD'] || keys['ArrowRight']) { moveX += cosY; moveZ -= sinY; }
 
-  if (move.lengthSq() > 0) move.normalize();
-  move.multiplyScalar(speed * dt);
+  const len = Math.sqrt(moveX * moveX + moveZ * moveZ);
+  if (len > 0) { moveX /= len; moveZ /= len; }
+  moveX *= speed * dt;
+  moveZ *= speed * dt;
 
-  let nx = camera.position.x + move.x;
-  let nz = camera.position.z + move.z;
+  let nx = camera.position.x + moveX;
+  let nz = camera.position.z + moveZ;
 
-  // Clamp to world bounds
   nx = Math.max(-980, Math.min(980, nx));
   nz = Math.max(-980, Math.min(980, nz));
 
-  // Circle collider pushout
   for (const col of colliders) {
     const dx = nx - col.x, dz = nz - col.z;
     const dist = Math.sqrt(dx * dx + dz * dz);
@@ -265,16 +219,14 @@ export function updateControls(
     }
   }
 
-  // Ground clamp + bridge + theatre steps
-  const gy = terrainH(nx, nz);
+  const gy      = terrainH(nx, nz);
   const bridge  = bridgeDeckY(nx, nz);
   const theatre = theatreStepH(nx, nz);
-  let groundY = gy;
+  let groundY   = gy;
   if (bridge  !== null) groundY = Math.max(groundY, bridge);
   if (theatre !== null) groundY = Math.max(groundY, theatre);
 
-  // Head bob
-  const moving = move.lengthSq() > 0;
+  const moving = len > 0;
   if (moving) {
     bobPhase += dt * (running ? 9 : 6);
     bobOffset = Math.sin(bobPhase) * (running ? 0.10 : 0.055);
@@ -283,11 +235,9 @@ export function updateControls(
     if (Math.abs(bobOffset) < 0.001) bobOffset = 0;
   }
 
-  // FOV ease
   const targetFov = running ? FOV_RUN : FOV_WALK;
   fovCurrent += (targetFov - fovCurrent) * Math.min(1, dt * 6);
   camera.fov = fovCurrent;
-  camera.updateProjectionMatrix();
 
   camera.position.set(nx, groundY + PLAYER_H + bobOffset, nz);
   camera.rotation.set(pitch, yaw, 0);
@@ -299,3 +249,6 @@ export function isPointerLocked(canvas: HTMLCanvasElement): boolean {
 
 export function getYaw(): number { return yaw; }
 export function setYaw(v: number) { yaw = v; }
+
+// unused Scene import guard
+export const _sceneRef: Scene | null = null;
