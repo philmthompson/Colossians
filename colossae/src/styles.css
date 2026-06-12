@@ -196,6 +196,10 @@ canvas#c {
   font-size: 0.92rem; line-height: 1.72; color: #ccc0a8;
   margin-bottom: 1rem;
 }
+#card-body a {
+  color: #c9a55c; text-decoration: underline;
+}
+#card-body a:hover { color: #e8dcc0; }
 #card-accuracy {
   font-size: 0.78rem; font-style: italic;
   color: #8a7a60; line-height: 1.55;

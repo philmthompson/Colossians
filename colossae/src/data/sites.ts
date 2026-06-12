@@ -73,6 +73,19 @@ export const SITES: SiteData[] = [
     accuracy: `Necropolis north of the Lycus: attested by Hamilton (1836) and confirmed by excavation. 60 rock-cut bathtub tombs, skeletal remains, some lids displaced: 2025 excavation (Yener, Pamukkale University). ~2,200 years old: excavation report. "inhabited, prosperous and large": Xenophon, <em>Anabasis</em> 1.2.6.`,
   },
   {
+    id: 'necropolis-dig',
+    title: '2025 Excavation — Rock-Cut Tombs',
+    verb: 'Examine',
+    era: 'Colossae · AD 52 / Modern Archaeology',
+    body: `Sixty bathtub-shaped tombs were hewn directly from the bedrock here — no masonry, no mortar, just the chisel and the stone. Pamukkale University archaeologists excavated this burial field in 2025, dating the tombs to roughly 2,200 years ago, the Hellenistic period. Skeletal remains lay inside many of them, lids slid or toppled aside over the centuries. The site is the first formally excavated necropolis at Colossae.
+<p style="margin-top:0.9rem">
+  <a href="https://www.turkiyetoday.com/culture/archaeologists-uncover-2200-year-old-rock-cut-burial-field-in-turkiyes-colossae-3208042" target="_blank" rel="noopener">
+    Read the excavation report with photographs →
+  </a>
+</p>`,
+    accuracy: `60 rock-cut bathtub tombs, ~2,200 years old, skeletal remains: Pamukkale University excavation, 2025 (Yener et al.). First formally excavated necropolis at Colossae. Photographs and report: Türkiye Today, 2025.`,
+  },
+  {
     id: 'milestone',
     title: 'Milestone — The Southern Road',
     verb: 'Read',
