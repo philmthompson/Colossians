@@ -183,6 +183,18 @@ function drawMap() {
   ctx.fillStyle = '#c9a55c'; ctx.font = 'italic 10px Georgia';
   ctx.fillText('← LAODICEA XII M.P.', wx(-480), wz(-92) - 6);
 
+  // Cardinal direction labels on the edges
+  ctx.fillStyle = '#c9a55c';
+  ctx.font = 'bold 13px Georgia';
+  ctx.textAlign = 'center';
+  ctx.fillText('N', W / 2, 18);
+  ctx.fillText('S', W / 2, H - 6);
+  ctx.textAlign = 'left';
+  ctx.fillText('W', 6, H / 2 + 5);
+  ctx.textAlign = 'right';
+  ctx.fillText('E', W - 6, H / 2 + 5);
+  ctx.textAlign = 'left';   // reset
+
   ctx.strokeStyle = 'rgba(201,165,92,0.4)'; ctx.lineWidth = 1;
   ctx.strokeRect(2, 2, W - 4, H - 4);
 }

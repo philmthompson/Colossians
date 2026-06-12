@@ -107,12 +107,12 @@ let touchExamineHandler: (() => void) | null = null;
 // Called by interact.ts when the player is near an interactive site
 export function setTouchExamine(verb: string, handler: () => void): void {
   const btn = document.getElementById('touch-use');
-  if (btn) btn.textContent = verb.toUpperCase();
+  if (btn) { btn.textContent = verb.toUpperCase(); btn.style.display = ''; }
   touchExamineHandler = handler;
 }
 export function clearTouchExamine(): void {
   const btn = document.getElementById('touch-use');
-  if (btn) btn.textContent = 'USE';
+  if (btn) btn.style.display = 'none';
   touchExamineHandler = null;
 }
 
@@ -197,6 +197,7 @@ function buildTouchHUD(): void {
 
   const useBtn = document.createElement('div'); useBtn.id = 'touch-use';
   useBtn.textContent = 'USE';
+  useBtn.style.display = 'none';   // hidden until near an interactive site
   document.body.appendChild(useBtn);
   useBtn.addEventListener('touchstart', (e) => {
     e.preventDefault();
@@ -328,7 +329,7 @@ export function updateControls(
     // Analog joystick: jy < 0 = stick pushed up = forward; jx > 0 = right = strafe right.
     // Speed scales linearly with how far the stick is pushed.
     if (jlen > 0.05) {
-      const fwd = -jy, str = jx;
+      const fwd = -jy, str = -jx;   // negate jx: joystick right = strafe right in camera space
       const wx = fwd * (-sinY) + str * cosY;
       const wz = fwd * (-cosY) + str * (-sinY);
       const wl = Math.sqrt(wx * wx + wz * wz);
