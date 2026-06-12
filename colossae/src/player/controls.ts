@@ -1,4 +1,4 @@
-import { UniversalCamera, Scene } from '@babylonjs/core';
+import { UniversalCamera, Scene, Vector3 } from '@babylonjs/core';
 import { terrainH } from '../world/terrain';
 
 const WALK_SPEED = 7.5;
@@ -25,9 +25,9 @@ function bridgeDeckY(x: number, z: number): number | null {
   return DECK_TOP;
 }
 
-// ─── Theatre step height ──────────────────────────────────────────────────────
+// ─── Theatre step height — keep in sync with theatre.ts constants ─────────────
 const THEATRE_TX = 224, THEATRE_TZ = -48;
-const T_R_START  = 11, T_TIER_W = 1.4, T_TIER_H = 0.55, T_TIERS = 16;
+const T_R_START  = 10, T_TIER_W = 0.75, T_TIER_H = 0.38, T_TIERS = 24;
 
 function theatreStepH(x: number, z: number): number | null {
   const dx = x - THEATRE_TX, dz = z - THEATRE_TZ;
@@ -36,6 +36,24 @@ function theatreStepH(x: number, z: number): number | null {
   if (Math.abs(Math.atan2(dz, dx)) >= Math.PI * 0.55) return null;
   const tier = Math.max(0, Math.min(T_TIERS - 1, Math.floor((r - T_R_START) / T_TIER_W)));
   return terrainH(THEATRE_TX, THEATRE_TZ) + tier * T_TIER_H;
+}
+
+// ─── Temple podium floor (player can walk on top of the podium steps) ─────────
+const TEMPLE_TX = 70, TEMPLE_TZ = -10;
+const TEMPLE_R_INNER = 9.5, TEMPLE_R_OUTER = 12.0;
+
+function templeFloorY(x: number, z: number): number | null {
+  const dx = x - TEMPLE_TX, dz = z - TEMPLE_TZ;
+  const r  = Math.sqrt(dx * dx + dz * dz);
+  if (r > TEMPLE_R_OUTER) return null;
+  const floorY = terrainH(TEMPLE_TX, TEMPLE_TZ) + 2.0;
+  if (r <= TEMPLE_R_INNER) return floorY;          // inside colonnade
+  // Step ramp on east approach (x > TEMPLE_TX)
+  if (dx > 0 && Math.abs(dz) < 4.0) {
+    const t = (r - TEMPLE_R_INNER) / (TEMPLE_R_OUTER - TEMPLE_R_INNER);
+    return floorY * (1 - t) + terrainH(x, z) * t;
+  }
+  return null;
 }
 
 // ─── Circle colliders ─────────────────────────────────────────────────────────
@@ -61,6 +79,8 @@ let touchActive = false;
 export function initControls(camera: UniversalCamera, canvas: HTMLCanvasElement): void {
   camera.inputs.clear();
   camera.minZ = 0.3;
+  camera.checkCollisions = true;
+  camera.ellipsoid = new Vector3(0.4, 0.85, 0.4);
 
   if (window.matchMedia('(pointer: coarse)').matches) {
     touchActive = true;
@@ -222,9 +242,11 @@ export function updateControls(
   const gy      = terrainH(nx, nz);
   const bridge  = bridgeDeckY(nx, nz);
   const theatre = theatreStepH(nx, nz);
+  const temple  = templeFloorY(nx, nz);
   let groundY   = gy;
   if (bridge  !== null) groundY = Math.max(groundY, bridge);
   if (theatre !== null) groundY = Math.max(groundY, theatre);
+  if (temple  !== null) groundY = Math.max(groundY, temple);
 
   const moving = len > 0;
   if (moving) {
@@ -252,5 +274,5 @@ export function isPointerLocked(canvas: HTMLCanvasElement): boolean {
 export function getYaw(): number { return yaw; }
 export function setYaw(v: number) { yaw = v; }
 
-// unused Scene import guard
+// suppress unused import
 export const _sceneRef: Scene | null = null;
