@@ -31,18 +31,21 @@ canvas#c {
 }
 .intro-eyebrow {
   font-size: 0.8rem; letter-spacing: 0.25em; text-transform: uppercase;
+  text-indent: 0.25em;
   color: #c9a55c; margin-bottom: 0.75rem;
 }
 #intro-inner h1 {
   font-size: clamp(3rem, 8vw, 5.5rem);
   font-variant: small-caps; letter-spacing: 0.12em;
+  /* Compensate for trailing letter-spacing so the word optically centres */
+  text-indent: 0.12em;
   color: #e8dcc0; font-weight: normal;
   text-shadow: 0 0 60px rgba(201,165,92,0.4);
   line-height: 1;
 }
 .intro-sub {
   font-size: 1.1rem; color: #c9a55c; margin: 0.5rem 0 1.5rem;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.2em; text-indent: 0.2em;
 }
 .intro-body {
   font-size: 1rem; color: #b8a888; line-height: 1.7;
