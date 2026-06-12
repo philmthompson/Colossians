@@ -19,6 +19,7 @@ import { buildNPCs } from './actors/npc';
 import { initWind } from './audio/wind';
 
 // ─── Build version stamp ─────────────────────────────────────────────────────
+// (Deploy chain restored — see trigger-deploy.yml)
 const versionEl = document.getElementById('build-version');
 if (versionEl) versionEl.textContent = `build ${__BUILD_DATE__}`;
 
