@@ -56,6 +56,33 @@ function templeFloorY(x: number, z: number): number | null {
   return null;
 }
 
+// ─── Building roof / floor heights ───────────────────────────────────────────
+// Returns the walkable top surface of raised platforms / building roofs when the
+// player is within the footprint. Like the bridge and theatre, these override
+// the raw terrain height so the player stands on the structure rather than
+// sinking through it.
+function buildingFloorY(x: number, z: number): number | null {
+  // Agora plaza slab
+  if (Math.abs(x - 120) < 17 && Math.abs(z + 44) < 17) {
+    return terrainH(120, -44) + 0.3;
+  }
+  // Baths roof — only when approaching from the hill side (terrain nearly as high)
+  {
+    const bRoof = terrainH(156, -18) + 7;
+    if (Math.abs(x - 156) < 11 && Math.abs(z + 18) < 7.5 && terrainH(x, z) > bRoof - 2) {
+      return bRoof;
+    }
+  }
+  // Philemon's house roof
+  {
+    const pRoof = terrainH(141, -86) + 4.5;
+    if (Math.abs(x - 141) < 9 && Math.abs(z + 86) < 8 && terrainH(x, z) > pRoof - 2) {
+      return pRoof;
+    }
+  }
+  return null;
+}
+
 // ─── Circle colliders ─────────────────────────────────────────────────────────
 export interface Collider { x: number; z: number; r: number; }
 const colliders: Collider[] = [];
@@ -93,7 +120,7 @@ export function initControls(camera: UniversalCamera, canvas: HTMLCanvasElement)
 
   document.addEventListener('mousemove', (e) => {
     if (document.pointerLockElement !== canvas) return;
-    yaw   += e.movementX * 0.0018;
+    yaw   -= e.movementX * 0.0018;
     pitch -= e.movementY * 0.0018;
     pitch  = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, pitch));
   });
@@ -176,7 +203,7 @@ function onTouchMove(e: TouchEvent): void {
     } else if (t.identifier === touch.lookId) {
       const dx = t.clientX - touch.lookPrevX;
       const dy = t.clientY - touch.lookPrevY;
-      yaw   += dx * 0.004;
+      yaw   -= dx * 0.004;
       pitch -= dy * 0.004;
       pitch  = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, pitch));
       touch.lookPrevX = t.clientX; touch.lookPrevY = t.clientY;
@@ -239,14 +266,16 @@ export function updateControls(
     }
   }
 
-  const gy      = terrainH(nx, nz);
-  const bridge  = bridgeDeckY(nx, nz);
-  const theatre = theatreStepH(nx, nz);
-  const temple  = templeFloorY(nx, nz);
-  let groundY   = gy;
-  if (bridge  !== null) groundY = Math.max(groundY, bridge);
-  if (theatre !== null) groundY = Math.max(groundY, theatre);
-  if (temple  !== null) groundY = Math.max(groundY, temple);
+  const gy       = terrainH(nx, nz);
+  const bridge   = bridgeDeckY(nx, nz);
+  const theatre  = theatreStepH(nx, nz);
+  const temple   = templeFloorY(nx, nz);
+  const building = buildingFloorY(nx, nz);
+  let groundY    = gy;
+  if (bridge   !== null) groundY = Math.max(groundY, bridge);
+  if (theatre  !== null) groundY = Math.max(groundY, theatre);
+  if (temple   !== null) groundY = Math.max(groundY, temple);
+  if (building !== null) groundY = Math.max(groundY, building);
 
   const moving = len > 0;
   if (moving) {

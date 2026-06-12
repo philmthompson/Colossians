@@ -3,7 +3,7 @@ import {
   DirectionalLight, HemisphericLight, ShadowGenerator,
 } from '@babylonjs/core';
 import { buildTerrain } from './world/terrain';
-import { buildSunDisc, buildClouds, buildNature } from './world/nature';
+import { buildSunDisc, buildClouds, buildNature, updateClouds } from './world/nature';
 import { buildWater } from './world/water';
 import { buildCity } from './world/city';
 import { buildTheatre } from './world/theatre';
@@ -206,6 +206,7 @@ engine.runRenderLoop(() => {
 
   updateControls(camera, dt, locked);
   updateFlock(dt);
+  updateClouds(dt);
   updateShadow();
   updateHUD(camera);
 

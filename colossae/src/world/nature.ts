@@ -1,4 +1,4 @@
-import { Scene, MeshBuilder, StandardMaterial, Color3, Matrix, Quaternion, Vector3 } from '@babylonjs/core';
+import { Scene, MeshBuilder, StandardMaterial, Color3, Matrix, Quaternion, Vector3, TransformNode } from '@babylonjs/core';
 import { terrainH } from './terrain';
 
 function lmat(name: string, hex: number, scene: Scene): StandardMaterial {
@@ -28,25 +28,80 @@ export function buildSunDisc(scene: Scene): void {
   disc.isPickable = false;
 }
 
-export function buildClouds(scene: Scene): void {
-  const mat = new StandardMaterial('cloud-mat', scene);
-  mat.diffuseColor  = new Color3(1, 0.91, 0.78);
-  mat.emissiveColor = new Color3(0.6, 0.55, 0.47);
-  mat.alpha = 0.55;
-  mat.disableLighting = true;
+// Cloud state — roots moved each frame by updateClouds()
+interface CloudGroup { root: TransformNode; speed: number; }
+const cloudGroups: CloudGroup[] = [];
 
-  const positions: [number, number, number, number, number][] = [
-    [-300, 220, -100, 90, 22], [200, 240, -80, 70, 18],
-    [-100, 210,  200, 110, 20], [400, 230, -200, 80, 17],
-    [50,  200,  350, 120, 25],
+export function buildClouds(scene: Scene): void {
+  // Two materials: bright top and slightly darker underside
+  const topMat = new StandardMaterial('cloud-top', scene);
+  topMat.diffuseColor  = new Color3(1, 0.97, 0.93);
+  topMat.emissiveColor = new Color3(0.72, 0.68, 0.62);
+  topMat.alpha = 0.88;
+  topMat.disableLighting = true;
+  topMat.backFaceCulling = false;
+
+  const botMat = new StandardMaterial('cloud-bot', scene);
+  botMat.diffuseColor  = new Color3(0.78, 0.72, 0.65);
+  botMat.emissiveColor = new Color3(0.48, 0.44, 0.40);
+  botMat.alpha = 0.75;
+  botMat.disableLighting = true;
+  botMat.backFaceCulling = false;
+
+  // Each entry: [cx, cy, cz, mainR, speed]
+  const defs: [number, number, number, number, number][] = [
+    [-300, 220, -100,  55, 4.5],
+    [ 200, 240,  -80,  45, 3.8],
+    [-100, 210,  200,  60, 5.2],
+    [ 400, 230, -200,  42, 4.1],
+    [  50, 200,  350,  68, 3.4],
+    [-500, 215,  100,  50, 4.8],
+    [ 600, 225, -300,  38, 5.5],
+    [ 100, 235,  500,  58, 3.9],
   ];
-  for (const [cx, cy, cz, rx, ry] of positions) {
-    const c = MeshBuilder.CreateSphere('cloud', { diameter: rx * 2, segments: 10 }, scene);
-    c.scaling.y = ry / rx;
-    c.scaling.z = 0.6;
-    c.position.set(cx, cy, cz);
-    c.material = mat;
-    c.isPickable = false;
+
+  for (const [cx, cy, cz, r, speed] of defs) {
+    const root = new TransformNode('cloud-root', scene);
+    root.position.set(cx, cy, cz);
+
+    // Main body — flattened ellipsoid
+    const main = MeshBuilder.CreateSphere('cloud-m', { diameter: r * 2, segments: 12 }, scene);
+    main.scaling.set(1, 0.45, 0.72);
+    main.position.set(0, 0, 0);
+    main.material = topMat;
+    main.isPickable = false;
+    main.parent = root;
+
+    // Flat dark underside disc
+    const belly = MeshBuilder.CreateSphere('cloud-b', { diameter: r * 1.7, segments: 10 }, scene);
+    belly.scaling.set(1, 0.18, 0.68);
+    belly.position.set(0, -r * 0.18, 0);
+    belly.material = botMat;
+    belly.isPickable = false;
+    belly.parent = root;
+
+    // Bumps — 3-4 puffs on top
+    const bumpCount = 3 + Math.floor(Math.random() * 2);
+    for (let b = 0; b < bumpCount; b++) {
+      const br     = r * (0.4 + Math.random() * 0.35);
+      const angle  = (b / bumpCount) * Math.PI * 2;
+      const spread = r * 0.55;
+      const bump = MeshBuilder.CreateSphere(`cloud-bump-${cx}-${b}`, { diameter: br * 2, segments: 10 }, scene);
+      bump.scaling.set(1, 0.55, 0.8);
+      bump.position.set(Math.cos(angle) * spread * 0.6, r * 0.12, Math.sin(angle) * spread * 0.3);
+      bump.material = topMat;
+      bump.isPickable = false;
+      bump.parent = root;
+    }
+
+    cloudGroups.push({ root, speed });
+  }
+}
+
+export function updateClouds(dt: number): void {
+  for (const g of cloudGroups) {
+    g.root.position.x -= g.speed * dt;
+    if (g.root.position.x < -900) g.root.position.x = 900;
   }
 }
 
