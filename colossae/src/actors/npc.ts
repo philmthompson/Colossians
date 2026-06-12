@@ -7,9 +7,9 @@ import { terrainH } from '../world/terrain';
 // ─── NPC definitions ──────────────────────────────────────────────────────────
 export const NPC_DEFS = [
   // tunic colour, himation colour
-  { id: 'epaphras',   x: 116, z:  -42, tunic: [0.82, 0.76, 0.62], cloak: [0.55, 0.16, 0.11] },
-  { id: 'shepherd',   x: 300, z:  -50, tunic: [0.60, 0.50, 0.34], cloak: [0.28, 0.22, 0.14] },
-  { id: 'doorkeeper', x: 141, z:  -78, tunic: [0.74, 0.68, 0.54], cloak: [0.22, 0.36, 0.48] },
+  { id: 'epaphras',   x: 116, z:  -42, tunic: [0.82, 0.76, 0.62], cloak: [0.55, 0.16, 0.11], facing: 0 },
+  { id: 'shepherd',   x: 300, z:  -50, tunic: [0.60, 0.50, 0.34], cloak: [0.28, 0.22, 0.14], facing: 0 },
+  { id: 'doorkeeper', x: 141, z:  -78, tunic: [0.74, 0.68, 0.54], cloak: [0.22, 0.36, 0.48], facing: Math.PI },
 ];
 
 // ─── Shared materials (created once) ─────────────────────────────────────────
@@ -143,6 +143,7 @@ function clothPanel(
 function buildNPC(
   id: string, x: number, z: number,
   tunicRGB: number[], cloakRGB: number[],
+  facing: number,
   scene: Scene,
 ): void {
   ensureShared(scene);
@@ -266,7 +267,7 @@ function buildNPC(
 
   scene.onBeforeRenderObservable.add(() => {
     const t = performance.now() * 0.001 + phase;
-    root.rotation.y = Math.sin(t * 0.55) * 0.02;
+    root.rotation.y = facing + Math.sin(t * 0.55) * 0.02;
     head.position.y = headY0 + Math.sin(t * 1.1) * 0.01;
     torso.scaling.y = 1 + Math.sin(t * 1.1) * 0.012;
     frontDrape.rotation.z = Math.sin(t * 0.75) * 0.012;
@@ -278,6 +279,6 @@ function buildNPC(
 // ─── Public entry point ───────────────────────────────────────────────────────
 export function buildNPCs(scene: Scene): void {
   for (const def of NPC_DEFS) {
-    buildNPC(def.id, def.x, def.z, def.tunic, def.cloak, scene);
+    buildNPC(def.id, def.x, def.z, def.tunic, def.cloak, def.facing, scene);
   }
 }

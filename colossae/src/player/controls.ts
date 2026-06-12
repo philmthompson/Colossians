@@ -120,7 +120,7 @@ export function initControls(camera: UniversalCamera, canvas: HTMLCanvasElement)
 
   document.addEventListener('mousemove', (e) => {
     if (document.pointerLockElement !== canvas) return;
-    yaw   -= e.movementX * 0.0018;
+    yaw   += e.movementX * 0.0018;
     pitch -= e.movementY * 0.0018;
     pitch  = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, pitch));
   });
@@ -203,7 +203,7 @@ function onTouchMove(e: TouchEvent): void {
     } else if (t.identifier === touch.lookId) {
       const dx = t.clientX - touch.lookPrevX;
       const dy = t.clientY - touch.lookPrevY;
-      yaw   -= dx * 0.004;
+      yaw   += dx * 0.004;
       pitch -= dy * 0.004;
       pitch  = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, pitch));
       touch.lookPrevX = t.clientX; touch.lookPrevY = t.clientY;
