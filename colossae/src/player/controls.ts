@@ -9,7 +9,7 @@ const FOV_RUN    = 76 * Math.PI / 180;
 
 // ─── Bridge deck ─────────────────────────────────────────────────────────────
 function bridgeDeckY(x: number, z: number): number | null {
-  if (Math.abs(x - 22) > 4.5) return null;
+  if (Math.abs(x - 22) > 8) return null;
   const deckZ0 = -140, deckZ1 = -102;
   if (z < deckZ0 || z > deckZ1) return null;
   const DECK_TOP = -8;

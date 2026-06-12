@@ -50,14 +50,14 @@ export function buildClouds(scene: Scene): void {
 
   // Each entry: [cx, cy, cz, mainR, speed]
   const defs: [number, number, number, number, number][] = [
-    [-300, 220, -100,  55, 4.5],
-    [ 200, 240,  -80,  45, 3.8],
-    [-100, 210,  200,  60, 5.2],
-    [ 400, 230, -200,  42, 4.1],
-    [  50, 200,  350,  68, 3.4],
-    [-500, 215,  100,  50, 4.8],
-    [ 600, 225, -300,  38, 5.5],
-    [ 100, 235,  500,  58, 3.9],
+    [-300, 220, -100,  55, 1.4],
+    [ 200, 240,  -80,  45, 1.1],
+    [-100, 210,  200,  60, 1.6],
+    [ 400, 230, -200,  42, 1.3],
+    [  50, 200,  350,  68, 1.0],
+    [-500, 215,  100,  50, 1.5],
+    [ 600, 225, -300,  38, 1.7],
+    [ 100, 235,  500,  58, 1.2],
   ];
 
   for (const [cx, cy, cz, r, speed] of defs) {
@@ -132,10 +132,36 @@ function buildOliveGroves(scene: Scene): void {
 
 function buildCypresses(scene: Scene): void {
   const positions: [number, number][] = [];
+
+  // Original row flanking the necropolis field at z = -175
   for (let cx = -30; cx <= 80; cx += 14) {
     positions.push([cx - 4, -175]);
     positions.push([cx + 4, -175]);
   }
+
+  // Cypress avenue flanking the approach path (x ≈ 22) from bridge to necropolis
+  for (let az = -128; az >= -170; az -= 13) {
+    positions.push([22 - 9, az]);
+    positions.push([22 + 9, az]);
+  }
+
+  // Dense cypresses ringing the necropolis perimeter
+  const necroSpots: [number, number][] = [
+    [-44,-183],[-32,-183],[-20,-183],[-8,-183],[4,-183],[16,-183],[28,-183],[40,-183],[52,-183],[68,-183],[80,-183],
+    [-38,-225],[- 22,-228],[0,-228],[18,-228],[38,-228],[56,-228],[72,-225],
+    [-40,-200],[-40,-212],[78,-198],[78,-210],
+    [10,-230],[30,-232],[50,-230],
+  ];
+  for (const sp of necroSpots) positions.push(sp);
+
+  // A few cypresses near the chasm viewpoint and bridge south approach
+  const chasmSpots: [number, number][] = [
+    [8,-110],[14,-113],[30,-108],[38,-112],
+    [-5,-130],[-10,-122],[50,-110],[58,-115],
+  ];
+  for (const sp of chasmSpots) positions.push(sp);
+
+  // Hillside scatter (existing)
   for (let i = 0; i < 20; i++) positions.push([-100 + Math.random() * 200, 80 + Math.random() * 80]);
 
   const foliageSrc = MeshBuilder.CreateCylinder('cy-f-src', { diameterTop: 0, diameterBottom: 3, height: 10, tessellation: 7 }, scene);

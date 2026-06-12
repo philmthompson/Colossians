@@ -73,10 +73,10 @@ function buildRamp(
   m: StandardMaterial,
   rx: number, rz: number,
   deckY: number, groundY: number,
-  len: number, flip = false,
+  len: number, width: number, flip = false,
 ): void {
   const h     = Math.abs(deckY - groundY) + 1;
-  const ramp  = MeshBuilder.CreateBox('ramp', { width: 8, height: h, depth: len }, scene);
+  const ramp  = MeshBuilder.CreateBox('ramp', { width, height: h, depth: len }, scene);
   const angle = Math.atan2(deckY - groundY, len) * (flip ? -1 : 1);
   ramp.rotation.x = angle;
   ramp.position.set(rx, (deckY + groundY) / 2, rz);
@@ -84,27 +84,61 @@ function buildRamp(
 }
 
 export function buildBridge(scene: Scene): void {
-  const DECK_Y = -8, DECK_LEN = 42;
+  const DECK_Y   = -8;
+  const BRIDGE_W = 16;
+  const DECK_LEN = 44;
   const stoneMat = smat('bridge-s', 0x9a8870, scene);
+  const capMat   = smat('bridge-c', 0xb8a880, scene);
 
-  const deck = MeshBuilder.CreateBox('deck', { width: 8, height: 1.2, depth: DECK_LEN }, scene);
+  // Main deck slab
+  const deck = MeshBuilder.CreateBox('deck', { width: BRIDGE_W, height: 1.4, depth: DECK_LEN }, scene);
   deck.position.set(22, DECK_Y, -119);
   deck.material = stoneMat;
+  deck.checkCollisions = true;
 
-  for (const pz of [-114, -124]) {
-    const pier = MeshBuilder.CreateBox('pier', { width: 2.5, height: 8, depth: 2.5 }, scene);
-    pier.position.set(22, DECK_Y - 4, pz);
+  // Solid stone abutments embedding the bridge in each bank
+  for (const az of [-104, -134]) {
+    const abt = MeshBuilder.CreateBox('abt', { width: BRIDGE_W + 4, height: 8, depth: 7 }, scene);
+    abt.position.set(22, DECK_Y - 3, az);
+    abt.material = stoneMat;
+  }
+
+  // Two piers spanning from chasm floor to deck underside
+  for (const pz of [-113, -125]) {
+    const pier = MeshBuilder.CreateBox('pier', { width: BRIDGE_W - 2, height: 10, depth: 4 }, scene);
+    pier.position.set(22, DECK_Y - 4.5, pz);
     pier.material = stoneMat;
   }
 
-  for (const side of [-1, 1]) {
-    const par = MeshBuilder.CreateBox('par', { width: 0.6, height: 0.9, depth: DECK_LEN - 4 }, scene);
-    par.position.set(22 + side * 4.2, DECK_Y + 0.9, -119);
-    par.material = stoneMat;
+  // Arch haunch blocks bridging piers to abutments — give the underside an arch feel
+  for (const [hz, rx] of [[-108, 0.28], [-130, -0.28]] as [number, number][]) {
+    const haunch = MeshBuilder.CreateBox('haunch', { width: BRIDGE_W, height: 2.5, depth: 6 }, scene);
+    haunch.position.set(22, DECK_Y - 2.5, hz);
+    haunch.rotation.x = rx;
+    haunch.material = stoneMat;
   }
 
-  buildRamp(scene, stoneMat, 22, -135,  DECK_Y, terrainH(22, -140), 10);
-  buildRamp(scene, stoneMat, 22, -103,  DECK_Y, terrainH(22, -98),  10, true);
+  // Parapets — solid walls with capping stones
+  for (const side of [-1, 1]) {
+    const par = MeshBuilder.CreateBox('par', { width: 0.9, height: 1.1, depth: DECK_LEN - 2 }, scene);
+    par.position.set(22 + side * (BRIDGE_W / 2 - 0.45), DECK_Y + 1.1, -119);
+    par.material = stoneMat;
+
+    const cap = MeshBuilder.CreateBox('cap', { width: 1.1, height: 0.25, depth: DECK_LEN }, scene);
+    cap.position.set(22 + side * (BRIDGE_W / 2 - 0.55), DECK_Y + 1.75, -119);
+    cap.material = capMat;
+
+    // Parapet posts every ~9 units
+    for (let pz = -110; pz >= -128; pz -= 9) {
+      const post = MeshBuilder.CreateBox('post', { width: 1.1, height: 1.5, depth: 1.1 }, scene);
+      post.position.set(22 + side * (BRIDGE_W / 2 - 0.55), DECK_Y + 1.55, pz);
+      post.material = capMat;
+    }
+  }
+
+  // Ramps wider to match the bridge
+  buildRamp(scene, stoneMat, 22, -135, DECK_Y, terrainH(22, -140), 10, BRIDGE_W);
+  buildRamp(scene, stoneMat, 22, -103, DECK_Y, terrainH(22, -98),  10, BRIDGE_W, true);
 }
 
 export function buildWater(scene: Scene): void {
