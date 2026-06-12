@@ -9,7 +9,7 @@ import { buildCity } from './world/city';
 import { buildTheatre } from './world/theatre';
 import { buildNecropolis, buildMilestone } from './world/necropolis';
 import {
-  initControls, updateControls, isPointerLocked, setYaw,
+  initControls, updateControls, isPointerLocked, setYaw, setTouchControlsHidden,
 } from './player/controls';
 import { initHUD, updateHUD, isCardOpen, setReticleActive, hidePrompt } from './ui/hud';
 import { updateRegions } from './game/regions';
@@ -203,6 +203,11 @@ engine.runRenderLoop(() => {
   const dt      = Math.min(engine.getDeltaTime() / 1000, 0.05);
   const locked  = isPointerLocked(canvas);
   const active  = locked || window.matchMedia('(pointer: coarse)').matches;
+
+  // Hide the touch controls whenever a modal (info card, map, or intro) is up
+  const mapOpen   = !document.getElementById('map-overlay')?.classList.contains('hidden');
+  const introUp   = !!document.getElementById('intro');
+  setTouchControlsHidden(isCardOpen() || mapOpen || introUp);
 
   updateControls(camera, dt, locked);
   updateFlock(dt);

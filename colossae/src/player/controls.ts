@@ -142,9 +142,31 @@ export function initControls(camera: UniversalCamera, canvas: HTMLCanvasElement)
   document.addEventListener('keydown', (e) => { keys[e.code] = true; });
   document.addEventListener('keyup',   (e) => { keys[e.code] = false; });
 
-  canvas.addEventListener('touchstart', onTouchStart, { passive: false });
-  canvas.addEventListener('touchmove',  onTouchMove,  { passive: false });
-  canvas.addEventListener('touchend',   onTouchEnd,   { passive: false });
+  // Listen on document, not canvas: the joystick / dot are overlay divs layered
+  // above the canvas, so touches on them never bubble to a canvas listener.
+  document.addEventListener('touchstart', onTouchStart, { passive: false });
+  document.addEventListener('touchmove',  onTouchMove,  { passive: false });
+  document.addEventListener('touchend',   onTouchEnd,   { passive: false });
+  document.addEventListener('touchcancel', onTouchEnd,  { passive: false });
+}
+
+// Hide / show the on-screen touch controls (joystick, USE, MAP) — called when a
+// modal opens so the controls don't sit on top of the card or map.
+let touchHidden = false;
+export function setTouchControlsHidden(hidden: boolean): void {
+  if (!touchActive || hidden === touchHidden) return;
+  touchHidden = hidden;
+  for (const id of ['touch-joy', 'touch-use', 'touch-map']) {
+    const el = document.getElementById(id);
+    if (el) el.style.display = hidden ? 'none' : '';
+  }
+  if (hidden) {
+    // Release any in-progress joystick so the player stops moving
+    touch.joyId = -1; touch.joyX = 0; touch.joyY = 0;
+    touch.lookId = -1;
+    const dot = document.getElementById('touch-joy-dot');
+    if (dot) { dot.style.left = '35px'; dot.style.top = '35px'; }
+  }
 }
 
 function buildTouchHUD(): void {
@@ -199,9 +221,21 @@ const JOY_R = 55;
 // Max dot travel from centre in CSS pixels (≈ circle_r − half_dot_size)
 const JOY_DOT_TRAVEL = 32;
 
+// True when the touch target is one of the action buttons (let them self-handle)
+function onButton(target: EventTarget | null): boolean {
+  const el = target as HTMLElement | null;
+  if (!el) return false;
+  const id = el.id || el.closest?.('#touch-use, #touch-map')?.id;
+  return id === 'touch-use' || id === 'touch-map';
+}
+
 function onTouchStart(e: TouchEvent): void {
-  e.preventDefault();
+  if (touchHidden) return;
+  let handled = false;
   for (const t of Array.from(e.changedTouches)) {
+    if (onButton(t.target)) continue;   // button has its own handler
+    handled = true;
+
     // Activate joystick only when the touch lands inside the joystick circle
     if (touch.joyId === -1) {
       const joyEl = document.getElementById('touch-joy');
@@ -225,10 +259,12 @@ function onTouchStart(e: TouchEvent): void {
       touch.lookPrevX = t.clientX; touch.lookPrevY = t.clientY;
     }
   }
+  if (handled) e.preventDefault();
 }
 
 function onTouchMove(e: TouchEvent): void {
-  e.preventDefault();
+  if (touchHidden) return;
+  if (touch.joyId !== -1 || touch.lookId !== -1) e.preventDefault();
   for (const t of Array.from(e.changedTouches)) {
     if (t.identifier === touch.joyId) {
       const dx   = t.clientX - touch.joyOriginX;
