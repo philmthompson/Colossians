@@ -27,7 +27,7 @@ function bridgeDeckY(x: number, z: number): number | null {
 
 // ─── Theatre step height ──────────────────────────────────────────────────────
 const THEATRE_TX = 224, THEATRE_TZ = -48;
-const T_R_START  = 12, T_TIER_W = 2.2, T_TIER_H = 0.9, T_TIERS = 8;
+const T_R_START  = 11, T_TIER_W = 1.4, T_TIER_H = 0.55, T_TIERS = 16;
 
 function theatreStepH(x: number, z: number): number | null {
   const dx = x - THEATRE_TX, dz = z - THEATRE_TZ;
@@ -73,7 +73,7 @@ export function initControls(camera: UniversalCamera, canvas: HTMLCanvasElement)
 
   document.addEventListener('mousemove', (e) => {
     if (document.pointerLockElement !== canvas) return;
-    yaw   -= e.movementX * 0.0018;
+    yaw   += e.movementX * 0.0018;
     pitch -= e.movementY * 0.0018;
     pitch  = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, pitch));
   });
@@ -156,7 +156,7 @@ function onTouchMove(e: TouchEvent): void {
     } else if (t.identifier === touch.lookId) {
       const dx = t.clientX - touch.lookPrevX;
       const dy = t.clientY - touch.lookPrevY;
-      yaw   -= dx * 0.004;
+      yaw   += dx * 0.004;
       pitch -= dy * 0.004;
       pitch  = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, pitch));
       touch.lookPrevX = t.clientX; touch.lookPrevY = t.clientY;
