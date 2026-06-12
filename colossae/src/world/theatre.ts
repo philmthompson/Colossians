@@ -61,18 +61,19 @@ export function buildTheatre(scene: Scene): void {
   const statM  = smat('sc-statue', 0xddd6c4, scene);
 
   // ── Solid fill under the seating (one big half-cylinder fill) ────────────
+  // CAP_BOTTOM only — no top disc, otherwise a flat "roof" hovers over the cavea.
   const fillR = R_ORCH + ROWS * ROW_RUN;
-  const fillH = ROWS * ROW_RISE + 2.0;
+  const fillTopY = baseY + ROWS * ROW_RISE;       // top flush with highest tread
   const fill = MeshBuilder.CreateCylinder('seat-fill', {
     diameterTop:     fillR * 2,
     diameterBottom:  fillR * 2,
-    height:          baseY + fillH - bottom,
+    height:          fillTopY - bottom,
     tessellation:    SEG_HALF * 2,
     arc:             0.5,
-    cap:             Mesh.CAP_ALL,
+    cap:             Mesh.CAP_START,
     sideOrientation: Mesh.DOUBLESIDE,
   }, scene);
-  fill.position.set(TX, bottom + (baseY + fillH - bottom) / 2, TZ);
+  fill.position.set(TX, bottom + (fillTopY - bottom) / 2, TZ);
   fill.rotation.y = -Math.PI / 2;
   fill.material   = fillMat;
   fill.checkCollisions = true;
@@ -144,7 +145,8 @@ export function buildTheatre(scene: Scene): void {
       const rInner  = R_ORCH + t * ROW_RUN;
       const rOuter  = R_ORCH + (t + 1) * ROW_RUN;
       const treadY  = baseY + t * ROW_RISE;
-      const riserBY = t > 0 ? baseY + (t - 1) * ROW_RISE : baseY - 0.5;
+      // Lowest row's riser is sunk well into the ground so nothing hovers.
+      const riserBY = t > 0 ? baseY + (t - 1) * ROW_RISE : baseY - 3.0;
 
       for (let s = 0; s < nSegs; s++) {
         const a0 = aStart + (s / nSegs) * (aEnd - aStart);

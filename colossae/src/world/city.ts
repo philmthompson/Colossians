@@ -196,12 +196,20 @@ function buildAgora(scene: Scene): void {
 function buildBaths(scene: Scene): void {
   const BX = 156, BZ = -18;
   const stoneM = mat('bath-s', 0x9a8c78, scene);
-  groundedBox(scene, stoneM, BX, BZ, 22, 7, 15);
-  const maxY = footprintMaxY(BX, BZ, 22, 15);
-  const dome = MeshBuilder.CreateSphere('dome', { diameter: 16, segments: 14 }, scene);
-  dome.scaling.y = 0.5;
-  dome.position.set(BX, maxY + 7, BZ - 3);
+  const BH = 7;
+  groundedBox(scene, stoneM, BX, BZ, 22, BH, 15);
+  const roofY = footprintMaxY(BX, BZ, 22, 15) + BH;
+  // Hemispherical dome resting flush on the centre of the roof. Build a full
+  // sphere flattened to a half-height, with its equator at the roof line so the
+  // lower hemisphere is hidden inside the building and only the dome shows.
+  const dome = MeshBuilder.CreateSphere('dome', { diameter: 14, segments: 18 }, scene);
+  dome.scaling.y = 0.55;
+  dome.position.set(BX, roofY, BZ);
   dome.material = stoneM;
+  // Small finial lantern at the apex
+  const finial = MeshBuilder.CreateCylinder('dome-finial', { diameter: 1.0, height: 0.8, tessellation: 10 }, scene);
+  finial.position.set(BX, roofY + 7 * 0.55 + 0.4, BZ);
+  finial.material = stoneM;
   addCollider({ x: BX, z: BZ, r: 12 });
 }
 
@@ -244,7 +252,24 @@ function buildTemple(scene: Scene): void {
   statHead.position.set(TX2, podiumTop + 2.8 + 0.3, TZ2);
   statHead.material = statM;
 
-  addCollider({ x: TX2, z: TZ2, r: 10 });
+  // Entry stairways on BOTH ends so the temple can be climbed from the east
+  // (city) and the west (acropolis) approaches. Three broad steps each side.
+  const STEPS = 3;
+  for (const side of [1, -1]) {            // +1 = east, -1 = west (acropolis)
+    for (let s = 0; s < STEPS; s++) {
+      const stepTopY = podiumTop - (s + 1) * (podiumTop - footprintMaxY(TX2, TZ2, 18, 12)) / STEPS;
+      const reach    = 9 + (STEPS - s) * 0.9;   // outer steps wider
+      const sx       = TX2 + side * (9 + (STEPS - s - 0.5) * 0.9);
+      const h        = Math.max(0.2, stepTopY - (footprintMaxY(TX2, TZ2, 18, 12) - 1));
+      const step = MeshBuilder.CreateBox('temple-step', { width: 0.9, height: h, depth: 12 }, scene);
+      step.position.set(sx, stepTopY - h / 2, TZ2);
+      step.material = stoneM;
+      void reach;
+    }
+  }
+
+  // No central blocking collider — the columns each have their own, and the
+  // podium floor is walkable via templeFloorY() in controls.ts.
 }
 
 function buildLowerCity(scene: Scene): void {

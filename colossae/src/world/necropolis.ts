@@ -28,23 +28,29 @@ export function buildNecropolis(scene: Scene): void {
     const ty  = terrainH(tx, tz);
     const rot = 0.1 * (Math.random() - 0.5);
 
+    // Sarcophagus tub: top rim at ty + 0.8
     const tub = MeshBuilder.CreateBox('tub', { width: 2.0, height: 0.8, depth: 0.9 }, scene);
     tub.position.set(tx, ty + 0.4, tz);
     tub.rotation.y = rot;
     tub.material = travM;
 
-    const interior = MeshBuilder.CreateBox('tub-int', { width: 1.7, height: 0.55, depth: 0.65 }, scene);
-    interior.position.set(tx, ty + 0.7, tz);
+    // Hollow interior — top kept BELOW the tub rim (ty + 0.7) so it never
+    // coincides with the lid plane (which caused the z-fighting/dither).
+    const interior = MeshBuilder.CreateBox('tub-int', { width: 1.7, height: 0.5, depth: 0.62 }, scene);
+    interior.position.set(tx, ty + 0.45, tz);
     interior.rotation.y = rot;
     interior.material = darkM;
 
-    const lid = MeshBuilder.CreateBox('lid', { width: 2.05, height: 0.25, depth: 0.95 }, scene);
+    // Lid: a solid, thick block (0.35 high) that rests ON the rim. Its bottom
+    // sits at ty + 0.8 (the rim), so the dark interior is fully enclosed and no
+    // two surfaces share a plane.
+    const lid = MeshBuilder.CreateBox('lid', { width: 2.06, height: 0.35, depth: 0.96 }, scene);
     if (lidAjar) {
-      lid.position.set(tx + 0.6, ty + 0.85, tz + 0.2);
-      lid.rotation.z = 0.25;
-      lid.rotation.y = rot + 0.3;
+      // Slid partly off to one side, but still thick and clearly readable.
+      lid.position.set(tx + 0.7, ty + 1.02, tz + 0.18);
+      lid.rotation.y = rot + 0.25;
     } else {
-      lid.position.set(tx, ty + 0.85, tz);
+      lid.position.set(tx, ty + 0.975, tz);
       lid.rotation.y = rot;
     }
     lid.material = lidM;

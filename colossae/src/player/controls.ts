@@ -48,8 +48,8 @@ function templeFloorY(x: number, z: number): number | null {
   if (r > TEMPLE_R_OUTER) return null;
   const floorY = terrainH(TEMPLE_TX, TEMPLE_TZ) + 2.0;
   if (r <= TEMPLE_R_INNER) return floorY;          // inside colonnade
-  // Step ramp on east approach (x > TEMPLE_TX)
-  if (dx > 0 && Math.abs(dz) < 4.0) {
+  // Step ramps on BOTH ends — east (city) and west (acropolis) approaches.
+  if (Math.abs(dz) < 6.5) {
     const t = (r - TEMPLE_R_INNER) / (TEMPLE_R_OUTER - TEMPLE_R_INNER);
     return floorY * (1 - t) + terrainH(x, z) * t;
   }
