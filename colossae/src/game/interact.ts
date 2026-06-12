@@ -1,5 +1,6 @@
 import { getSite } from '../data/sites';
 import { showPrompt, hidePrompt, setReticleActive, openCard } from '../ui/hud';
+import { setTouchExamine, clearTouchExamine } from '../player/controls';
 
 export interface InteractEntry {
   id: string;
@@ -40,11 +41,16 @@ export function updateInteract(
   if (closest && active) {
     nearestId = closest.id;
     const site = getSite(closest.id);
-    if (site) { setReticleActive(true); showPrompt(`[E] ${site.verb}`); }
+    if (site) {
+      setReticleActive(true);
+      showPrompt(`[E] ${site.verb}`);
+      setTouchExamine(site.verb, tryInteract);
+    }
   } else {
     nearestId = null;
     setReticleActive(false);
     hidePrompt();
+    clearTouchExamine();
   }
 }
 

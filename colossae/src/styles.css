@@ -26,6 +26,7 @@ canvas#c {
   text-align: center;
   color: #e8dcc0;
   max-width: 480px;
+  width: 100%;
   padding: 2rem;
 }
 .intro-eyebrow {
@@ -57,7 +58,18 @@ canvas#c {
 #intro-btn:hover { background: #c9a55c; color: #1a120a; }
 .intro-note {
   margin-top: 1.5rem; font-size: 0.72rem; color: #7a6a50;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.05em; line-height: 1.7;
+}
+/* Show desktop note on non-touch, mobile note on touch devices */
+.intro-note-mobile  { display: none; }
+@media (pointer: coarse) {
+  .intro-note-desktop { display: none; }
+  .intro-note-mobile  { display: block; }
+}
+
+/* Hide the [E] prompt overlay on touch — action is via the EXAMINE button */
+@media (pointer: coarse) {
+  #prompt-box { display: none !important; }
 }
 
 /* Reticle */

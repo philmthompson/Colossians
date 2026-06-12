@@ -101,6 +101,20 @@ const touch = {
   joyOriginX: 0, joyOriginY: 0,
 };
 let touchActive = false;
+// Examine action swapped onto the action button while near a site
+let touchExamineHandler: (() => void) | null = null;
+
+// Called by interact.ts when the player is near an interactive site
+export function setTouchExamine(verb: string, handler: () => void): void {
+  const btn = document.getElementById('touch-use');
+  if (btn) btn.textContent = verb.toUpperCase();
+  touchExamineHandler = handler;
+}
+export function clearTouchExamine(): void {
+  const btn = document.getElementById('touch-use');
+  if (btn) btn.textContent = 'USE';
+  touchExamineHandler = null;
+}
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 export function initControls(camera: UniversalCamera, canvas: HTMLCanvasElement): void {
@@ -136,31 +150,41 @@ export function initControls(camera: UniversalCamera, canvas: HTMLCanvasElement)
 function buildTouchHUD(): void {
   const style = document.createElement('style');
   style.textContent = `
-    #touch-joy { position:fixed; left:40px; bottom:80px; width:100px; height:100px;
+    #touch-joy { position:fixed; left:40px; bottom:80px; width:110px; height:110px;
       border:2px solid rgba(201,165,92,0.5); border-radius:50%;
-      background:rgba(0,0,0,0.25); touch-action:none; z-index:50; }
-    #touch-joy-dot { position:absolute; width:36px; height:36px; border-radius:50%;
-      background:rgba(201,165,92,0.6); top:32px; left:32px; }
-    #touch-use { position:fixed; right:40px; bottom:80px; padding:14px 22px;
-      background:rgba(0,0,0,0.35); border:1px solid rgba(201,165,92,0.5);
-      color:#c9a55c; font-family:Georgia,serif; font-size:0.8rem;
-      letter-spacing:0.1em; border-radius:4px; z-index:50; touch-action:none; }
-    #touch-map { position:fixed; right:40px; bottom:160px; padding:10px 16px;
+      background:rgba(0,0,0,0.28); touch-action:none; z-index:50; }
+    #touch-joy-dot { position:absolute; width:40px; height:40px; border-radius:50%;
+      background:rgba(201,165,92,0.65); top:35px; left:35px;
+      transition: none; }
+    #touch-use { position:fixed; right:40px; bottom:80px; padding:16px 24px;
+      background:rgba(0,0,0,0.38); border:1px solid rgba(201,165,92,0.55);
+      color:#c9a55c; font-family:Georgia,serif; font-size:0.82rem;
+      letter-spacing:0.12em; border-radius:4px; z-index:50; touch-action:none;
+      user-select:none; -webkit-user-select:none; }
+    #touch-map { position:fixed; right:40px; bottom:172px; padding:12px 18px;
       background:rgba(0,0,0,0.35); border:1px solid rgba(201,165,92,0.4);
       color:#c9a55c; font-family:Georgia,serif; font-size:0.75rem;
-      letter-spacing:0.1em; border-radius:4px; z-index:50; }
+      letter-spacing:0.1em; border-radius:4px; z-index:50;
+      user-select:none; -webkit-user-select:none; }
   `;
   document.head.appendChild(style);
+
   const joy = document.createElement('div'); joy.id = 'touch-joy';
   joy.innerHTML = '<div id="touch-joy-dot"></div>';
   document.body.appendChild(joy);
+
   const useBtn = document.createElement('div'); useBtn.id = 'touch-use';
   useBtn.textContent = 'USE';
   document.body.appendChild(useBtn);
   useBtn.addEventListener('touchstart', (e) => {
     e.preventDefault();
-    document.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyE' }));
+    if (touchExamineHandler) {
+      touchExamineHandler();
+    } else {
+      document.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyE' }));
+    }
   });
+
   const mapBtn = document.createElement('div'); mapBtn.id = 'touch-map';
   mapBtn.textContent = 'MAP';
   document.body.appendChild(mapBtn);
@@ -170,15 +194,33 @@ function buildTouchHUD(): void {
   });
 }
 
+// Joystick circle radius in CSS pixels (matches width/height above ÷ 2)
+const JOY_R = 55;
+// Max dot travel from centre in CSS pixels (≈ circle_r − half_dot_size)
+const JOY_DOT_TRAVEL = 32;
+
 function onTouchStart(e: TouchEvent): void {
   e.preventDefault();
   for (const t of Array.from(e.changedTouches)) {
-    const isLeft = t.clientX < window.innerWidth / 2;
-    if (isLeft && touch.joyId === -1) {
-      touch.joyId = t.identifier;
-      touch.joyOriginX = t.clientX; touch.joyOriginY = t.clientY;
-      touch.joyX = 0; touch.joyY = 0;
-    } else if (!isLeft && touch.lookId === -1) {
+    // Activate joystick only when the touch lands inside the joystick circle
+    if (touch.joyId === -1) {
+      const joyEl = document.getElementById('touch-joy');
+      if (joyEl) {
+        const rect = joyEl.getBoundingClientRect();
+        const cx = rect.left + rect.width  / 2;
+        const cy = rect.top  + rect.height / 2;
+        const d  = Math.sqrt((t.clientX - cx) ** 2 + (t.clientY - cy) ** 2);
+        if (d <= JOY_R + 10) {            // small tolerance for fat fingers
+          touch.joyId = t.identifier;
+          touch.joyOriginX = cx;          // fixed at circle centre
+          touch.joyOriginY = cy;
+          touch.joyX = 0; touch.joyY = 0;
+          continue;
+        }
+      }
+    }
+    // Everything else is a look touch
+    if (touch.lookId === -1) {
       touch.lookId = t.identifier;
       touch.lookPrevX = t.clientX; touch.lookPrevY = t.clientY;
     }
@@ -189,17 +231,23 @@ function onTouchMove(e: TouchEvent): void {
   e.preventDefault();
   for (const t of Array.from(e.changedTouches)) {
     if (t.identifier === touch.joyId) {
-      const dx = t.clientX - touch.joyOriginX;
-      const dy = t.clientY - touch.joyOriginY;
-      const max = 40;
-      touch.joyX = Math.max(-1, Math.min(1, dx / max));
-      touch.joyY = Math.max(-1, Math.min(1, dy / max));
+      const dx   = t.clientX - touch.joyOriginX;
+      const dy   = t.clientY - touch.joyOriginY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      // Normalise direction, clamp magnitude to [0, 1] based on circle radius
+      const ratio = Math.min(dist / JOY_R, 1);
+      if (dist > 0) {
+        touch.joyX = (dx / dist) * ratio;
+        touch.joyY = (dy / dist) * ratio;
+      } else {
+        touch.joyX = 0; touch.joyY = 0;
+      }
+      // Move dot
       const dot = document.getElementById('touch-joy-dot');
-      if (dot) { dot.style.left = (32 + touch.joyX * max * 0.6) + 'px'; dot.style.top = (32 + touch.joyY * max * 0.6) + 'px'; }
-      keys['KeyW'] = touch.joyY < -0.3; keys['ArrowUp']    = keys['KeyW'];
-      keys['KeyS'] = touch.joyY >  0.3; keys['ArrowDown']  = keys['KeyS'];
-      keys['KeyA'] = touch.joyX < -0.3; keys['ArrowLeft']  = keys['KeyA'];
-      keys['KeyD'] = touch.joyX >  0.3; keys['ArrowRight'] = keys['KeyD'];
+      if (dot) {
+        dot.style.left = (35 + touch.joyX * JOY_DOT_TRAVEL) + 'px';
+        dot.style.top  = (35 + touch.joyY * JOY_DOT_TRAVEL) + 'px';
+      }
     } else if (t.identifier === touch.lookId) {
       const dx = t.clientX - touch.lookPrevX;
       const dy = t.clientY - touch.lookPrevY;
@@ -215,12 +263,8 @@ function onTouchEnd(e: TouchEvent): void {
   for (const t of Array.from(e.changedTouches)) {
     if (t.identifier === touch.joyId) {
       touch.joyId = -1; touch.joyX = 0; touch.joyY = 0;
-      keys['KeyW'] = false; keys['ArrowUp']    = false;
-      keys['KeyS'] = false; keys['ArrowDown']  = false;
-      keys['KeyA'] = false; keys['ArrowLeft']  = false;
-      keys['KeyD'] = false; keys['ArrowRight'] = false;
       const dot = document.getElementById('touch-joy-dot');
-      if (dot) { dot.style.left = '32px'; dot.style.top = '32px'; }
+      if (dot) { dot.style.left = '35px'; dot.style.top = '35px'; }
     }
     if (t.identifier === touch.lookId) touch.lookId = -1;
   }
@@ -234,21 +278,41 @@ export function updateControls(
 ): void {
   if (!locked && !touchActive) return;
 
-  running = keys['ShiftLeft'] || keys['ShiftRight'];
+  const jx = touch.joyX, jy = touch.joyY;
+  const jlen = Math.sqrt(jx * jx + jy * jy);
+
+  // Sprint when joystick is pushed >85% of full range, or Shift on keyboard
+  running = keys['ShiftLeft'] || keys['ShiftRight'] || (touchActive && jlen > 0.85);
   const speed = running ? RUN_SPEED : WALK_SPEED;
 
   const sinY = Math.sin(yaw), cosY = Math.cos(yaw);
   let moveX = 0, moveZ = 0;
 
-  if (keys['KeyW'] || keys['ArrowUp'])    { moveX -= sinY; moveZ -= cosY; }
-  if (keys['KeyS'] || keys['ArrowDown'])  { moveX += sinY; moveZ += cosY; }
-  if (keys['KeyA'] || keys['ArrowLeft'])  { moveX -= cosY; moveZ += sinY; }
-  if (keys['KeyD'] || keys['ArrowRight']) { moveX += cosY; moveZ -= sinY; }
+  if (touchActive) {
+    // Analog joystick: jy < 0 = stick pushed up = forward; jx > 0 = right = strafe right.
+    // Speed scales linearly with how far the stick is pushed.
+    if (jlen > 0.05) {
+      const fwd = -jy, str = jx;
+      const wx = fwd * (-sinY) + str * cosY;
+      const wz = fwd * (-cosY) + str * (-sinY);
+      const wl = Math.sqrt(wx * wx + wz * wz);
+      if (wl > 0) {
+        const spd = speed * jlen * dt;
+        moveX = (wx / wl) * spd;
+        moveZ = (wz / wl) * spd;
+      }
+    }
+  } else {
+    if (keys['KeyW'] || keys['ArrowUp'])    { moveX -= sinY; moveZ -= cosY; }
+    if (keys['KeyS'] || keys['ArrowDown'])  { moveX += sinY; moveZ += cosY; }
+    if (keys['KeyA'] || keys['ArrowLeft'])  { moveX -= cosY; moveZ += sinY; }
+    if (keys['KeyD'] || keys['ArrowRight']) { moveX += cosY; moveZ -= sinY; }
 
-  const len = Math.sqrt(moveX * moveX + moveZ * moveZ);
-  if (len > 0) { moveX /= len; moveZ /= len; }
-  moveX *= speed * dt;
-  moveZ *= speed * dt;
+    const len = Math.sqrt(moveX * moveX + moveZ * moveZ);
+    if (len > 0) { moveX /= len; moveZ /= len; }
+    moveX *= speed * dt;
+    moveZ *= speed * dt;
+  }
 
   let nx = camera.position.x + moveX;
   let nz = camera.position.z + moveZ;
@@ -277,7 +341,7 @@ export function updateControls(
   if (temple   !== null) groundY = Math.max(groundY, temple);
   if (building !== null) groundY = Math.max(groundY, building);
 
-  const moving = len > 0;
+  const moving = moveX !== 0 || moveZ !== 0;
   if (moving) {
     bobPhase += dt * (running ? 9 : 6);
     bobOffset = Math.sin(bobPhase) * (running ? 0.10 : 0.055);
