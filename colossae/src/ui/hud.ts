@@ -3,7 +3,7 @@ import { getYaw } from '../player/controls';
 const COMPASS_CARDS = [
   { label: 'N', deg: 0 }, { label: 'NE', deg: 45 }, { label: 'E', deg: 90 },
   { label: 'SE', deg: 135 }, { label: 'S', deg: 180 }, { label: 'SW', deg: 225 },
-  { label: 'W', deg: 270 }, { label: 'NW', deg: 315 }, { label: 'N', deg: 360 },
+  { label: 'W', deg: 270 }, { label: 'NW', deg: 315 },
 ];
 const CARD_PX = 52;
 let compassStrip: HTMLElement | null = null;
