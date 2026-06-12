@@ -240,7 +240,9 @@ export function updateControls(
   camera.fov = fovCurrent;
 
   camera.position.set(nx, groundY + PLAYER_H + bobOffset, nz);
-  camera.rotation.set(pitch, yaw, 0);
+  // Babylon.js FreeCamera default forward is +Z; offset yaw by π to match Three.js (-Z) convention.
+  // Negate pitch because Babylon positive rotation.x = look down (opposite of Three.js).
+  camera.rotation.set(-pitch, yaw + Math.PI, 0);
 }
 
 export function isPointerLocked(canvas: HTMLCanvasElement): boolean {
