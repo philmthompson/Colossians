@@ -1,4 +1,4 @@
-import { Scene, Mesh, MeshBuilder, StandardMaterial, Color3, Material } from '@babylonjs/core';
+import { Scene, Mesh, MeshBuilder, StandardMaterial, Color3, Material, Quaternion } from '@babylonjs/core';
 import { terrainH } from './terrain';
 import { addCollider } from '../player/controls';
 import {
@@ -412,62 +412,70 @@ function buildDyeWorks(scene: Scene): void {
 
 function buildRoads(scene: Scene): void {
   const cobM = makeCobbleMat(scene, 'road-cob');
+  const EPS = 0.8;
 
-  // roadStrip: lay terrain-hugging cobblestone slabs between two points.
-  // Slabs overlap slightly in length (+0.3) to eliminate gaps.
-  function roadStrip(x1: number, z1: number, x2: number, z2: number, width: number, segs: number) {
+  // Terrain-conforming road strip: ~1.8 unit segments each pitched and rolled
+  // to match the local terrain slope, eliminating floating slabs on hillsides.
+  function roadStrip(x1: number, z1: number, x2: number, z2: number, width: number) {
+    const totalLen = Math.sqrt((x2 - x1) ** 2 + (z2 - z1) ** 2);
+    const segs = Math.max(1, Math.ceil(totalLen / 1.8));
     const dx = (x2 - x1) / segs, dz = (z2 - z1) / segs;
     const segLen = Math.sqrt(dx * dx + dz * dz);
-    const angle  = Math.atan2(dx, dz);
+    const yAngle = Math.atan2(dx, dz);
+    // Local forward and right vectors for slope sampling
+    const fwdX = dx / segLen, fwdZ = dz / segLen;
+    const rgtX = fwdZ, rgtZ = -fwdX;
+
     for (let i = 0; i < segs; i++) {
       const mx = x1 + (i + 0.5) * dx, mz = z1 + (i + 0.5) * dz;
-      const ty = terrainH(mx, mz) + 0.09;
-      const slab = MeshBuilder.CreateBox(`rd-${i}-${Math.round(x1)}-${Math.round(z1)}`, {
-        width: segLen + 0.30, height: 0.22, depth: width + 0.10,
-      }, scene);
-      slab.position.set(mx, ty, mz);
-      slab.rotation.y = angle;
+      const hMid = terrainH(mx, mz);
+      const hFwd = terrainH(mx + fwdX * EPS, mz + fwdZ * EPS);
+      const hBck = terrainH(mx - fwdX * EPS, mz - fwdZ * EPS);
+      const hRgt = terrainH(mx + rgtX * EPS, mz + rgtZ * EPS);
+      const hLft = terrainH(mx - rgtX * EPS, mz - rgtZ * EPS);
+
+      // Negative pitch: positive Y-pitch in Babylon tilts the front face down
+      const pitch = -Math.atan2(hFwd - hBck, 2 * EPS);
+      const roll  =  Math.atan2(hRgt - hLft, 2 * EPS);
+
+      const slab = MeshBuilder.CreateBox('rd', { width: segLen + 0.30, height: 0.22, depth: width + 0.10 }, scene);
+      slab.position.set(mx, hMid + 0.09, mz);
+      slab.rotationQuaternion = Quaternion.RotationYawPitchRoll(yAngle, pitch, roll);
       slab.material = cobM;
     }
   }
 
-  // Small junction cap to fill gaps where two strips meet at an angle
   function junctionCap(x: number, z: number, size: number) {
     const ty = terrainH(x, z) + 0.09;
-    const cap = MeshBuilder.CreateBox(`rjcap-${Math.round(x)}-${Math.round(z)}`, {
-      width: size, height: 0.22, depth: size,
-    }, scene);
+    const cap = MeshBuilder.CreateBox('rjcap', { width: size, height: 0.22, depth: size }, scene);
     cap.position.set(x, ty, z);
     cap.material = cobM;
   }
 
-  // ── Cardo: full N–S spine, acropolis area to bridge north abutment ─────────
-  roadStrip(92,   0, 92, -44,  7,  5);   // south cardo (temple / agora approach)
-  roadStrip(92, -44, 92, -92,  7,  6);   // main cardo through city
-  roadStrip(92, -92, 92, -100, 7,  2);   // cardo → bridge north approach
+  // ── Cardo: full N–S spine ─────────────────────────────────────────────────
+  roadStrip(92,   0, 92,  -92, 7);   // acropolis south to decumanus
+  roadStrip(92, -92, 92, -100, 7);   // cardo → bridge north approach
 
-  // ── Decumanus: east-west cross street at z = -92 ──────────────────────────
-  roadStrip(92, -92, 58, -92, 7, 4);    // decumanus west of cardo (toward temple)
+  // ── Decumanus: west of cardo ──────────────────────────────────────────────
+  roadStrip(92, -92, 58, -92, 7);
 
-  // ── East approach: milestone → curve around theatre NE → join decumanus ───
-  // Theatre is centred at (224, -48).  Its outer wall reaches x≈253, z≈-20 to
-  // z≈-76.  The decumanus at z=-92 already clears the theatre's northern extent
-  // (z=-76).  The road curves from milestone at (292,-89) gently northward to
-  // z=-92, arcing around the theatre's east side at x≈258.
-  roadStrip(292, -89, 258, -89, 8,  4);   // east of theatre, milestone side
+  // ── East approach: milestone → curve north around theatre east → decumanus ─
+  // Milestone at (292,-89). Theatre centre (224,-48), eastern outer edge ~x=255.
+  // Road arcs north from milestone, then swings west along the decumanus.
+  roadStrip(292, -89, 258, -89, 8);
   junctionCap(258, -89, 9);
-  roadStrip(258, -89, 230, -92, 8,  4);   // gentle arc north to decumanus level
+  roadStrip(258, -89, 230, -92, 8);
   junctionCap(230, -92, 9);
-  roadStrip(230, -92,  92, -92, 8, 16);   // along decumanus to cardo
+  roadStrip(230, -92,  92, -92, 8);
   junctionCap(92, -92, 9);
 
-  // ── Post-bridge: cross south abutment then turn WEST along chasm ──────────
-  // Player crosses bridge heading north (-z). At the south abutment they turn
-  // Right = WEST (-x).  Road follows the south bank of the chasm westward.
-  roadStrip(92, -142, 92, -150, 7,  2);   // brief north to clear abutment
+  // ── Post-bridge: south abutment then turn EAST along chasm south bank ─────
+  // Player crosses bridge heading south (+z). After the south abutment they
+  // turn left = EAST (+x). Road follows the chasm south bank eastward.
+  roadStrip(92, -142, 92, -150, 7);
   junctionCap(92, -150, 8);
-  roadStrip(92, -150,  0, -150, 7, 10);   // WEST along chasm south bank
-  roadStrip( 0, -150, -80, -150, 7,  9);  // continue west into distance
+  roadStrip(92, -150, 200, -150, 7);
+  roadStrip(200, -150, 310, -150, 7);
 }
 
 function buildAgoraMarket(scene: Scene): void {
