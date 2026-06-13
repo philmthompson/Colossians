@@ -1,7 +1,7 @@
 export interface SiteData {
   id: string;
   title: string;
-  verb: 'Examine' | 'Talk' | 'Read' | 'Enter' | 'Inspect';
+  verb: 'Examine' | 'Talk' | 'Read' | 'Enter' | 'Inspect' | 'Observe';
   era?: string;
   body: string;
   accuracy: string;
@@ -107,8 +107,8 @@ export const SITES: SiteData[] = [
     accuracy: `Baths: attested as probable from surface survey (Yener, Cadwallader). Cold Cadmus-fed water: inferred from local hydrology. Cold water as local identity marker vs Laodicea: NT Rev 3:15-16 (written ~AD 95, extrapolated back). Specific plan and location are conjectural.`,
   },
   {
-    id: 'epaphras',
-    title: 'Epaphras',
+    id: 'aristarchus',
+    title: 'Aristarchus',
     verb: 'Talk',
     body: '',
     accuracy: '',
@@ -138,9 +138,17 @@ export const SITES: SiteData[] = [
     accuracy: '',
     lines: [
       `Onesimus? Haven't seen him in days. The master hasn't said anything, but I notice things. I always notice things.`,
-      `If you're looking for the assembly, they meet in the evenings, in the courtyard. Epaphras started it. Ask for Archippus if you need the master.`,
+      `If you're looking for the assembly, they meet in the evenings, in the courtyard. Ask for Archippus if you need the master.`,
       `Nobody comes and goes from this house without my knowing it. Except Onesimus, apparently.`,
     ],
+  },
+  {
+    id: 'cadmus',
+    title: 'Mount Cadmus',
+    verb: 'Observe',
+    era: 'Colossae · AD 52',
+    body: `The mountain fills the northern sky. Its Phrygian name is Honaz Dağı — the Romans know it as Cadmus, after the Phoenician founder-hero whose wanderings the Greeks traced everywhere they found a high place worth naming. The peak stands at nearly two thousand six hundred metres; even in late spring, the summit carries snow. The shepherds of the valley pastures read the weather by its caps and shadows. <br><br>The springs that water Colossae — cold, minerally, fast — descend from these flanks. The same water that feeds the Lycus, stains the wool crimson, and fills the baths runs off this mountain. It is, in the most literal sense, the source of everything the city lives on.`,
+    accuracy: `Mount Cadmus (Honaz Dağı): name and height (2,571 m) attested. Cadmus myth association: ancient and medieval sources. Lycus River headwaters from the Cadmus massif: geographical fact. Role of mineral spring water in Colossae's dye industry: Strabo <em>Geography</em> 12.8.16.`,
   },
   {
     id: 'flocks',

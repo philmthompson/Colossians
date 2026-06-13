@@ -7,7 +7,7 @@ import { terrainH } from '../world/terrain';
 // ─── NPC definitions ──────────────────────────────────────────────────────────
 export const NPC_DEFS = [
   // tunic colour, himation colour
-  { id: 'epaphras',   x: 116, z:  -42, tunic: [0.82, 0.76, 0.62], cloak: [0.55, 0.16, 0.11], facing: 0 },
+  { id: 'aristarchus', x: 116, z:  -42, tunic: [0.82, 0.76, 0.62], cloak: [0.55, 0.16, 0.11], facing: 0 },
   { id: 'shepherd',   x: 300, z:  -50, tunic: [0.60, 0.50, 0.34], cloak: [0.28, 0.22, 0.14], facing: 0 },
   { id: 'doorkeeper', x: 141, z:  -78, tunic: [0.74, 0.68, 0.54], cloak: [0.22, 0.36, 0.48], facing: Math.PI },
 ];

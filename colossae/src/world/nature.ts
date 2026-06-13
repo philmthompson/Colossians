@@ -163,8 +163,23 @@ function buildCypresses(scene: Scene): void {
   ];
   for (const sp of chasmSpots) positions.push(sp);
 
-  // Hillside scatter (existing)
+  // Hillside scatter
   for (let i = 0; i < 20; i++) positions.push([-100 + Math.random() * 200, 80 + Math.random() * 80]);
+
+  // City approaches: lining the main north–south route through lower city
+  for (let az = -30; az >= -92; az -= 10) {
+    positions.push([88,  az]);
+    positions.push([96,  az]);
+  }
+
+  // Theatre district: scattered around the cavea
+  for (let i = 0; i < 10; i++) positions.push([198 + Math.random() * 40, -30 + Math.random() * 40]);
+
+  // Agora surrounds
+  const agoraRing: [number, number][] = [
+    [105,-28],[130,-28],[115,-50],[125,-50],[98,-38],[138,-38],
+  ];
+  for (const sp of agoraRing) positions.push(sp);
 
   const foliageSrc = MeshBuilder.CreateCylinder('cy-f-src', { diameterTop: 0, diameterBottom: 3, height: 10, tessellation: 7 }, scene);
   const trunkSrc   = MeshBuilder.CreateCylinder('cy-t-src', { diameterTop: 0.4, diameterBottom: 0.5, height: 3.5, tessellation: 7 }, scene);
@@ -182,6 +197,71 @@ function buildCypresses(scene: Scene): void {
   }
   trunkSrc.thinInstanceSetBuffer('matrix',   new Float32Array(tM), 16);
   foliageSrc.thinInstanceSetBuffer('matrix', new Float32Array(fM), 16);
+}
+
+// Oriental plane trees (Platanus orientalis) — broad domed canopy, near water and town squares
+function buildPlaneTrees(scene: Scene): void {
+  const positions: [number, number][] = [
+    // Along the river banks east and west of the chasm
+    [-180,-118],[-160,-118],[-140,-120],[-120,-118],
+    [175,-118],[190,-116],[210,-120],[230,-118],
+    // Town square / agora area
+    [108,-44],[122,-44],[108,-52],[122,-52],
+    // Philemon's courtyard surrounds
+    [134,-82],[148,-82],[134,-92],[148,-92],
+    // Acropolis base
+    [-28,-20],[-14,-24],[18,-20],[32,-24],
+  ];
+
+  const trunkSrc   = MeshBuilder.CreateCylinder('pl-trunk-src', { diameterTop: 0.55, diameterBottom: 0.7, height: 4.5, tessellation: 9 }, scene);
+  const foliageSrc = MeshBuilder.CreateSphere('pl-foliage-src', { diameter: 7, segments: 7 }, scene);
+  trunkSrc.isVisible   = false;
+  foliageSrc.isVisible = false;
+  trunkSrc.material   = lmat('pl-t', 0x7a6040, scene);
+  foliageSrc.material = lmat('pl-f', 0x3a5828, scene);
+
+  const tM: number[] = [], fM: number[] = [];
+  for (const [ox, oz] of positions) {
+    const ty    = terrainH(ox, oz);
+    const scale = 0.8 + Math.random() * 0.4;
+    const ry    = Math.random() * Math.PI * 2;
+    tM.push(...thinMatrix(ox, ty + 2.25,             oz, ry, scale, scale, scale).m);
+    fM.push(...thinMatrix(ox, ty + 5 + scale * 0.8,  oz, ry, scale * 1.2, scale * 0.8, scale * 1.2).m);
+  }
+  trunkSrc.thinInstanceSetBuffer('matrix',   new Float32Array(tM), 16);
+  foliageSrc.thinInstanceSetBuffer('matrix', new Float32Array(fM), 16);
+}
+
+// Aleppo / Turkish red pines (Pinus brutia) — conical, on drier hillsides and slopes
+function buildPines(scene: Scene): void {
+  const positions: [number, number][] = [];
+  // Northern slopes toward Cadmus
+  for (let i = 0; i < 22; i++) positions.push([-60 + Math.random() * 120, -230 - Math.random() * 60]);
+  // Eastern hill flanks
+  for (let i = 0; i < 18; i++) positions.push([220 + Math.random() * 80, -60 + Math.random() * 60]);
+  // Western valley walls
+  for (let i = 0; i < 14; i++) positions.push([-160 + Math.random() * 40, -40 + Math.random() * 80]);
+
+  const trunkSrc   = MeshBuilder.CreateCylinder('pn-trunk-src', { diameterTop: 0.3, diameterBottom: 0.5, height: 5, tessellation: 7 }, scene);
+  const can1Src    = MeshBuilder.CreateCylinder('pn-can1-src',  { diameterTop: 0, diameterBottom: 4.5, height: 5, tessellation: 8 }, scene);
+  const can2Src    = MeshBuilder.CreateCylinder('pn-can2-src',  { diameterTop: 0, diameterBottom: 3,   height: 4, tessellation: 8 }, scene);
+  trunkSrc.isVisible = can1Src.isVisible = can2Src.isVisible = false;
+  trunkSrc.material = lmat('pn-t', 0x5a3818, scene);
+  can1Src.material  = lmat('pn-c1', 0x2a4420, scene);
+  can2Src.material  = lmat('pn-c2', 0x304e26, scene);
+
+  const tM: number[] = [], c1M: number[] = [], c2M: number[] = [];
+  for (const [ox, oz] of positions) {
+    const ty    = terrainH(ox, oz);
+    const scale = 0.75 + Math.random() * 0.45;
+    const ry    = Math.random() * Math.PI * 2;
+    tM.push( ...thinMatrix(ox, ty + 2.5,          oz, ry, scale, scale, scale).m);
+    c1M.push(...thinMatrix(ox, ty + 4.5 + scale,  oz, ry, scale, scale, scale).m);
+    c2M.push(...thinMatrix(ox, ty + 7.5 + scale,  oz, ry, scale, scale, scale).m);
+  }
+  trunkSrc.thinInstanceSetBuffer('matrix',  new Float32Array(tM),  16);
+  can1Src.thinInstanceSetBuffer('matrix',   new Float32Array(c1M), 16);
+  can2Src.thinInstanceSetBuffer('matrix',   new Float32Array(c2M), 16);
 }
 
 function buildReeds(scene: Scene): void {
@@ -212,6 +292,8 @@ function buildReeds(scene: Scene): void {
 export function buildNature(scene: Scene): void {
   buildOliveGroves(scene);
   buildCypresses(scene);
+  buildPlaneTrees(scene);
+  buildPines(scene);
   buildReeds(scene);
 
   // Snow cap on Mount Cadmus peak
