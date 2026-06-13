@@ -518,6 +518,16 @@ function buildChurch(scene: Scene): void {
   // Helper: centre between two values
   const mid = (a: number, b: number) => (a + b) / 2;
 
+  // ── LEVEL FOUNDATION ─────────────────────────────────────────────────────
+  // Fill entire footprint from below ground to baseY so the interior floor
+  // is perfectly level regardless of terrain slope.
+  {
+    const foundH = baseY - BOTTOM;
+    const found = MeshBuilder.CreateBox('ch-found', { width: bW, height: foundH, depth: bD }, scene);
+    found.position.set(bCX, BOTTOM + foundH * 0.5, bCZ);
+    found.material = stoneM;
+  }
+
   // ── OUTER PERIMETER ───────────────────────────────────────────────────────
   wall(bCX, zN, bW, T);    // north (full)
   wall(bCX, zS, bW, T);    // south (full)
@@ -526,8 +536,24 @@ function buildChurch(scene: Scene): void {
   // East wall: entrance gap of 3 m in the vestibule face (zPort → zS = 7 m, gap centred at z=-79.5)
   const eDoorC = mid(zPort, zS);   // -79.5
   const eDoorW = 3.0;
+  const ARCH_H = 2.8;   // clear opening height
   wall(xE, mid(zN, eDoorC - eDoorW / 2), T, eDoorC - eDoorW / 2 - zN);   // north section
   wall(xE, mid(eDoorC + eDoorW / 2, zS), T, zS - (eDoorC + eDoorW / 2)); // south section
+
+  // Archway: lintel header above the door gap, and two jamb columns
+  {
+    const lintH  = WH - ARCH_H;          // height of header block
+    const lintel = MeshBuilder.CreateBox('ch-lintel', { width: T + 0.3, height: lintH, depth: eDoorW }, scene);
+    lintel.position.set(xE, baseY + ARCH_H + lintH * 0.5, eDoorC);
+    lintel.material = stuccoM;
+
+    for (const side of [-1, 1]) {
+      const jz   = eDoorC + side * (eDoorW / 2 + 0.2);
+      const jamb = MeshBuilder.CreateBox('ch-jamb', { width: T + 0.3, height: ARCH_H, depth: 0.4 }, scene);
+      jamb.position.set(xE, baseY + ARCH_H * 0.5, jz);
+      jamb.material = stoneM;
+    }
+  }
 
   // ── INTERIOR DIVISIONS ────────────────────────────────────────────────────
 
