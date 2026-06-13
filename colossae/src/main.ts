@@ -99,9 +99,24 @@ initWind();
 initControls(camera, canvas);
 setYaw(0); // face north toward the city from the acropolis wall opening
 
-// ─── Intro screen ────────────────────────────────────────────────────────────
-const intro    = document.getElementById('intro')!;
-const introBtn = document.getElementById('intro-btn')!;
+// ─── Intro screen + loading bar ──────────────────────────────────────────────
+const intro       = document.getElementById('intro')!;
+const introBtn    = document.getElementById('intro-btn') as HTMLButtonElement;
+const loadingBar  = document.getElementById('loading-bar')!;
+const loadingFill = document.getElementById('loading-fill') as HTMLElement;
+
+// Start indeterminate sweep while shaders compile
+loadingBar.classList.add('indeterminate');
+
+scene.executeWhenReady(() => {
+  // Snap to full, pause briefly, then enable the button
+  loadingBar.classList.remove('indeterminate');
+  loadingFill.style.width = '100%';
+  setTimeout(() => {
+    introBtn.disabled = false;
+    introBtn.textContent = 'BEGIN';
+  }, 450);
+});
 
 introBtn.addEventListener('click', () => {
   intro.classList.add('fade-out');

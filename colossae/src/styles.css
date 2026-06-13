@@ -56,9 +56,31 @@ canvas#c {
   color: #c9a55c; font-family: inherit; font-size: 0.85rem;
   letter-spacing: 0.3em; text-transform: uppercase;
   padding: 0.7rem 2.5rem; cursor: pointer;
-  transition: background 0.3s, color 0.3s;
+  transition: background 0.3s, color 0.3s, opacity 0.3s;
 }
-#intro-btn:hover { background: #c9a55c; color: #1a120a; }
+#intro-btn:hover:not(:disabled) { background: #c9a55c; color: #1a120a; }
+#intro-btn:disabled { opacity: 0.45; cursor: default; border-color: #7a6a50; color: #7a6a50; }
+
+/* Loading bar */
+#loading-bar {
+  width: 220px; height: 2px;
+  background: rgba(201,165,92,0.18);
+  margin: 1rem auto 0;
+  overflow: hidden;
+}
+#loading-fill {
+  height: 100%; width: 0%;
+  background: #c9a55c;
+  transition: width 0.4s ease;
+}
+#loading-bar.indeterminate #loading-fill {
+  width: 35%;
+  animation: loading-sweep 1.4s ease-in-out infinite;
+}
+@keyframes loading-sweep {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(800%); }
+}
 .intro-note {
   margin-top: 1.5rem; font-size: 0.72rem; color: #7a6a50;
   letter-spacing: 0.05em; line-height: 1.7;
