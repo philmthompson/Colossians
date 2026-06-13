@@ -452,25 +452,25 @@ function buildRoads(scene: Scene): void {
     cap.material = cobM;
   }
 
-  // ── Cardo: full N–S spine ─────────────────────────────────────────────────
-  roadStrip(92,   0, 92,  -92, 7);   // acropolis south to decumanus
-  roadStrip(92, -92, 92, -100, 7);   // cardo → bridge north approach
+  // ── Cardo: N–S spine from spawn through city to bridge north approach ────
+  roadStrip(92, 0, 92, -92, 7);
+  roadStrip(92, -92, 92, -100, 7);
 
-  // ── Decumanus: east-west cross street through the city grid ───────────────
-  roadStrip(224, -92, 92, -92, 8);   // theatre junction across to cardo
-  junctionCap(92, -92, 9);
-  roadStrip(92, -92, 58, -92, 7);    // west of cardo (toward temple)
+  // ── Western exit road from spawn latitude ────────────────────────────────
+  roadStrip(91, -8, -300, -4, 7);
 
-  // ── Theatre connector (GREEN): theatre south down to the decumanus ────────
-  roadStrip(224, -58, 224, -92, 7);
-  junctionCap(224, -92, 9);
+  // ── East-side connector: N–S then back west to cardo ─────────────────────
+  roadStrip(195, -14, 195, -24, 7);
+  junctionCap(195, -14, 8);
+  roadStrip(195, -24, 91, -22, 7);
+  junctionCap(91, -22, 8);
 
-  // ── SE city-exit road (GREEN): from the theatre junction out to the SE ────
-  // Replaces the old NE milestone arc, which the annotation marks for removal.
-  roadStrip(224, -92, 258, -110, 8);
-  roadStrip(258, -110, 298, -132, 8);
+  // ── Eastern road: from theatre area heading far east ─────────────────────
+  roadStrip(226, -15, 289, -10, 8);
+  junctionCap(226, -15, 9);
+  roadStrip(289, -10, 800, -9, 8);
 
-  // ── Post-bridge: short link off the south abutment (necropolis side) ──────
+  // ── Post-bridge stub (necropolis side) ───────────────────────────────────
   roadStrip(92, -142, 92, -150, 7);
 }
 

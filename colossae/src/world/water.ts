@@ -1,5 +1,4 @@
-import { Scene, MeshBuilder, StandardMaterial, Color3 } from '@babylonjs/core';
-import { terrainH } from './terrain';
+import { Scene, MeshBuilder, StandardMaterial, Color3, Quaternion } from '@babylonjs/core';
 
 const RIVER_Z  = -120;
 const CHASM_X0 =  60;
@@ -70,59 +69,54 @@ function buildGorgeWalls(scene: Scene): void {
 
 
 export function buildBridge(scene: Scene): void {
-  // Deck sits level at the city-side terrain so no ramps are needed.
-  const NORTH_Y  = terrainH(92, -105);   // sample at north abutment
-  const SOUTH_Y  = terrainH(92, -133);   // sample at south abutment
-  const DECK_Y   = Math.min(NORTH_Y, SOUTH_Y);
-  const BRIDGE_W = 12;   // matches cardo road width
-  const DECK_LEN = 44;
+  // Sloped bridge: y=13 at city side (z=-95), y=9 at necropolis side (z=-142).
+  const NORTH_Z  = -95,  NORTH_Y  = 13;   // city side (higher)
+  const SOUTH_Z  = -142, SOUTH_Y  =  9;   // necropolis side (lower)
+  const BRIDGE_W = 12;
+  const DECK_LEN = Math.abs(SOUTH_Z - NORTH_Z);             // 47
+  const DECK_Z   = (NORTH_Z + SOUTH_Z) / 2;                 // -118.5
+  const DECK_Y   = (NORTH_Y + SOUTH_Y) / 2;                 // 11
+  // Pitch: positive tilts +Z end (NORTH_Z = -95) upward
+  const pitch    = Math.atan2(NORTH_Y - SOUTH_Y, DECK_LEN); // atan2(4,47)
   const stoneMat = smat('bridge-s', 0x9a8870, scene);
   const capMat   = smat('bridge-c', 0xb8a880, scene);
 
-  // Main deck slab
+  // Main deck slab — tilted to slope from city to necropolis
   const deck = MeshBuilder.CreateBox('deck', { width: BRIDGE_W, height: 1.4, depth: DECK_LEN }, scene);
-  deck.position.set(92, DECK_Y, -119);
+  deck.position.set(92, DECK_Y, DECK_Z);
+  deck.rotationQuaternion = Quaternion.RotationYawPitchRoll(0, pitch, 0);
   deck.material = stoneMat;
   deck.checkCollisions = true;
 
-  // Solid stone abutments — deep enough to fill any gap between deck and bank
-  for (const [az, bankY] of [[-104, NORTH_Y], [-134, SOUTH_Y]] as [number, number][]) {
-    const fill = Math.max(8, Math.abs(DECK_Y - bankY) + 6);
+  // Abutments at each bank, sized to fill the gap to ground
+  const abutments: [number, number][] = [[NORTH_Z + 3.5, NORTH_Y], [SOUTH_Z - 3.5, SOUTH_Y]];
+  for (const [az, bankY] of abutments) {
+    const fill = Math.max(8, bankY + 6);
     const abt = MeshBuilder.CreateBox('abt', { width: BRIDGE_W + 4, height: fill, depth: 7 }, scene);
-    abt.position.set(92, DECK_Y - fill * 0.5, az);
+    abt.position.set(92, bankY - fill * 0.5, az);
     abt.material = stoneMat;
   }
 
-  // Two piers spanning from chasm floor to deck underside
-  for (const pz of [-113, -125]) {
+  // Piers below the deck centre
+  for (const pz of [-110, -127]) {
+    const t = (pz - SOUTH_Z) / (NORTH_Z - SOUTH_Z);
+    const pierY = SOUTH_Y + t * (NORTH_Y - SOUTH_Y);
     const pier = MeshBuilder.CreateBox('pier', { width: BRIDGE_W - 2, height: 12, depth: 4 }, scene);
-    pier.position.set(92, DECK_Y - 5.5, pz);
+    pier.position.set(92, pierY - 5, pz);
     pier.material = stoneMat;
   }
 
-  // Arch haunch blocks
-  for (const [hz, rx] of [[-108, 0.28], [-130, -0.28]] as [number, number][]) {
-    const haunch = MeshBuilder.CreateBox('haunch', { width: BRIDGE_W, height: 2.5, depth: 6 }, scene);
-    haunch.position.set(92, DECK_Y - 2.5, hz);
-    haunch.rotation.x = rx;
-    haunch.material = stoneMat;
-  }
-
-  // Parapets
+  // Parapets (follow deck slope)
   for (const side of [-1, 1]) {
     const par = MeshBuilder.CreateBox('par', { width: 0.9, height: 1.1, depth: DECK_LEN - 2 }, scene);
-    par.position.set(92 + side * (BRIDGE_W / 2 - 0.45), DECK_Y + 1.1, -119);
+    par.position.set(92 + side * (BRIDGE_W / 2 - 0.45), DECK_Y + 1.1, DECK_Z);
+    par.rotationQuaternion = Quaternion.RotationYawPitchRoll(0, pitch, 0);
     par.material = stoneMat;
 
     const cap = MeshBuilder.CreateBox('cap', { width: 1.1, height: 0.25, depth: DECK_LEN }, scene);
-    cap.position.set(92 + side * (BRIDGE_W / 2 - 0.55), DECK_Y + 1.75, -119);
+    cap.position.set(92 + side * (BRIDGE_W / 2 - 0.55), DECK_Y + 1.75, DECK_Z);
+    cap.rotationQuaternion = Quaternion.RotationYawPitchRoll(0, pitch, 0);
     cap.material = capMat;
-
-    for (let pz = -110; pz >= -128; pz -= 9) {
-      const post = MeshBuilder.CreateBox('post', { width: 1.1, height: 1.5, depth: 1.1 }, scene);
-      post.position.set(92 + side * (BRIDGE_W / 2 - 0.55), DECK_Y + 1.55, pz);
-      post.material = capMat;
-    }
   }
 }
 

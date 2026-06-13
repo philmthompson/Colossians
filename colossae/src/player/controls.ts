@@ -8,12 +8,14 @@ const FOV_WALK   = 72 * Math.PI / 180;
 const FOV_RUN    = 76 * Math.PI / 180;
 
 // ─── Bridge deck ─────────────────────────────────────────────────────────────
-// Mirrors buildBridge in water.ts: width=12, deck level = max terrain of both banks.
-const BRIDGE_DECK_Y = Math.max(terrainH(92, -98), terrainH(92, -140));
+// Sloped bridge: y=13 at z=-95 (city side) to y=9 at z=-142 (necropolis side).
+const BRIDGE_N_Z = -95, BRIDGE_S_Z = -142;
+const BRIDGE_N_Y = 13,  BRIDGE_S_Y =  9;
 function bridgeDeckY(x: number, z: number): number | null {
   if (Math.abs(x - 92) > 6) return null;
-  if (z < -140 || z > -98) return null;
-  return BRIDGE_DECK_Y;
+  if (z < BRIDGE_S_Z || z > BRIDGE_N_Z) return null;
+  const t = (z - BRIDGE_S_Z) / (BRIDGE_N_Z - BRIDGE_S_Z);  // 0 at south, 1 at north
+  return BRIDGE_S_Y + t * (BRIDGE_N_Y - BRIDGE_S_Y);
 }
 
 // ─── Theatre step height — keep in sync with theatre.ts constants ─────────────
