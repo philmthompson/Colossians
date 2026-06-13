@@ -81,6 +81,12 @@ export interface Collider { x: number; z: number; r: number; }
 const colliders: Collider[] = [];
 export function addCollider(c: Collider) { colliders.push(c); }
 
+// ─── Developer flight mode ────────────────────────────────────────────────────
+let _flightMode = false;
+const FLIGHT_SPEED = 45;
+export function toggleFlightMode(): void { _flightMode = !_flightMode; }
+export function isFlightMode(): boolean  { return _flightMode; }
+
 // ─── State ────────────────────────────────────────────────────────────────────
 const keys: Record<string, boolean> = {};
 let yaw = 0, pitch = 0, running = false;
@@ -129,7 +135,9 @@ export function initControls(camera: UniversalCamera, canvas: HTMLCanvasElement)
     if (document.pointerLockElement !== canvas) return;
     yaw   += e.movementX * 0.0018;
     pitch -= e.movementY * 0.0018;
-    pitch  = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, pitch));
+    // In flight mode allow full vertical range so you can look straight down
+    const pitchLimit = _flightMode ? Math.PI * 0.49 : Math.PI / 3;
+    pitch = Math.max(-pitchLimit, Math.min(pitchLimit, pitch));
   });
 
   document.addEventListener('keydown', (e) => { keys[e.code] = true; });
@@ -307,6 +315,29 @@ export function updateControls(
   locked: boolean,
 ): void {
   if (!locked && !touchActive) return;
+
+  // ── Developer flight mode (toggled by '0' key in main.ts) ──────────────────
+  if (_flightMode) {
+    const sp = (keys['ShiftLeft'] || keys['ShiftRight']) ? FLIGHT_SPEED * 3 : FLIGHT_SPEED;
+    const sinP = Math.sin(pitch), cosP = Math.cos(pitch);
+    const sinY2 = Math.sin(yaw), cosY2 = Math.cos(yaw);
+    let mx = 0, my = 0, mz = 0;
+    // WASD: full 3-D camera-relative movement
+    if (keys['KeyW'] || keys['ArrowUp'])    { mx -= sinY2 * cosP; my += sinP; mz -= cosY2 * cosP; }
+    if (keys['KeyS'] || keys['ArrowDown'])  { mx += sinY2 * cosP; my -= sinP; mz += cosY2 * cosP; }
+    if (keys['KeyA'] || keys['ArrowLeft'])  { mx += cosY2; mz -= sinY2; }
+    if (keys['KeyD'] || keys['ArrowRight']) { mx -= cosY2; mz += sinY2; }
+    // E / Space = fly up, Q / C = fly down (independent of look direction)
+    if (keys['KeyE'] || keys['Space'])     my += 1;
+    if (keys['KeyQ'] || keys['KeyC'])      my -= 1;
+    const len = Math.sqrt(mx * mx + my * my + mz * mz);
+    if (len > 0) { mx /= len; my /= len; mz /= len; }
+    camera.position.x += mx * sp * dt;
+    camera.position.y += my * sp * dt;
+    camera.position.z += mz * sp * dt;
+    camera.rotation.set(-pitch, yaw + Math.PI, 0);
+    return;
+  }
 
   const jx = touch.joyX, jy = touch.joyY;
   const jlen = Math.sqrt(jx * jx + jy * jy);

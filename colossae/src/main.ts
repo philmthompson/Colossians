@@ -10,6 +10,7 @@ import { buildTheatre } from './world/theatre';
 import { buildNecropolis, buildMilestone } from './world/necropolis';
 import {
   initControls, updateControls, isPointerLocked, setYaw, setTouchControlsHidden,
+  toggleFlightMode,
 } from './player/controls';
 import { initHUD, updateHUD, isCardOpen, setReticleActive, hidePrompt } from './ui/hud';
 import { updateRegions } from './game/regions';
@@ -96,7 +97,7 @@ initWind();
 
 // ─── Controls ────────────────────────────────────────────────────────────────
 initControls(camera, canvas);
-setYaw(Math.PI / 2); // face east over the city from the acropolis hill
+setYaw(0); // face north toward the city from the acropolis wall opening
 
 // ─── Intro screen ────────────────────────────────────────────────────────────
 const intro    = document.getElementById('intro')!;
@@ -110,6 +111,7 @@ introBtn.addEventListener('click', () => {
 
 // ─── Key events ──────────────────────────────────────────────────────────────
 document.addEventListener('keydown', (e) => {
+  if (e.code === 'Digit0') toggleFlightMode();   // hidden dev: fly mode
   if (e.code === 'KeyE') {
     if (isCardOpen()) closeCard();
     else tryInteract();
