@@ -459,90 +459,188 @@ function buildAgoraMarket(scene: Scene): void {
 }
 
 function buildChurch(scene: Scene): void {
+  // Floor plan (from archaeological record, Dura-Europos house-church):
+  //   1 = Courtyard (open air, centre)   5 = Lecture room (north centre)
+  //   2 = Portico   (south centre)       6 = Baptistery   (north east)
+  //   3 = Small room (south west)        7 = Stairs        (mid east)
+  //   4 = Assembly hall (west)           8 = Vestibule     (south east, entrance)
+  //
+  // Orientation: entrance faces east  (positive-x in game = east)
+  // Building centre: CX=158, CZ=-86
+
   const CX = 158, CZ = -86;
-  const baseY = footprintMaxY(CX, CZ, 24, 20);
-  const BOTTOM = footprintMinY(CX, CZ, 24, 20) - SINK;
-  const stuccoM = makeStuccoMat(scene, 'church-s');
-  const roofM   = makeTerracottaMat(scene, 'church-r');
-  const courtM  = makePavingMat(scene, 'church-ct');
-  const WALL_H  = 3.8;
-  const top     = baseY + WALL_H;
+  const T  = 1.0;    // wall thickness
+  const WH = 4.2;    // wall height above baseY
 
-  function wallSeg(wx: number, wz: number, w: number, d: number) {
-    const totalH = top - BOTTOM;
-    const seg = MeshBuilder.CreateBox('cw', { width: w, height: totalH, depth: d }, scene);
-    seg.position.set(wx, BOTTOM + totalH * 0.5, wz);
-    seg.material = stuccoM;
-    seg.checkCollisions = true;
+  // ── Key coordinate lines ──────────────────────────────────────────────────
+  const xW    = CX - 13;   // 145 – outer west wall
+  const xDiv  = CX - 4;    // 154 – assembly hall | centre block
+  const xEDiv = CX + 5;    // 163 – centre block | east section
+  const xE    = CX + 12;   // 170 – outer east wall (entrance side)
+
+  const zN    = CZ - 11;   // -97 – outer north wall
+  const zLect = CZ - 5;    // -91 – lecture room south / courtyard north
+  const zPort = CZ + 3;    // -83 – courtyard south / portico+south-rooms north
+  const zBapt = CZ - 2;    // -88 – baptistery south / stairs north
+  const zS    = CZ + 10;   // -76 – outer south wall
+
+  const bW  = xE   - xW;   // building width  = 25
+  const bD  = zS   - zN;   // building depth  = 21
+  const bCX = (xW  + xE)  / 2;   // 157.5
+  const bCZ = (zN  + zS)  / 2;   // -86.5
+
+  const baseY  = footprintMaxY(bCX, bCZ, bW, bD);
+  const BOTTOM = footprintMinY(bCX, bCZ, bW, bD) - SINK;
+  const top    = baseY + WH;
+  const totH   = top - BOTTOM;
+
+  const stuccoM = makeStuccoMat(scene,    'ch-stucco');
+  const roofM   = makeTerracottaMat(scene,'ch-roof');
+  const courtM  = makePavingMat(scene,    'ch-court');
+  const colM    = makeColumnMat(scene,    'ch-col');
+  const stoneM  = makeLimestoneMat(scene, 'ch-stone');
+  const waterM  = mat('ch-water', 0x3060a0, scene);
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+  // Full-height wall segment (centred at cx,cz, width w, depth d)
+  function wall(cx: number, cz: number, w: number, d: number) {
+    const b = MeshBuilder.CreateBox('cw', { width: w, height: totH, depth: d }, scene);
+    b.position.set(cx, BOTTOM + totH * 0.5, cz);
+    b.material = stuccoM;
+    b.checkCollisions = true;
+  }
+  // Roof slab flush on top of walls
+  function roof(cx: number, cz: number, w: number, d: number) {
+    const r = MeshBuilder.CreateBox('cr', { width: w, height: 0.4, depth: d }, scene);
+    r.position.set(cx, top + 0.2, cz);
+    r.material = roofM;
+  }
+  // Helper: centre between two values
+  const mid = (a: number, b: number) => (a + b) / 2;
+
+  // ── OUTER PERIMETER ───────────────────────────────────────────────────────
+  wall(bCX, zN, bW, T);    // north (full)
+  wall(bCX, zS, bW, T);    // south (full)
+  wall(xW,  bCZ, T, bD);   // west  (full)
+
+  // East wall: entrance gap of 3 m in the vestibule face (zPort → zS = 7 m, gap centred at z=-79.5)
+  const eDoorC = mid(zPort, zS);   // -79.5
+  const eDoorW = 3.0;
+  wall(xE, mid(zN, eDoorC - eDoorW / 2), T, eDoorC - eDoorW / 2 - zN);   // north section
+  wall(xE, mid(eDoorC + eDoorW / 2, zS), T, zS - (eDoorC + eDoorW / 2)); // south section
+
+  // ── INTERIOR DIVISIONS ────────────────────────────────────────────────────
+
+  // (A) Assembly hall east wall: x=xDiv, full height zN→zPort
+  //     Door gap 2.5 m centred at z = mid(zN,zPort) ≈ -90
+  {
+    const dc = mid(zN, zPort), dh = 2.5;
+    wall(xDiv, mid(zN, dc - dh / 2), T, dc - dh / 2 - zN);
+    wall(xDiv, mid(dc + dh / 2, zPort), T, zPort - dc - dh / 2);
   }
 
-  // ── Outer perimeter walls (24×20, door gap on south face) ─────────────────
-  // North wall (full)
-  wallSeg(CX, CZ - 10, 24, 1.0);
-  // South wall with central entrance gap (8 units wide)
-  wallSeg(CX - 8,   CZ + 10, 8, 1.0);   // west of entrance
-  wallSeg(CX + 8,   CZ + 10, 8, 1.0);   // east of entrance
-  // West wall (full)
-  wallSeg(CX - 12, CZ, 1.0, 20);
-  // East wall (full)
-  wallSeg(CX + 12, CZ, 1.0, 20);
-
-  // ── Interior partition: courtyard / assembly hall divider ──────────────────
-  // Runs E-W at CZ+2. Door gap on west side (2.5 wide) and east side
-  wallSeg(CX + 4,  CZ + 2, 13, 0.8);   // east segment
-  wallSeg(CX - 9,  CZ + 2,  3, 0.8);   // west stub
-
-  // ── Assembly hall roof ────────────────────────────────────────────────────
-  const hallRoof = MeshBuilder.CreateBox('hall-roof', { width: 23, height: 0.4, depth: 11.5 }, scene);
-  hallRoof.position.set(CX, top + 0.2, CZ - 4);
-  hallRoof.material = roofM;
-
-  // ── Teaching area partition (east side of assembly hall) ──────────────────
-  // N-S wall at CX+6, from CZ-10 to CZ+2
-  wallSeg(CX + 6, CZ - 4, 0.8, 12);
-  // Teaching area roof
-  const teachRoof = MeshBuilder.CreateBox('teach-roof', { width: 12, height: 0.4, depth: 6 }, scene);
-  teachRoof.position.set(CX - 4, top + 0.2, CZ - 6.5);
-  teachRoof.material = roofM;
-
-  // ── Baptistery (small room, NW of courtyard) ──────────────────────────────
-  // Partition at CX-5, from CZ+2 to CZ+10
-  wallSeg(CX - 5, CZ + 6, 0.8, 8);
-  // Baptistry roof
-  const baptRoof = MeshBuilder.CreateBox('bapt-roof', { width: 6, height: 0.4, depth: 7.5 }, scene);
-  baptRoof.position.set(CX - 8.5, top + 0.2, CZ + 6);
-  baptRoof.material = roofM;
-
-  // ── Baptismal font (small circular basin) ─────────────────────────────────
-  const fontRim = MeshBuilder.CreateCylinder('font-rim', { diameter: 2.0, height: 0.5, tessellation: 14 }, scene);
-  fontRim.position.set(CX - 9, baseY + 0.25, CZ + 7);
-  fontRim.material = stuccoM;
-  const fontWater = MeshBuilder.CreateCylinder('font-water', { diameter: 1.6, height: 0.12, tessellation: 14 }, scene);
-  fontWater.position.set(CX - 9, baseY + 0.4, CZ + 7);
-  const waterM = mat('font-w', 0x3060a0, scene);
-  fontWater.material = waterM;
-
-  // ── Courtyard floor paving ────────────────────────────────────────────────
-  const court = MeshBuilder.CreateBox('church-court', { width: 13, height: 0.18, depth: 7.5 }, scene);
-  court.position.set(CX + 2.5, baseY + 0.09, CZ + 6.5);
-  court.material = courtM;
-
-  // ── Simple wooden benches in assembly hall ────────────────────────────────
-  const benchM = mat('bench', 0x6a4020, scene);
-  for (let row = 0; row < 4; row++) {
-    const bz = CZ - 8 + row * 2.5;
-    const bench = MeshBuilder.CreateBox(`bench-${row}`, { width: 8, height: 0.22, depth: 0.5 }, scene);
-    bench.position.set(CX - 3, baseY + 0.22, bz);
-    bench.material = benchM;
+  // (B) Assembly hall / Room-3 divider: z=zPort, x=xW→xDiv (9 m E-W)
+  //     Door gap 2 m centred
+  {
+    const dc = mid(xW, xDiv), dh = 2.0;
+    wall(mid(xW, dc - dh / 2), zPort, dc - dh / 2 - xW, T);
+    wall(mid(dc + dh / 2, xDiv), zPort, xDiv - dc - dh / 2, T);
   }
 
-  // ── Stairs to upper floor (SE corner of courtyard) ───────────────────────
-  for (let s = 0; s < 5; s++) {
-    const step = MeshBuilder.CreateBox(`church-step-${s}`, { width: 1.6, height: 0.28, depth: 0.5 }, scene);
-    step.position.set(CX + 10, baseY + 0.14 + s * 0.28, CZ + 9 - s * 0.5);
-    step.material = stuccoM;
+  // (C) Room-3 east wall: x=xDiv, z=zPort→zS (no door — Room 3 accessed via hall)
+  wall(xDiv, mid(zPort, zS), T, zS - zPort);
+
+  // (D) Lecture room south wall: z=zLect, x=xDiv→xEDiv (9 m)
+  //     Door gap 2.5 m centred
+  {
+    const dc = mid(xDiv, xEDiv), dh = 2.5;
+    wall(mid(xDiv, dc - dh / 2), zLect, dc - dh / 2 - xDiv, T);
+    wall(mid(dc + dh / 2, xEDiv), zLect, xEDiv - dc - dh / 2, T);
   }
 
+  // (E) Courtyard south opening → portico: NO wall, just two columns
+  column(scene, mid(xDiv, xEDiv) - 2.5, zPort, 0.4, 4.5, 0, colM);
+  column(scene, mid(xDiv, xEDiv) + 2.5, zPort, 0.4, 4.5, 0, colM);
+
+  // (F) Centre block east wall: x=xEDiv, zN→zPort
+  //     Two door gaps: one into baptistery (near north), one into stairs
+  {
+    const g1c = mid(zN, zBapt), g2c = mid(zBapt, zPort), gh = 2.0;
+    wall(xEDiv, mid(zN, g1c - gh / 2), T, g1c - gh / 2 - zN);
+    wall(xEDiv, mid(g1c + gh / 2, g2c - gh / 2), T, g2c - g1c - gh);
+    wall(xEDiv, mid(g2c + gh / 2, zPort), T, zPort - g2c - gh / 2);
+  }
+
+  // (G) Baptistery south wall: z=zBapt, x=xEDiv→xE
+  wall(mid(xEDiv, xE), zBapt, xE - xEDiv, T);
+
+  // (H) Stairs south / Vestibule north: z=zPort, x=xEDiv→xE
+  //     Door gap 2 m centred (connect vestibule to stairs)
+  {
+    const dc = mid(xEDiv, xE), dh = 2.0;
+    wall(mid(xEDiv, dc - dh / 2), zPort, dc - dh / 2 - xEDiv, T);
+    wall(mid(dc + dh / 2, xE),    zPort, xE - dc - dh / 2,    T);
+  }
+
+  // ── ROOFS (all enclosed rooms except courtyard) ───────────────────────────
+  roof(mid(xW,    xDiv),  mid(zN,    zPort), xDiv  - xW,    zPort - zN);   // (4) Assembly
+  roof(mid(xW,    xDiv),  mid(zPort, zS),    xDiv  - xW,    zS    - zPort);// (3) Room 3
+  roof(mid(xDiv,  xEDiv), mid(zN,    zLect), xEDiv - xDiv,  zLect - zN);   // (5) Lecture
+  roof(mid(xDiv,  xEDiv), mid(zPort, zS),    xEDiv - xDiv,  zS    - zPort);// (2) Portico
+  roof(mid(xEDiv, xE),    mid(zN,    zBapt), xE    - xEDiv, zBapt - zN);   // (6) Baptistery
+  roof(mid(xEDiv, xE),    mid(zBapt, zPort), xE    - xEDiv, zPort - zBapt);// (7) Stairs
+  roof(mid(xEDiv, xE),    mid(zPort, zS),    xE    - xEDiv, zS    - zPort);// (8) Vestibule
+
+  // ── COURTYARD FLOOR (open air) ─────────────────────────────────────────────
+  {
+    const cw = xEDiv - xDiv - 0.2, cd = zPort - zLect - 0.2;
+    const pave = MeshBuilder.CreateBox('ch-pave', { width: cw, height: 0.18, depth: cd }, scene);
+    pave.position.set(mid(xDiv, xEDiv), baseY + 0.09, mid(zLect, zPort));
+    pave.material = courtM;
+  }
+
+  // ── BAPTISTERY (6): sunken font area ──────────────────────────────────────
+  {
+    const bx = mid(xEDiv, xE);      // 166.5
+    const bz = mid(zN, zBapt) - 1;  // near north end of baptistery
+    // Sunken plunge-pool lip (slightly below floor)
+    const rim = MeshBuilder.CreateCylinder('font-rim', { diameter: 2.2, height: 0.5, tessellation: 16 }, scene);
+    rim.position.set(bx, baseY - 0.25, bz);
+    rim.material = stoneM;
+    // Water surface
+    const water = MeshBuilder.CreateCylinder('font-water', { diameter: 1.8, height: 0.08, tessellation: 16 }, scene);
+    water.position.set(bx, baseY - 0.18, bz);
+    water.material = waterM;
+    // Sunken floor patch
+    const sunk = MeshBuilder.CreateBox('font-floor', { width: 3, height: 0.2, depth: 3 }, scene);
+    sunk.position.set(bx, baseY - 0.5, bz);
+    sunk.material = stoneM;
+  }
+
+  // ── STAIRS (7): simple staircase rising northward ─────────────────────────
+  {
+    const sw = (xE - xEDiv) * 0.7;   // stair width ≈ 5 m
+    const sx = mid(xEDiv, xE);
+    for (let s = 0; s < 6; s++) {
+      const step = MeshBuilder.CreateBox(`ch-step-${s}`, { width: sw, height: 0.28, depth: 0.5 }, scene);
+      step.position.set(sx, baseY + 0.14 + s * 0.28, zBapt - 0.4 - s * 0.5);
+      step.material = stuccoM;
+    }
+  }
+
+  // ── COLLIDERS along outer perimeter, gap at east entrance ─────────────────
+  // North wall
+  for (const cx of [mid(xW, xDiv), mid(xDiv, xEDiv), mid(xEDiv, xE)])
+    addCollider({ x: cx, z: zN, r: 1.2 });
+  // South wall
+  for (const cx of [mid(xW, xDiv), mid(xDiv, xEDiv), mid(xEDiv, xE)])
+    addCollider({ x: cx, z: zS, r: 1.2 });
+  // West wall
+  for (const cz of [mid(zN, zLect), mid(zLect, zPort), mid(zPort, zS)])
+    addCollider({ x: xW, z: cz, r: 1.2 });
+  // East wall — only north section (gap at vestibule)
+  for (const cz of [mid(zN, zBapt), mid(zBapt, zPort)])
+    addCollider({ x: xE, z: cz, r: 1.2 });
 }
 
 export function buildCity(scene: Scene): void {
