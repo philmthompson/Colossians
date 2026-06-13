@@ -101,7 +101,36 @@ export function initHUD(): void {
   initCompass(); initPrompt(); initReticle(); initCard(); initBanner();
 }
 
+// ── Dev coordinate readout (toggle with the "9" key) ────────────────────────
+let coordEl: HTMLElement | null = null;
+let coordVisible = false;
+
+function ensureCoordEl(): HTMLElement {
+  if (!coordEl) {
+    coordEl = document.createElement('div');
+    coordEl.id = 'coord-readout';
+    coordEl.style.cssText = [
+      'position:fixed', 'top:8px', 'left:8px', 'z-index:9999',
+      'padding:6px 10px', 'background:rgba(0,0,0,0.65)', 'color:#7CFC00',
+      'font:13px/1.4 monospace', 'border:1px solid #7CFC00', 'border-radius:4px',
+      'pointer-events:none', 'white-space:pre',
+    ].join(';');
+    document.body.appendChild(coordEl);
+  }
+  return coordEl;
+}
+
+export function toggleCoords(): void {
+  coordVisible = !coordVisible;
+  ensureCoordEl().style.display = coordVisible ? 'block' : 'none';
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function updateHUD(_camera: any): void {
+export function updateHUD(camera: any): void {
   updateCompass();
+  if (coordVisible && camera) {
+    const p = camera.position;
+    ensureCoordEl().textContent =
+      `x: ${p.x.toFixed(1)}\ny: ${p.y.toFixed(1)}\nz: ${p.z.toFixed(1)}`;
+  }
 }

@@ -12,7 +12,7 @@ import {
   initControls, updateControls, isPointerLocked, setYaw, setTouchControlsHidden,
   toggleFlightMode,
 } from './player/controls';
-import { initHUD, updateHUD, isCardOpen, setReticleActive, hidePrompt } from './ui/hud';
+import { initHUD, updateHUD, isCardOpen, setReticleActive, hidePrompt, toggleCoords } from './ui/hud';
 import { updateRegions } from './game/regions';
 import { updateInteract, tryInteract, registerAllSites } from './game/interact';
 import { buildFlock, updateFlock } from './actors/sheep';
@@ -112,6 +112,7 @@ introBtn.addEventListener('click', () => {
 // ─── Key events ──────────────────────────────────────────────────────────────
 document.addEventListener('keydown', (e) => {
   if (e.code === 'Digit0') toggleFlightMode();   // hidden dev: fly mode
+  if (e.code === 'Digit9') toggleCoords();        // hidden dev: coordinate readout
   if (e.code === 'KeyE') {
     if (isCardOpen()) closeCard();
     else tryInteract();
