@@ -56,18 +56,6 @@ function buildChasmFloor(scene: Scene): void {
   }
 }
 
-function buildGorgeWalls(scene: Scene): void {
-  const wallM = smat('gorge', 0x6a5c48, scene);
-  wallM.backFaceCulling = false;
-  const wallLen = 1000, wallH = 14;
-  for (const side of [-1, 1]) {
-    const mesh = MeshBuilder.CreatePlane('gorge-wall', { width: wallLen, height: wallH }, scene);
-    mesh.rotation.y = side > 0 ? 0 : Math.PI;
-    mesh.position.set(0, WATER_Y + wallH / 2 - 1, RIVER_Z + side * 9);
-    mesh.material = wallM;
-  }
-}
-
 
 export function buildBridge(scene: Scene): void {
   const BRIDGE_X = 92;
@@ -137,6 +125,5 @@ export function buildWater(scene: Scene): void {
   buildWestReach(scene);
   buildEastReach(scene);
   buildChasmFloor(scene);
-  buildGorgeWalls(scene);
   buildBridge(scene);
 }
