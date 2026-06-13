@@ -76,6 +76,17 @@ function buildingFloorY(x: number, z: number): number | null {
       return pRoof;
     }
   }
+  // Church (house-church) ground floor — footprint xW=145→xE=170, zN=-97→zS=-76
+  // baseY mirrors footprintMaxY(157.5, -86.5, 25, 21) from city.ts
+  {
+    const CHURCH_FLOOR: number = (() => {
+      let max = -Infinity;
+      for (const ox of [-12.5, 0, 12.5]) for (const oz of [-10.5, 0, 10.5])
+        max = Math.max(max, terrainH(157.5 + ox, -86.5 + oz));
+      return max;
+    })();
+    if (x >= 145 && x <= 170 && z >= -97 && z <= -76) return CHURCH_FLOOR;
+  }
   return null;
 }
 

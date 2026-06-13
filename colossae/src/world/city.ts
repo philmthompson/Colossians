@@ -540,17 +540,22 @@ function buildChurch(scene: Scene): void {
   wall(xE, mid(zN, eDoorC - eDoorW / 2), T, eDoorC - eDoorW / 2 - zN);   // north section
   wall(xE, mid(eDoorC + eDoorW / 2, zS), T, zS - (eDoorC + eDoorW / 2)); // south section
 
-  // Archway: lintel header above the door gap, and two jamb columns
+  // Archway: lintel header + pilaster jambs that protrude outward from the wall face
   {
-    const lintH  = WH - ARCH_H;          // height of header block
-    const lintel = MeshBuilder.CreateBox('ch-lintel', { width: T + 0.3, height: lintH, depth: eDoorW }, scene);
-    lintel.position.set(xE, baseY + ARCH_H + lintH * 0.5, eDoorC);
-    lintel.material = stuccoM;
+    const lintH   = WH - ARCH_H;    // height of header block (~1.4 m)
+    const PROJ    = 0.6;             // how far the frame protrudes beyond the wall face
+    const frameW  = T + PROJ;        // total depth of frame elements
 
+    // Lintel spans the full gap width, sits on top of ARCH_H
+    const lintel = MeshBuilder.CreateBox('ch-lintel', { width: frameW, height: lintH, depth: eDoorW + 1.2 }, scene);
+    lintel.position.set(xE + PROJ * 0.5 - T * 0.5, baseY + ARCH_H + lintH * 0.5, eDoorC);
+    lintel.material = stoneM;
+
+    // Pilaster jambs run the full opening height, flanking the gap
     for (const side of [-1, 1]) {
-      const jz   = eDoorC + side * (eDoorW / 2 + 0.2);
-      const jamb = MeshBuilder.CreateBox('ch-jamb', { width: T + 0.3, height: ARCH_H, depth: 0.4 }, scene);
-      jamb.position.set(xE, baseY + ARCH_H * 0.5, jz);
+      const jz   = eDoorC + side * (eDoorW / 2 + 0.45);
+      const jamb = MeshBuilder.CreateBox('ch-jamb', { width: frameW, height: ARCH_H, depth: 0.9 }, scene);
+      jamb.position.set(xE + PROJ * 0.5 - T * 0.5, baseY + ARCH_H * 0.5, jz);
       jamb.material = stoneM;
     }
   }

@@ -95,9 +95,8 @@ export function buildBridge(scene: Scene): void {
     abt.material = stoneMat;
   }
 
-  // Piers: rise from just above WATER_Y to safely below deck underside.
-  // Deck underside centre ≈ DECK_Y - DECK_H/2; keep pier top 1.5 m clear.
-  const pierTopY = DECK_Y - DECK_H / 2 - 1.5;
+  // Piers: rise from just above WATER_Y to nearly flush with deck underside.
+  const pierTopY = DECK_Y - DECK_H / 2 - 0.2;
   const pierH    = Math.max(4, pierTopY - WATER_Y);
   for (const pz of [-110, -128]) {
     const pier = MeshBuilder.CreateBox('pier', { width: BRIDGE_W - 2, height: pierH, depth: 4 }, scene);
