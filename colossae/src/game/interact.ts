@@ -1,6 +1,7 @@
 import { getSite } from '../data/sites';
 import { showPrompt, hidePrompt, setReticleActive, openCard } from '../ui/hud';
 import { setTouchExamine, clearTouchExamine } from '../player/controls';
+import { playInteractChime, speakNPCLine } from '../audio/interact';
 
 export interface InteractEntry {
   id: string;
@@ -61,8 +62,11 @@ export function tryInteract(): void {
   if (site.lines && site.lines.length > 0) {
     const idx  = npcCycles[site.id] ?? 0;
     npcCycles[site.id] = (idx + 1) % site.lines.length;
-    openCard(site.title, `<p>"${site.lines[idx]}"</p>`, '', 'Colossae · AD 52');
+    const line = site.lines[idx];
+    openCard(site.title, `<p>${line}</p>`, '', 'Colossae · AD 52');
+    speakNPCLine(site.id, line);
   } else {
+    playInteractChime();
     openCard(site.title, `<p>${site.body}</p>`, site.accuracy, site.era ?? 'Colossae · AD 52');
   }
 }

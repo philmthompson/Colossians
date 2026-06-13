@@ -113,9 +113,9 @@ export const SITES: SiteData[] = [
     body: '',
     accuracy: '',
     lines: [
-      `"The colossinus clip this season is the best I have seen in fifteen years. The fleeces from the eastern pastures — Cadmus water, you understand. The mineral content is what makes it take the dye."`,
-      `"Laodicea takes everything now. The road trade, the new construction, the banking. But who do the Laodicean merchants come to when they want dyed wool? Us. We have always been here. We will be here after them."`,
-      `"I have heard there is an assembly meeting in Philemon's house. Strange things, these new brotherhoods. Still — wool is wool, and a man must eat. What brings you to Colossae, stranger?"`,
+      `The colossinus clip this season is the best I have seen in fifteen years. The fleeces from the eastern pastures — Cadmus water, you understand. The mineral content is what makes it take the dye.`,
+      `Laodicea takes everything now. The road trade, the new construction, the banking. But who do the Laodicean merchants come to when they want dyed wool? Us. We have always been here. We will be here after them.`,
+      `I have heard there is an assembly meeting in Philemon's house. Strange things, these new brotherhoods. Still — wool is wool, and a man must eat. What brings you to Colossae, stranger?`,
     ],
   },
   {
@@ -125,9 +125,9 @@ export const SITES: SiteData[] = [
     body: '',
     accuracy: '',
     lines: [
-      `"Twelve to count this morning, twelve this evening. The Cadmus pastures are good in spring. By July I will have to move them higher up the slope — the heat comes early in the valley."`,
-      `"See those clouds on the peak? By tomorrow there will be wind from the south. I have been watching that mountain for thirty years. It does not lie."`,
-      `"The river does as it pleases down there. It runs underground half a stade and comes back out like nothing happened. I have never trusted a river that does that."`,
+      `Twelve to count this morning, twelve this evening. The Cadmus pastures are good in spring. By July I will have to move them higher up the slope — the heat comes early in the valley.`,
+      `See those clouds on the peak? By tomorrow there will be wind from the south. I have been watching that mountain for thirty years. It does not lie.`,
+      `The river does as it pleases down there. It runs underground half a stade and comes back out like nothing happened. I have never trusted a river that does that.`,
     ],
   },
   {
@@ -137,9 +137,9 @@ export const SITES: SiteData[] = [
     body: '',
     accuracy: '',
     lines: [
-      `"Onesimus? Haven't seen him in days. The master hasn't said anything, but I notice things. I always notice things."`,
-      `"If you're looking for the assembly, they meet in the evenings, in the courtyard. Epaphras started it. Ask for Archippus if you need the master."`,
-      `"Nobody comes and goes from this house without my knowing it. Except Onesimus, apparently."`,
+      `Onesimus? Haven't seen him in days. The master hasn't said anything, but I notice things. I always notice things.`,
+      `If you're looking for the assembly, they meet in the evenings, in the courtyard. Epaphras started it. Ask for Archippus if you need the master.`,
+      `Nobody comes and goes from this house without my knowing it. Except Onesimus, apparently.`,
     ],
   },
   {

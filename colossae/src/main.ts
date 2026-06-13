@@ -17,6 +17,7 @@ import { updateInteract, tryInteract, registerAllSites } from './game/interact';
 import { buildFlock, updateFlock } from './actors/sheep';
 import { buildNPCs } from './actors/npc';
 import { initWind } from './audio/wind';
+import { stopSpeech } from './audio/interact';
 
 // ─── Build version stamp ─────────────────────────────────────────────────────
 // (Deploy chain restored — see trigger-deploy.yml)
@@ -132,6 +133,7 @@ function toggleMap() {
 }
 function closeMap() { document.getElementById('map-overlay')!.classList.add('hidden'); }
 function closeCard() {
+  stopSpeech();
   document.getElementById('card')!.classList.add('hidden');
   document.getElementById('lb-top')!.classList.remove('open');
   document.getElementById('lb-bot')!.classList.remove('open');
