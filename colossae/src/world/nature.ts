@@ -1,5 +1,6 @@
 import { Scene, Mesh, MeshBuilder, StandardMaterial, Color3, Matrix, Quaternion, Vector3, Texture } from '@babylonjs/core';
 import { terrainH } from './terrain';
+import { buildForestTrees } from './trees';
 
 function lmat(name: string, hex: number, scene: Scene): StandardMaterial {
   const m = new StandardMaterial(name, scene);
@@ -295,6 +296,7 @@ export function buildNature(scene: Scene): void {
   buildPlaneTrees(scene);
   buildPines(scene);
   buildReeds(scene);
+  buildForestTrees(scene);
 
   // Snow cap on Mount Cadmus (southern peak, visible looking south along the cardo)
   // Terrain at (0, 750) reaches ~420 u; sphere sits just below summit.
