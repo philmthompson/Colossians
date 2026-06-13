@@ -174,12 +174,8 @@ function buildAgora(scene: Scene): void {
   const AX = (WX + EX) * 0.5;       // 112
   const AZ = (NZ + SZ) * 0.5;       // -29
 
-  const plazaM = makePavingMat(scene, 'plaza');
   const stoneM = makeLimestoneMat(scene, 'ag-s');
   const colM   = makeColumnMat(scene, 'ag-col');
-
-  // ── Paved limestone court ────────────────────────────────────────────────────
-  groundedBox(scene, plazaM, AX, AZ, EX - WX, 0.25, SZ - NZ);
 
   // ── Stoa columns ─────────────────────────────────────────────────────────────
   const COL_SPACING = 5.5;

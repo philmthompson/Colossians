@@ -59,10 +59,6 @@ function templeFloorY(x: number, z: number): number | null {
 // the raw terrain height so the player stands on the structure rather than
 // sinking through it.
 function buildingFloorY(x: number, z: number): number | null {
-  // Agora plaza slab
-  if (Math.abs(x - 112) < 12 && Math.abs(z + 29) < 11) {
-    return terrainH(112, -29) + 0.3;
-  }
   // Baths roof — only when approaching from the hill side (terrain nearly as high)
   {
     const bRoof = terrainH(156, -18) + 7;

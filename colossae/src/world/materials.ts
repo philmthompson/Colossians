@@ -280,3 +280,28 @@ export function makePavingMat(scene: Scene, name = 'paving'): PBRMaterial {
 
   return buildPBR(scene, name, { albedo, normal, roughness: 0.65, metallic: 0.0, uScale: 5, vScale: 5 });
 }
+
+/**
+ * Varied earthy ground — sandy soil with subtle fbm grain variation.
+ * Used on the terrain mesh. Large uScale/vScale so it tiles across 2000 units.
+ */
+export function makeTerrainMat(scene: Scene, name = 'terrain-ground'): PBRMaterial {
+  const albedo = bakeTexture(scene, SIZE, (px, py) => {
+    const f1 = fbm(px / SIZE * 4, py / SIZE * 4, 5);
+    const f2 = fbm(px / SIZE * 12 + 3.7, py / SIZE * 12 + 1.9, 4) * 0.4;
+    const f3 = fbm(px / SIZE * 32 + 9.1, py / SIZE * 32 + 6.3, 3) * 0.15;
+    const base = 155 + f1 * 42 + f2 * 28 + f3 * 14;
+    // Warm sandy earth: R dominant, G moderate, B low
+    return [
+      clamp(base + 12),
+      clamp(base - 8),
+      clamp(base - 32),
+    ];
+  });
+
+  const normal = bakeNormal(scene, SIZE, (px, py) =>
+    fbm(px / SIZE * 16, py / SIZE * 16, 5) * 0.14
+  , 1.6);
+
+  return buildPBR(scene, name, { albedo, normal, roughness: 0.97, metallic: 0.0, uScale: 80, vScale: 80 });
+}

@@ -37,7 +37,7 @@ scene.fogMode    = Scene.FOGMODE_LINEAR;
 scene.fogStart   = 480;
 scene.fogEnd     = 980;
 scene.fogColor   = FOG_COLOR;
-scene.clearColor = new Color4(FOG_COLOR.r, FOG_COLOR.g, FOG_COLOR.b, 1);
+scene.clearColor = new Color4(0.38, 0.62, 0.88, 1);
 
 // ─── Camera ──────────────────────────────────────────────────────────────────
 const camera = new UniversalCamera('cam', new Vector3(18, 0, -28), scene);
@@ -54,7 +54,7 @@ const shadow = new ShadowGenerator(2048, sun);
 shadow.usePoissonSampling = true;
 
 const hemi = new HemisphericLight('hemi', new Vector3(0, 1, 0), scene);
-hemi.diffuse    = new Color3(0.831, 0.722, 0.541); // 0xd4b88a
+hemi.diffuse    = new Color3(0.72, 0.78, 0.92); // sky-blue ambient
 hemi.groundColor = new Color3(0.353, 0.376, 0.251); // 0x5a6040
 hemi.intensity  = 1.0;
 

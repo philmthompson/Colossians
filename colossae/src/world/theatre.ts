@@ -78,6 +78,22 @@ export function buildTheatre(scene: Scene): void {
   fill.material   = fillMat;
   fill.checkCollisions = true;
 
+  // Close the open north and south flat sides of the half-cylinder
+  const fillH = fillTopY - bottom;
+  const northFill = MeshBuilder.CreateBox('seat-fill-north', {
+    width: fillR, height: fillH, depth: 0.5,
+  }, scene);
+  northFill.position.set(TX + fillR / 2, bottom + fillH / 2, TZ - fillR);
+  northFill.material = fillMat;
+  northFill.checkCollisions = true;
+
+  const southFill = MeshBuilder.CreateBox('seat-fill-south', {
+    width: fillR, height: fillH, depth: 0.5,
+  }, scene);
+  southFill.position.set(TX + fillR / 2, bottom + fillH / 2, TZ + fillR);
+  southFill.material = fillMat;
+  southFill.checkCollisions = true;
+
   // ── Stadium-style stepped seating (custom VertexData) ────────────────────
   // Each row produces a tread (horizontal top surface) and a riser (vertical
   // front face). We build two large merged meshes: one for treads, one for risers.
@@ -350,13 +366,15 @@ function buildScaenae(scene: Scene, baseY: number, bottom: number, m: Sc): void 
   ped.material = m.marble;
 
   // ── Pulpitum (stage platform) ─────────────────────────────────────────────
-  const stageW   = 5.0;
-  const stageX   = faceX + 1.3 + stageW / 2;
-  const stageTop = baseY + 1.4;
+  const stageW        = 5.0;
+  const stageX        = faceX + 1.3 + stageW / 2;
+  const stageTop      = baseY + 1.4;
+  const stageTerrain  = Math.min(terrainH(stageX, TZ), baseY - 2);
+  const stageBottom   = stageTerrain - 6;
   const stage = MeshBuilder.CreateBox('sc-stage', {
-    width: stageW, height: stageTop - (baseY - 1), depth: HALF_Z * 2 - 2,
+    width: stageW, height: stageTop - stageBottom, depth: HALF_Z * 2 - 2,
   }, scene);
-  stage.position.set(stageX, (baseY - 1 + stageTop) / 2, TZ);
+  stage.position.set(stageX, (stageBottom + stageTop) / 2, TZ);
   stage.material = m.stoneL;
   stage.checkCollisions = true;
 

@@ -177,8 +177,13 @@ canvas#c {
   border: 1px solid rgba(201,165,92,0.45);
   color: #e8dcc0;
   max-width: min(560px, 88vw);
+  max-height: min(85vh, 640px);
+  overflow-y: auto;
   padding: 2.2rem 2.5rem;
   pointer-events: auto;
+}
+@media (max-width: 480px) {
+  #card-inner { padding: 1.4rem 1.2rem; }
 }
 #card-era {
   font-size: 0.72rem; letter-spacing: 0.25em;

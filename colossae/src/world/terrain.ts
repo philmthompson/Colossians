@@ -1,4 +1,5 @@
-import { Scene, Mesh, VertexData, StandardMaterial, Color3 } from '@babylonjs/core';
+import { Scene, Mesh, VertexData } from '@babylonjs/core';
+import { makeTerrainMat } from './materials';
 
 function gauss(x: number, z: number, cx: number, cz: number, r: number, h: number) {
   const dx = x - cx, dz = z - cz;
@@ -66,6 +67,15 @@ export function buildTerrain(scene: Scene): Mesh {
   const normals = new Float32Array(vertCount * 3);
   VertexData.ComputeNormals(positions, indices, normals);
 
+  const uvs = new Float32Array(vertCount * 2);
+  for (let row = 0; row <= SEGS; row++) {
+    for (let col = 0; col <= SEGS; col++) {
+      const i = row * N + col;
+      uvs[i * 2]     = col / SEGS;
+      uvs[i * 2 + 1] = row / SEGS;
+    }
+  }
+
   const ROAD_Z = -92, ROAD_W = 7;
   const CARDO_X = 92, CARDO_W = 6;
   const colors = new Float32Array(vertCount * 4);
@@ -120,14 +130,13 @@ export function buildTerrain(scene: Scene): Mesh {
   vd.indices   = indices;
   vd.normals   = normals;
   vd.colors    = colors;
+  vd.uvs       = uvs;
 
   const mesh = new Mesh('terrain', scene);
   vd.applyToMesh(mesh);
   mesh.checkCollisions = true;
 
-  const mat = new StandardMaterial('terrain-mat', scene);
-  mat.diffuseColor  = Color3.White();
-  mat.specularColor = Color3.Black();
+  const mat = makeTerrainMat(scene);
   mesh.material = mat;
 
   return mesh;
