@@ -85,7 +85,7 @@ export function speakNPCLine(npcId: string, text: string): void {
   );
   if (preferred) utt.voice = preferred;
 
-  speechSynthesis.speak(utt);
+  // speechSynthesis.speak(utt);  // disabled — re-enable for voice
 }
 
 export function stopSpeech(): void {

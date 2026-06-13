@@ -415,26 +415,32 @@ function buildRoads(scene: Scene): void {
 
   function roadStrip(x1: number, z1: number, x2: number, z2: number, width: number, segs: number) {
     const dx = (x2 - x1) / segs, dz = (z2 - z1) / segs;
-    const len = Math.sqrt(dx * dx + dz * dz);
-    const angle = Math.atan2(dx, dz);  // rotation around Y
+    const segLen = Math.sqrt(dx * dx + dz * dz);
+    const angle = Math.atan2(dx, dz);
     for (let i = 0; i < segs; i++) {
       const mx = x1 + (i + 0.5) * dx, mz = z1 + (i + 0.5) * dz;
       const ty = terrainH(mx, mz) + 0.08;
-      const slab = MeshBuilder.CreateBox(`road-${i}-${x1}`, { width: len + 0.1, height: 0.18, depth: width }, scene);
+      const slab = MeshBuilder.CreateBox(`road-${i}-${Math.round(x1)}-${Math.round(z1)}`, {
+        width: segLen + 0.15, height: 0.20, depth: width,
+      }, scene);
       slab.position.set(mx, ty, mz);
       slab.rotation.y = angle;
       slab.material = cobM;
     }
   }
 
-  // East approach (milestone to decumanus junction)
-  roadStrip(225, -88, 292, -89, 8, 8);
-  // Decumanus (cardo to theatre hill junction)
-  roadStrip(92, -92, 225, -92, 8, 16);
-  // Cardo (north: decumanus to agora/baths zone)
+  // ── East approach: milestone → behind theatre → decumanus ────────────────
+  roadStrip(292, -89, 258, -72, 8,  5);   // from milestone toward theatre hill
+  roadStrip(258, -72, 224, -72, 8,  4);   // behind theatre (z=-72 is south of stage)
+  roadStrip(224, -72, 192, -80, 8,  4);   // arc around theatre hill
+  roadStrip(192, -80,  92, -92, 8, 12);   // join decumanus
+
+  // ── Cardo north: decumanus to agora/baths area ────────────────────────────
   roadStrip(92, -44, 92, -92, 7, 6);
-  // Cardo south (bridge exit to beyond chasm)
-  roadStrip(92, -130, 92, -175, 7, 6);
+
+  // ── Post-bridge: south then east along chasm ──────────────────────────────
+  roadStrip(92, -134, 92, -155, 7, 3);    // brief south
+  roadStrip(92, -155, 220, -155, 7, 14);  // turn east, follow chasm south bank
 }
 
 function buildAgoraMarket(scene: Scene): void {
@@ -505,9 +511,9 @@ function buildChurch(scene: Scene): void {
   // ── Outer perimeter walls (24×20, door gap on south face) ─────────────────
   // North wall (full)
   wallSeg(CX, CZ - 10, 24, 1.0);
-  // South wall with central entrance gap (3 units wide)
-  wallSeg(CX - 6.5, CZ + 10, 11, 1.0);
-  wallSeg(CX + 6.5, CZ + 10, 11, 1.0);
+  // South wall with central entrance gap (8 units wide)
+  wallSeg(CX - 8,   CZ + 10, 8, 1.0);   // west of entrance
+  wallSeg(CX + 8,   CZ + 10, 8, 1.0);   // east of entrance
   // West wall (full)
   wallSeg(CX - 12, CZ, 1.0, 20);
   // East wall (full)
@@ -515,8 +521,8 @@ function buildChurch(scene: Scene): void {
 
   // ── Interior partition: courtyard / assembly hall divider ──────────────────
   // Runs E-W at CZ+2. Door gap on west side (2.5 wide) and east side
-  wallSeg(CX + 3,  CZ + 2, 16, 0.8);   // right segment (leaves gap at west)
-  wallSeg(CX - 10, CZ + 2,  1, 0.8);   // left stub
+  wallSeg(CX + 4,  CZ + 2, 13, 0.8);   // east segment
+  wallSeg(CX - 9,  CZ + 2,  3, 0.8);   // west stub
 
   // ── Assembly hall roof ────────────────────────────────────────────────────
   const hallRoof = MeshBuilder.CreateBox('hall-roof', { width: 23, height: 0.4, depth: 11.5 }, scene);
@@ -569,7 +575,6 @@ function buildChurch(scene: Scene): void {
     step.material = stuccoM;
   }
 
-  addCollider({ x: CX, z: CZ, r: 14 });
 }
 
 export function buildCity(scene: Scene): void {

@@ -40,7 +40,7 @@ scene.fogColor   = FOG_COLOR;
 scene.clearColor = new Color4(0.38, 0.62, 0.88, 1);
 
 // ─── Camera ──────────────────────────────────────────────────────────────────
-const camera = new UniversalCamera('cam', new Vector3(18, 0, -28), scene);
+const camera = new UniversalCamera('cam', new Vector3(44, 0, -8), scene);
 camera.minZ = 0.3;
 camera.maxZ = 1200;
 camera.fov  = 72 * Math.PI / 180;

@@ -18,11 +18,17 @@ export function terrainH(x: number, z: number): number {
   h += gauss(x, z,   0, 750, 320, 250);
   h += gauss(x, z, 200, 720, 280, 220);
   h += gauss(x, z,-200, 780, 260, 200);
-  h += gauss(x, z,   0, -520, 200, 160);   // main peak (Cadmus/Honaz)
-  h += gauss(x, z, 180, -560, 160, 130);
-  h += gauss(x, z,-180, -500, 170, 120);
-  h += gauss(x, z, 380, -600, 140,  90);
-  h += gauss(x, z,-360, -580, 150,  85);
+  {
+    // Mountains only contribute south of z=-350 to avoid raising the city/chasm area
+    const mf = z < -350 ? Math.min(1.0, (-350 - z) / 80) : 0;
+    if (mf > 0) {
+      h += mf * gauss(x, z,   0, -520, 200, 160);
+      h += mf * gauss(x, z, 180, -560, 160, 130);
+      h += mf * gauss(x, z,-180, -500, 170, 120);
+      h += mf * gauss(x, z, 380, -600, 140,  90);
+      h += mf * gauss(x, z,-360, -580, 150,  85);
+    }
+  }
   if (z > 140) { const t = (z - 140) / 200; h += t * t * 18; }
   const dg = z - (-120);
   h -= 13 * Math.exp(-(dg * dg) / (2 * 8 * 8));
@@ -31,6 +37,16 @@ export function terrainH(x: number, z: number): number {
     const bell = Math.sin(Math.PI * cx2);
     const dcz = z - (-120);
     h -= 4 * bell * Math.exp(-(dcz * dcz) / (2 * 6 * 6));
+  }
+  // Necropolis plateau — blend terrain toward a flat surface around (30, -200)
+  {
+    const ndx = x - 30, ndz = z + 200;
+    const ndist = Math.sqrt(ndx * ndx + ndz * ndz);
+    if (ndist < 52) {
+      const targetH = 4.5;
+      const blend = Math.max(0, 1 - ndist / 42);
+      h = h * (1 - blend) + targetH * blend;
+    }
   }
   return h;
 }

@@ -286,27 +286,41 @@ export function makePavingMat(scene: Scene, name = 'paving'): PBRMaterial {
  * Use for road mesh surfaces.
  */
 export function makeCobbleMat(scene: Scene, name = 'cobble'): PBRMaterial {
-  const STONE = 20;  // px per cobble
   const albedo = bakeTexture(scene, SIZE, (px, py) => {
-    const tx = ((px % STONE) + STONE) % STONE;
-    const ty = ((py % STONE) + STONE) % STONE;
-    // Mortar joints: 2px border
-    const isJoint = tx < 2 || ty < 2 || tx > STONE - 3 || ty > STONE - 3;
-    const n = fbm(px / SIZE * 20 + 7, py / SIZE * 20 + 3, 4);
-    if (isJoint) return [clamp(100), clamp(90), clamp(75)];
-    const base = 128 + n * 40;
-    // Warm grey-brown cobblestone
-    return [clamp(base + 6), clamp(base - 4), clamp(base - 18)];
+    // Distort the grid coordinates with fbm to create irregular stone shapes
+    const STONE = 54;
+    const dox = Math.floor(fbm(px / SIZE * 4.2,       py / SIZE * 4.2,       3) * 22);
+    const doy = Math.floor(fbm(px / SIZE * 4.2 + 5.1, py / SIZE * 4.2 + 3.7, 3) * 22);
+    // Alternate row offset for more irregular look
+    const rowShift = Math.floor(py / STONE) % 2 === 0 ? 0 : Math.floor(STONE * 0.5);
+    const tx = ((px + rowShift + dox) % STONE + STONE) % STONE;
+    const ty = ((py + doy) % STONE + STONE) % STONE;
+    const isJoint = tx < 3 || ty < 3 || tx > STONE - 4 || ty > STONE - 4;
+    const grain  = fbm(px / SIZE * 16 + 1.3, py / SIZE * 16 + 2.7, 4);
+    const grain2 = fbm(px / SIZE * 40 + 7.1, py / SIZE * 40 + 4.9, 3) * 0.25;
+    if (isJoint) return [clamp(72), clamp(70), clamp(68)]; // dark grey mortar
+    // Basalt: cool grey-blue tones, varied per stone
+    const base = 150 + grain * 36 + grain2 * 14;
+    return [clamp(base - 8), clamp(base - 4), clamp(base + 6)];
   });
+
   const normal = bakeNormal(scene, SIZE, (px, py) => {
-    const tx = ((px % STONE) + STONE) % STONE;
-    const ty = ((py % STONE) + STONE) % STONE;
-    const cx = tx / STONE - 0.5, cy = ty / STONE - 0.5;
-    const isJoint = tx < 2 || ty < 2 || tx > STONE - 3 || ty > STONE - 3;
-    const dome = isJoint ? -0.06 : (1 - (cx * cx + cy * cy) * 4) * 0.12;
-    return dome + fbm(px / SIZE * 30, py / SIZE * 30, 3) * 0.03;
-  }, 2.0);
-  return buildPBR(scene, name, { albedo, normal, roughness: 0.93, metallic: 0.0, uScale: 12, vScale: 12 });
+    const STONE = 54;
+    const dox = Math.floor(fbm(px / SIZE * 4.2,       py / SIZE * 4.2,       3) * 22);
+    const doy = Math.floor(fbm(px / SIZE * 4.2 + 5.1, py / SIZE * 4.2 + 3.7, 3) * 22);
+    const rowShift = Math.floor(py / STONE) % 2 === 0 ? 0 : Math.floor(STONE * 0.5);
+    const tx = ((px + rowShift + dox) % STONE + STONE) % STONE;
+    const ty = ((py + doy) % STONE + STONE) % STONE;
+    const isJoint = tx < 3 || ty < 3 || tx > STONE - 4 || ty > STONE - 4;
+    if (isJoint) return -0.05;
+    // Convex dome per stone, centered
+    const cx = (tx / STONE) - 0.5;
+    const cy = (ty / STONE) - 0.5;
+    const dome = Math.max(0, 0.20 - (cx * cx + cy * cy) * 3.2);
+    return dome + fbm(px / SIZE * 28, py / SIZE * 28, 3) * 0.02;
+  }, 3.0);
+
+  return buildPBR(scene, name, { albedo, normal, roughness: 0.88, metallic: 0.0, uScale: 5, vScale: 5 });
 }
 
 /**
