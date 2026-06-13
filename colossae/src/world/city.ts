@@ -333,7 +333,7 @@ function buildLowerCity(scene: Scene): void {
     [77, -86],  [77, -58],  [77, -30],          // west of cardo
     [111, -86], [111, -58], [111, -5],           // east block 1 (agora at z≈-29, skip)
     [142, -58], [142, -30],                      // east block 2 (Philemon at -86; baths near -18)
-    [174, -86], [174, -58], [174, -30],          // east block 3
+    [174, -58], [174, -30],                      // east block 3 (skip -86: overlaps church)
   ];
   for (const [ix, iz] of insulae) {
     for (const [dx, dz] of [[-5, -5], [5, -5], [-5, 5], [5, 5]] as [number, number][]) {

@@ -19,16 +19,19 @@ export function terrainH(x: number, z: number): number {
   h += gauss(x, z, 200, 720, 280, 220);
   h += gauss(x, z,-200, 780, 260, 200);
   {
-    // Mountains only contribute south of z=-350 to avoid raising the city/chasm area
+    // Gentle rolling hills north of necropolis (formerly over-tall; now just low swells)
     const mf = z < -350 ? Math.min(1.0, (-350 - z) / 80) : 0;
     if (mf > 0) {
-      h += mf * gauss(x, z,   0, -520, 200, 160);
-      h += mf * gauss(x, z, 180, -560, 160, 130);
-      h += mf * gauss(x, z,-180, -500, 170, 120);
-      h += mf * gauss(x, z, 380, -600, 140,  90);
-      h += mf * gauss(x, z,-360, -580, 150,  85);
+      h += mf * gauss(x, z,   0, -520,  80, 18);
+      h += mf * gauss(x, z, 160, -560,  55,  9);
+      h += mf * gauss(x, z,-160, -500,  55,  9);
     }
   }
+  // Mount Cadmus foothills — flanking the main southern peak
+  h += gauss(x, z,  110, 420,  90, 45);
+  h += gauss(x, z, -110, 380,  85, 40);
+  h += gauss(x, z,  220, 550, 100, 55);
+  h += gauss(x, z, -200, 510,  95, 48);
   if (z > 140) { const t = (z - 140) / 200; h += t * t * 18; }
   const dg = z - (-120);
   h -= 13 * Math.exp(-(dg * dg) / (2 * 8 * 8));

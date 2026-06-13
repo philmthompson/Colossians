@@ -78,7 +78,7 @@ export function registerAllSites(): void {
     ['temple',     70, -10, 12], ['acropolis',    0,  -8, 52],
     ['silo',      -58,  -6,  7], ['chasm',      112,-120, 28],
     ['necropolis', 30,-200, 46], ['necropolis-dig', 30,-212, 12],
-    ['milestone',  292, -89,  6], ['cadmus',      0, -300, 55],
+    ['milestone',  292, -89,  6], ['cadmus',      0,  380, 80],
     ['philemon',  141, -86, 12], ['baths',      156, -18, 14],
     ['aristarchus', 116, -42,  6], ['shepherd',   300, -50, 10],
     ['doorkeeper',141, -78,  5], ['flocks',     300, -50, 40],

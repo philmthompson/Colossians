@@ -36,7 +36,7 @@ const REGIONS: Region[] = [
   },
   {
     name: 'Mount Cadmus', subtitle: 'Honaz Dağı · 2,571 m',
-    test: pos => Math.abs(pos.x) < 80 && pos.z < -265,
+    test: pos => Math.abs(pos.x) < 120 && pos.z > 280,
   },
   {
     name: 'The Chasm', subtitle: 'Herodotus 7.30',

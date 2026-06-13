@@ -296,13 +296,14 @@ export function buildNature(scene: Scene): void {
   buildPines(scene);
   buildReeds(scene);
 
-  // Snow cap on Mount Cadmus peak
+  // Snow cap on Mount Cadmus (southern peak, visible looking south along the cardo)
+  // Terrain at (0, 750) reaches ~420 u; sphere sits just below summit.
   const snowMat = new StandardMaterial('snow', scene);
   snowMat.diffuseColor  = new Color3(0.95, 0.97, 1.0);
   snowMat.specularColor = new Color3(0.3, 0.3, 0.3);
-  const snow = MeshBuilder.CreateSphere('cadmus-snow', { diameter: 140, segments: 12 }, scene);
-  snow.scaling.y = 0.22;
-  snow.position.set(0, 152, -520);
+  const snow = MeshBuilder.CreateSphere('cadmus-snow', { diameter: 200, segments: 12 }, scene);
+  snow.scaling.y = 0.28;
+  snow.position.set(0, 360, 700);
   snow.material = snowMat;
   snow.isPickable = false;
 }
