@@ -16,8 +16,8 @@ export function terrainH(x: number, z: number): number {
   h += gauss(x, z,   0,  -8,  55,  8);
   h += gauss(x, z, 224, -48, 28, 13);
   h += gauss(x, z,   0, 750, 320, 250);
-  h += gauss(x, z, 200, 720, 280, 220);
-  h += gauss(x, z,-200, 780, 260, 200);
+  h += gauss(x, z, 250, 720, 280, 220);
+  h += gauss(x, z,-130, 780, 260, 200);
   {
     // Gentle rolling hills north of necropolis (formerly over-tall; now just low swells)
     const mf = z < -350 ? Math.min(1.0, (-350 - z) / 80) : 0;
@@ -27,11 +27,11 @@ export function terrainH(x: number, z: number): number {
       h += mf * gauss(x, z,-160, -500,  55,  9);
     }
   }
-  // Mount Cadmus foothills — flanking the main southern peak
-  h += gauss(x, z,  110, 420,  90, 45);
-  h += gauss(x, z, -110, 380,  85, 40);
-  h += gauss(x, z,  220, 550, 100, 55);
-  h += gauss(x, z, -200, 510,  95, 48);
+  // Mount Cadmus foothills — flanking the main southern peak, centred on cardo x≈92
+  h += gauss(x, z,  180, 420,  90, 45);
+  h += gauss(x, z,  -20, 380,  85, 40);
+  h += gauss(x, z,  290, 550, 100, 55);
+  h += gauss(x, z, -110, 510,  95, 48);
   if (z > 140) { const t = (z - 140) / 200; h += t * t * 18; }
   const dg = z - (-120);
   h -= 13 * Math.exp(-(dg * dg) / (2 * 8 * 8));
