@@ -413,15 +413,17 @@ function buildDyeWorks(scene: Scene): void {
 function buildRoads(scene: Scene): void {
   const cobM = makeCobbleMat(scene, 'road-cob');
 
+  // roadStrip: lay terrain-hugging cobblestone slabs between two points.
+  // Slabs overlap slightly in length (+0.3) to eliminate gaps.
   function roadStrip(x1: number, z1: number, x2: number, z2: number, width: number, segs: number) {
     const dx = (x2 - x1) / segs, dz = (z2 - z1) / segs;
     const segLen = Math.sqrt(dx * dx + dz * dz);
-    const angle = Math.atan2(dx, dz);
+    const angle  = Math.atan2(dx, dz);
     for (let i = 0; i < segs; i++) {
       const mx = x1 + (i + 0.5) * dx, mz = z1 + (i + 0.5) * dz;
-      const ty = terrainH(mx, mz) + 0.08;
-      const slab = MeshBuilder.CreateBox(`road-${i}-${Math.round(x1)}-${Math.round(z1)}`, {
-        width: segLen + 0.15, height: 0.20, depth: width,
+      const ty = terrainH(mx, mz) + 0.09;
+      const slab = MeshBuilder.CreateBox(`rd-${i}-${Math.round(x1)}-${Math.round(z1)}`, {
+        width: segLen + 0.30, height: 0.22, depth: width + 0.10,
       }, scene);
       slab.position.set(mx, ty, mz);
       slab.rotation.y = angle;
@@ -429,18 +431,43 @@ function buildRoads(scene: Scene): void {
     }
   }
 
-  // ── East approach: milestone → behind theatre → decumanus ────────────────
-  roadStrip(292, -89, 258, -72, 8,  5);   // from milestone toward theatre hill
-  roadStrip(258, -72, 224, -72, 8,  4);   // behind theatre (z=-72 is south of stage)
-  roadStrip(224, -72, 192, -80, 8,  4);   // arc around theatre hill
-  roadStrip(192, -80,  92, -92, 8, 12);   // join decumanus
+  // Small junction cap to fill gaps where two strips meet at an angle
+  function junctionCap(x: number, z: number, size: number) {
+    const ty = terrainH(x, z) + 0.09;
+    const cap = MeshBuilder.CreateBox(`rjcap-${Math.round(x)}-${Math.round(z)}`, {
+      width: size, height: 0.22, depth: size,
+    }, scene);
+    cap.position.set(x, ty, z);
+    cap.material = cobM;
+  }
 
-  // ── Cardo north: decumanus to agora/baths area ────────────────────────────
-  roadStrip(92, -44, 92, -92, 7, 6);
+  // ── Cardo: full N–S spine, acropolis area to bridge north abutment ─────────
+  roadStrip(92,   0, 92, -44,  7,  5);   // south cardo (temple / agora approach)
+  roadStrip(92, -44, 92, -92,  7,  6);   // main cardo through city
+  roadStrip(92, -92, 92, -100, 7,  2);   // cardo → bridge north approach
 
-  // ── Post-bridge: south then east along chasm ──────────────────────────────
-  roadStrip(92, -134, 92, -155, 7, 3);    // brief south
-  roadStrip(92, -155, 220, -155, 7, 14);  // turn east, follow chasm south bank
+  // ── Decumanus: east-west cross street at z = -92 ──────────────────────────
+  roadStrip(92, -92, 58, -92, 7, 4);    // decumanus west of cardo (toward temple)
+
+  // ── East approach: milestone → curve around theatre NE → join decumanus ───
+  // Theatre is centred at (224, -48).  Its outer wall reaches x≈253, z≈-20 to
+  // z≈-76.  The decumanus at z=-92 already clears the theatre's northern extent
+  // (z=-76).  The road curves from milestone at (292,-89) gently northward to
+  // z=-92, arcing around the theatre's east side at x≈258.
+  roadStrip(292, -89, 258, -89, 8,  4);   // east of theatre, milestone side
+  junctionCap(258, -89, 9);
+  roadStrip(258, -89, 230, -92, 8,  4);   // gentle arc north to decumanus level
+  junctionCap(230, -92, 9);
+  roadStrip(230, -92,  92, -92, 8, 16);   // along decumanus to cardo
+  junctionCap(92, -92, 9);
+
+  // ── Post-bridge: cross south abutment then turn WEST along chasm ──────────
+  // Player crosses bridge heading north (-z). At the south abutment they turn
+  // Right = WEST (-x).  Road follows the south bank of the chasm westward.
+  roadStrip(92, -142, 92, -150, 7,  2);   // brief north to clear abutment
+  junctionCap(92, -150, 8);
+  roadStrip(92, -150,  0, -150, 7, 10);   // WEST along chasm south bank
+  roadStrip( 0, -150, -80, -150, 7,  9);  // continue west into distance
 }
 
 function buildAgoraMarket(scene: Scene): void {

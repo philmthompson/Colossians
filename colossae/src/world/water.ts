@@ -71,9 +71,9 @@ function buildGorgeWalls(scene: Scene): void {
 
 export function buildBridge(scene: Scene): void {
   // Deck sits level at the city-side terrain so no ramps are needed.
-  const NORTH_Y  = terrainH(92, -98);
-  const SOUTH_Y  = terrainH(92, -140);
-  const DECK_Y   = Math.max(NORTH_Y, SOUTH_Y);
+  const NORTH_Y  = terrainH(92, -105);   // sample at north abutment
+  const SOUTH_Y  = terrainH(92, -133);   // sample at south abutment
+  const DECK_Y   = Math.min(NORTH_Y, SOUTH_Y);
   const BRIDGE_W = 12;   // matches cardo road width
   const DECK_LEN = 44;
   const stoneMat = smat('bridge-s', 0x9a8870, scene);
@@ -87,7 +87,7 @@ export function buildBridge(scene: Scene): void {
 
   // Solid stone abutments — deep enough to fill any gap between deck and bank
   for (const [az, bankY] of [[-104, NORTH_Y], [-134, SOUTH_Y]] as [number, number][]) {
-    const fill = Math.max(6, DECK_Y - bankY + 4);
+    const fill = Math.max(8, Math.abs(DECK_Y - bankY) + 6);
     const abt = MeshBuilder.CreateBox('abt', { width: BRIDGE_W + 4, height: fill, depth: 7 }, scene);
     abt.position.set(92, DECK_Y - fill * 0.5, az);
     abt.material = stoneMat;
