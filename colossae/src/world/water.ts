@@ -72,60 +72,64 @@ function buildGorgeWalls(scene: Scene): void {
 export function buildBridge(scene: Scene): void {
   const BRIDGE_X = 92;
   const BRIDGE_W = 12;
+  const DECK_H   = 1.4;
 
-  // Sample the actual terrain at the top of each bank (clear of the chasm dip).
-  // The chasm Gaussian is centred at z=-120, sigma≈8; at ±22 units it's negligible.
-  const NORTH_Z = -98;   // city-side bank top
-  const SOUTH_Z = -142;  // necropolis-side bank top
+  // Sample terrain at both banks, well clear of the chasm Gaussian (sigma≈8).
+  const NORTH_Z = -98;   // city-side bank (less negative z = south in game)
+  const SOUTH_Z = -142;  // necropolis-side bank
   const NORTH_Y = terrainH(BRIDGE_X, NORTH_Z);
   const SOUTH_Y = terrainH(BRIDGE_X, SOUTH_Z);
 
-  const DECK_LEN = Math.abs(SOUTH_Z - NORTH_Z);
-  const DECK_Z   = (NORTH_Z + SOUTH_Z) / 2;
-  const DECK_Y   = (NORTH_Y + SOUTH_Y) / 2;
-
-  // Pitch so the deck surface matches both bank heights.
-  // In Babylon left-handed: positive X-pitch raises the +Z end of the box.
-  // The +Z end is at NORTH_Z (less negative = higher z = city side).
-  const pitch = Math.atan2(NORTH_Y - SOUTH_Y, DECK_LEN);
+  const DECK_LEN = Math.abs(SOUTH_Z - NORTH_Z);           // 44
+  const DECK_Z   = (NORTH_Z + SOUTH_Z) / 2;               // -120
+  // Set centre so the deck TOP (not centre) lands at terrain height on each end.
+  // Deck top at centre = DECK_Y + DECK_H/2 = (NORTH_Y+SOUTH_Y)/2  →  DECK_Y = avg - DECK_H/2
+  const DECK_Y   = (NORTH_Y + SOUTH_Y) / 2 - DECK_H / 2;
+  // Positive X-pitch (Babylon left-handed) raises the +Z end of the box.
+  // +Z end = NORTH_Z (less negative = city side), should be at NORTH_Y.
+  const pitch    = Math.atan2(NORTH_Y - SOUTH_Y, DECK_LEN);
 
   const stoneMat = smat('bridge-s', 0x9a8870, scene);
   const capMat   = smat('bridge-c', 0xb8a880, scene);
 
-  // Deck slab — tilted to match bank elevations
-  const deck = MeshBuilder.CreateBox('deck', { width: BRIDGE_W, height: 1.4, depth: DECK_LEN }, scene);
+  // Deck slab — centre lowered so the top surface meets the banks
+  const deck = MeshBuilder.CreateBox('deck', { width: BRIDGE_W, height: DECK_H, depth: DECK_LEN }, scene);
   deck.position.set(BRIDGE_X, DECK_Y, DECK_Z);
   deck.rotationQuaternion = Quaternion.RotationYawPitchRoll(0, pitch, 0);
   deck.material = stoneMat;
   deck.checkCollisions = true;
 
-  // Abutments — solid blocks that fill from the deck down into the bank
+  // Abutments: fill from bank terrain surface down into the ground
   for (const [az, bankY] of [[NORTH_Z + 4, NORTH_Y], [SOUTH_Z - 4, SOUTH_Y]] as [number, number][]) {
-    const fill = Math.max(10, bankY + 8);
+    const fill = Math.max(12, Math.abs(bankY) + 10);
     const abt = MeshBuilder.CreateBox('abt', { width: BRIDGE_W + 4, height: fill, depth: 8 }, scene);
     abt.position.set(BRIDGE_X, bankY - fill * 0.5, az);
     abt.material = stoneMat;
   }
 
-  // Piers spanning from chasm floor up toward the deck underside
+  // Piers: top must stay below deck underside (DECK_Y - DECK_H/2 at that z).
+  // Use short piers that reach from chasm floor up to just below the deck.
   for (const pz of [-110, -128]) {
-    const t  = (pz - SOUTH_Z) / (NORTH_Z - SOUTH_Z);
-    const py = SOUTH_Y + t * (NORTH_Y - SOUTH_Y);
-    const pier = MeshBuilder.CreateBox('pier', { width: BRIDGE_W - 2, height: 18, depth: 4 }, scene);
-    pier.position.set(BRIDGE_X, py - 8, pz);
+    const t    = (pz - SOUTH_Z) / (NORTH_Z - SOUTH_Z);
+    const deckBottom = DECK_Y - DECK_H / 2 + t * (NORTH_Y - SOUTH_Y);
+    const pierTop    = deckBottom - 0.3;          // stay 0.3 m clear of deck underside
+    const pierH      = Math.max(4, pierTop - WATER_Y + 3);
+    const pier = MeshBuilder.CreateBox('pier', { width: BRIDGE_W - 2, height: pierH, depth: 4 }, scene);
+    pier.position.set(BRIDGE_X, pierTop - pierH / 2, pz);
     pier.material = stoneMat;
   }
 
-  // Parapets — follow the same pitch as the deck
+  // Parapets sit on the deck top surface, rotating with the same pitch
+  const deckTopY = DECK_Y + DECK_H / 2;
   for (const side of [-1, 1]) {
     const xOff = side * (BRIDGE_W / 2 - 0.45);
     const par = MeshBuilder.CreateBox('par', { width: 0.9, height: 1.1, depth: DECK_LEN - 2 }, scene);
-    par.position.set(BRIDGE_X + xOff, DECK_Y + 1.1, DECK_Z);
+    par.position.set(BRIDGE_X + xOff, deckTopY + 0.55, DECK_Z);
     par.rotationQuaternion = Quaternion.RotationYawPitchRoll(0, pitch, 0);
     par.material = stoneMat;
 
     const cap = MeshBuilder.CreateBox('cap', { width: 1.1, height: 0.25, depth: DECK_LEN }, scene);
-    cap.position.set(BRIDGE_X + xOff, DECK_Y + 1.75, DECK_Z);
+    cap.position.set(BRIDGE_X + xOff, deckTopY + 1.225, DECK_Z);
     cap.rotationQuaternion = Quaternion.RotationYawPitchRoll(0, pitch, 0);
     cap.material = capMat;
   }

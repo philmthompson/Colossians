@@ -16,7 +16,7 @@ function bridgeDeckY(x: number, z: number): number | null {
   if (Math.abs(x - 92) > 6) return null;
   if (z < BRIDGE_S_Z || z > BRIDGE_N_Z) return null;
   const t = (z - BRIDGE_S_Z) / (BRIDGE_N_Z - BRIDGE_S_Z);
-  return BRIDGE_S_Y + t * (BRIDGE_N_Y - BRIDGE_S_Y) + 1.4;  // +deck thickness
+  return BRIDGE_S_Y + t * (BRIDGE_N_Y - BRIDGE_S_Y);
 }
 
 // ─── Theatre step height — keep in sync with theatre.ts constants ─────────────
