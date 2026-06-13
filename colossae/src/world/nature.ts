@@ -139,10 +139,10 @@ function buildCypresses(scene: Scene): void {
     positions.push([cx + 4, -175]);
   }
 
-  // Cypress avenue flanking the approach path (x ≈ 22) from bridge to necropolis
+  // Cypress avenue flanking the cardo approach (x ≈ 92) from bridge to necropolis
   for (let az = -128; az >= -170; az -= 13) {
-    positions.push([22 - 9, az]);
-    positions.push([22 + 9, az]);
+    positions.push([92 - 9, az]);
+    positions.push([92 + 9, az]);
   }
 
   // Dense cypresses ringing the necropolis perimeter
@@ -154,10 +154,10 @@ function buildCypresses(scene: Scene): void {
   ];
   for (const sp of necroSpots) positions.push(sp);
 
-  // A few cypresses near the chasm viewpoint and bridge south approach
+  // Cypresses near the chasm viewpoint and bridge approaches
   const chasmSpots: [number, number][] = [
-    [8,-110],[14,-113],[30,-108],[38,-112],
-    [-5,-130],[-10,-122],[50,-110],[58,-115],
+    [78,-110],[84,-113],[100,-108],[106,-112],
+    [70,-130],[66,-122],[112,-110],[118,-115],
   ];
   for (const sp of chasmSpots) positions.push(sp);
 

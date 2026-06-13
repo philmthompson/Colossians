@@ -71,8 +71,8 @@ function buildGorgeWalls(scene: Scene): void {
 
 export function buildBridge(scene: Scene): void {
   // Deck sits level at the city-side terrain so no ramps are needed.
-  const NORTH_Y  = terrainH(22, -98);
-  const SOUTH_Y  = terrainH(22, -140);
+  const NORTH_Y  = terrainH(92, -98);
+  const SOUTH_Y  = terrainH(92, -140);
   const DECK_Y   = Math.max(NORTH_Y, SOUTH_Y);
   const BRIDGE_W = 12;   // matches cardo road width
   const DECK_LEN = 44;
@@ -81,7 +81,7 @@ export function buildBridge(scene: Scene): void {
 
   // Main deck slab
   const deck = MeshBuilder.CreateBox('deck', { width: BRIDGE_W, height: 1.4, depth: DECK_LEN }, scene);
-  deck.position.set(22, DECK_Y, -119);
+  deck.position.set(92, DECK_Y, -119);
   deck.material = stoneMat;
   deck.checkCollisions = true;
 
@@ -89,21 +89,21 @@ export function buildBridge(scene: Scene): void {
   for (const [az, bankY] of [[-104, NORTH_Y], [-134, SOUTH_Y]] as [number, number][]) {
     const fill = Math.max(6, DECK_Y - bankY + 4);
     const abt = MeshBuilder.CreateBox('abt', { width: BRIDGE_W + 4, height: fill, depth: 7 }, scene);
-    abt.position.set(22, DECK_Y - fill * 0.5, az);
+    abt.position.set(92, DECK_Y - fill * 0.5, az);
     abt.material = stoneMat;
   }
 
   // Two piers spanning from chasm floor to deck underside
   for (const pz of [-113, -125]) {
     const pier = MeshBuilder.CreateBox('pier', { width: BRIDGE_W - 2, height: 12, depth: 4 }, scene);
-    pier.position.set(22, DECK_Y - 5.5, pz);
+    pier.position.set(92, DECK_Y - 5.5, pz);
     pier.material = stoneMat;
   }
 
   // Arch haunch blocks
   for (const [hz, rx] of [[-108, 0.28], [-130, -0.28]] as [number, number][]) {
     const haunch = MeshBuilder.CreateBox('haunch', { width: BRIDGE_W, height: 2.5, depth: 6 }, scene);
-    haunch.position.set(22, DECK_Y - 2.5, hz);
+    haunch.position.set(92, DECK_Y - 2.5, hz);
     haunch.rotation.x = rx;
     haunch.material = stoneMat;
   }
@@ -111,16 +111,16 @@ export function buildBridge(scene: Scene): void {
   // Parapets
   for (const side of [-1, 1]) {
     const par = MeshBuilder.CreateBox('par', { width: 0.9, height: 1.1, depth: DECK_LEN - 2 }, scene);
-    par.position.set(22 + side * (BRIDGE_W / 2 - 0.45), DECK_Y + 1.1, -119);
+    par.position.set(92 + side * (BRIDGE_W / 2 - 0.45), DECK_Y + 1.1, -119);
     par.material = stoneMat;
 
     const cap = MeshBuilder.CreateBox('cap', { width: 1.1, height: 0.25, depth: DECK_LEN }, scene);
-    cap.position.set(22 + side * (BRIDGE_W / 2 - 0.55), DECK_Y + 1.75, -119);
+    cap.position.set(92 + side * (BRIDGE_W / 2 - 0.55), DECK_Y + 1.75, -119);
     cap.material = capMat;
 
     for (let pz = -110; pz >= -128; pz -= 9) {
       const post = MeshBuilder.CreateBox('post', { width: 1.1, height: 1.5, depth: 1.1 }, scene);
-      post.position.set(22 + side * (BRIDGE_W / 2 - 0.55), DECK_Y + 1.55, pz);
+      post.position.set(92 + side * (BRIDGE_W / 2 - 0.55), DECK_Y + 1.55, pz);
       post.material = capMat;
     }
   }

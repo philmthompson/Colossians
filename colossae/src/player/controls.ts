@@ -9,9 +9,9 @@ const FOV_RUN    = 76 * Math.PI / 180;
 
 // ─── Bridge deck ─────────────────────────────────────────────────────────────
 // Mirrors buildBridge in water.ts: width=12, deck level = max terrain of both banks.
-const BRIDGE_DECK_Y = Math.max(terrainH(22, -98), terrainH(22, -140));
+const BRIDGE_DECK_Y = Math.max(terrainH(92, -98), terrainH(92, -140));
 function bridgeDeckY(x: number, z: number): number | null {
-  if (Math.abs(x - 22) > 6) return null;
+  if (Math.abs(x - 92) > 6) return null;
   if (z < -140 || z > -98) return null;
   return BRIDGE_DECK_Y;
 }
