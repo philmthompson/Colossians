@@ -85,9 +85,9 @@ export function buildBridge(scene: Scene): void {
   // Set centre so the deck TOP (not centre) lands at terrain height on each end.
   // Deck top at centre = DECK_Y + DECK_H/2 = (NORTH_Y+SOUTH_Y)/2  →  DECK_Y = avg - DECK_H/2
   const DECK_Y   = (NORTH_Y + SOUTH_Y) / 2 - DECK_H / 2;
-  // Positive X-pitch (Babylon left-handed) raises the +Z end of the box.
-  // +Z end = NORTH_Z (less negative = city side), should be at NORTH_Y.
-  const pitch    = Math.atan2(NORTH_Y - SOUTH_Y, DECK_LEN);
+  // Positive X-pitch (Babylon left-handed) LOWERS the +Z end of the box.
+  // +Z end = NORTH_Z (city side, higher terrain) → negate to raise it.
+  const pitch    = -Math.atan2(NORTH_Y - SOUTH_Y, DECK_LEN);
 
   const stoneMat = smat('bridge-s', 0x9a8870, scene);
   const capMat   = smat('bridge-c', 0xb8a880, scene);
@@ -107,15 +107,13 @@ export function buildBridge(scene: Scene): void {
     abt.material = stoneMat;
   }
 
-  // Piers: top must stay below deck underside (DECK_Y - DECK_H/2 at that z).
-  // Use short piers that reach from chasm floor up to just below the deck.
+  // Piers: rise from just above WATER_Y to safely below deck underside.
+  // Deck underside centre ≈ DECK_Y - DECK_H/2; keep pier top 1.5 m clear.
+  const pierTopY = DECK_Y - DECK_H / 2 - 1.5;
+  const pierH    = Math.max(4, pierTopY - WATER_Y);
   for (const pz of [-110, -128]) {
-    const t    = (pz - SOUTH_Z) / (NORTH_Z - SOUTH_Z);
-    const deckBottom = DECK_Y - DECK_H / 2 + t * (NORTH_Y - SOUTH_Y);
-    const pierTop    = deckBottom - 0.3;          // stay 0.3 m clear of deck underside
-    const pierH      = Math.max(4, pierTop - WATER_Y + 3);
     const pier = MeshBuilder.CreateBox('pier', { width: BRIDGE_W - 2, height: pierH, depth: 4 }, scene);
-    pier.position.set(BRIDGE_X, pierTop - pierH / 2, pz);
+    pier.position.set(BRIDGE_X, pierTopY - pierH / 2, pz);
     pier.material = stoneMat;
   }
 
