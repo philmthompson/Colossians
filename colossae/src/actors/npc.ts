@@ -281,4 +281,109 @@ export function buildNPCs(scene: Scene): void {
   for (const def of NPC_DEFS) {
     buildNPC(def.id, def.x, def.z, def.tunic, def.cloak, def.facing, scene);
   }
+  buildCardoWalker(scene);
+}
+
+// ─── Cardo walker — patrols the main north–south street ──────────────────────
+function buildCardoWalker(scene: Scene): void {
+  ensureShared(scene);
+
+  const CARDO_X   = 92;
+  const SOUTH_Z   = -14;   // southern turnaround (near decumanus)
+  const NORTH_Z   = -82;   // northern turnaround (near Philemon gate)
+  const NPC_SPEED = 2.4;   // m/s
+
+  // Tunic: dusty linen, himation: earth brown (merchant traveller look)
+  const tunicMat = sm('npc-tunic-walker', 0.76, 0.70, 0.54, 0.05, scene);
+  const trimMat  = sm('npc-trim-walker',  0.82, 0.55, 0.20, 0.08, scene);
+  const cloakMat = sm('npc-cloak-walker', 0.44, 0.32, 0.20, 0.06, scene);
+
+  const root = new TransformNode('npc-walker', scene);
+  root.position.set(CARDO_X, terrainH(CARDO_X, SOUTH_Z), SOUTH_Z);
+  root.scaling.setAll(0.5);
+
+  // ── Upper body (identical to standard NPC) ──────────────────────────────
+  const torso = cyl('w-torso', 1.55, 0.95, new Vector3(0, 1.95, 0), tunicMat, root, scene,
+    { dTop: 0.82, dBot: 1.08, tess: 18 });
+  cyl('w-hem', 0.06, 1.16, new Vector3(0, 1.18, 0), trimMat, root, scene, { dTop: 1.14, dBot: 1.18 });
+
+  const belt = MeshBuilder.CreateTorus('w-belt', { diameter: 0.98, thickness: 0.055, tessellation: 48 }, scene);
+  belt.position.set(0, 1.86, 0); belt.scaling.z = 0.78; belt.material = leatherMat; belt.parent = root;
+
+  cyl('w-neck', 0.28, 0.22, new Vector3(0, 2.78, -0.02), skinMat, root, scene);
+  const head = sph('w-head', 0.68, new Vector3(0, 3.18, -0.04), new Vector3(0.9, 1.08, 0.82), skinMat, root, scene);
+  sph('w-hair-b', 0.72, new Vector3(0, 3.24, 0.08), new Vector3(0.92, 0.9, 0.7), hairMat, root, scene);
+  sph('w-hair-f', 0.58, new Vector3(0, 3.45, -0.13), new Vector3(0.9, 0.42, 0.55), hairMat, root, scene);
+  sph('w-beard',  0.38, new Vector3(0, 3.02, -0.34), new Vector3(0.82, 0.58, 0.38), hairMat, root, scene);
+  sph('w-eye-l', 0.055, new Vector3(-0.13, 3.27, -0.37), Vector3.One(), eyeMat, root, scene);
+  sph('w-eye-r', 0.055, new Vector3( 0.13, 3.27, -0.37), Vector3.One(), eyeMat, root, scene);
+
+  // Arms — swing opposite to legs
+  const rArm = new TransformNode('w-rarm-pivot', scene);
+  rArm.position.set(0.48, 2.55, 0); rArm.parent = root;
+  cylBetween('w-r-upper', new Vector3(0, 0, 0), new Vector3(0.27, -0.47, -0.21), 0.105, skinMat, rArm, scene);
+  cylBetween('w-r-fore',  new Vector3(0.27, -0.47, -0.21), new Vector3(0, -0.89, -0.42), 0.09, skinMat, rArm, scene);
+  sph('w-rhand', 0.19, new Vector3(0, -0.97, -0.45), new Vector3(0.8, 1, 0.75), skinMat, rArm, scene);
+  cylBetween('w-r-sleeve', new Vector3(0, 0, 0), new Vector3(0.10, -0.24, -0.10), 0.15, tunicMat, rArm, scene);
+
+  const lArm = new TransformNode('w-larm-pivot', scene);
+  lArm.position.set(-0.48, 2.55, 0); lArm.parent = root;
+  cylBetween('w-l-upper', new Vector3(0, 0, 0), new Vector3(-0.29, -0.47, -0.08), 0.105, skinMat, lArm, scene);
+  cylBetween('w-l-fore',  new Vector3(-0.29, -0.47, -0.08), new Vector3(-0.36, -0.89, -0.14), 0.09, skinMat, lArm, scene);
+  sph('w-lhand', 0.19, new Vector3(-0.36, -0.97, -0.14), new Vector3(0.8, 1, 0.75), skinMat, lArm, scene);
+  cylBetween('w-l-sleeve', new Vector3(0, 0, 0), new Vector3(-0.10, -0.24, -0.05), 0.15, tunicMat, lArm, scene);
+
+  // Himation — simple back drape
+  clothPanel('w-back-drape', -0.58, 0.58, -0.68, 0.68, 2.65, 0.95, 0.47, cloakMat, root, scene);
+  clothPanel('w-front-drape', -0.62, 0.28, -0.72, 0.52, 2.74, 1.04, -0.53, cloakMat, root, scene);
+  bx('w-cloak-trim-t', new Vector3(-0.13, 2.73, -0.575), new Vector3(0.78, 0.035, 0.015), trimMat, root, scene);
+
+  // ── Legs — hung from hip pivot nodes so they can swing ──────────────────
+  const rHip = new TransformNode('w-rhip', scene);
+  rHip.position.set( 0.23, 1.15, 0.02); rHip.parent = root;
+  cylBetween('w-rleg', new Vector3(0, 0, 0), new Vector3(0, -0.78, -0.07), 0.105, skinMat, rHip, scene);
+  bx('w-rfoot',   new Vector3(0, -0.88, -0.20), new Vector3(0.16, 0.07, 0.33), skinMat, rHip, scene);
+  bx('w-rsandal', new Vector3(0, -0.94, -0.20), new Vector3(0.19, 0.025, 0.37), leatherMat, rHip, scene);
+
+  const lHip = new TransformNode('w-lhip', scene);
+  lHip.position.set(-0.23, 1.15, 0.02); lHip.parent = root;
+  cylBetween('w-lleg', new Vector3(0, 0, 0), new Vector3(0, -0.78, -0.07), 0.105, skinMat, lHip, scene);
+  bx('w-lfoot',   new Vector3(0, -0.88, -0.20), new Vector3(0.16, 0.07, 0.33), skinMat, lHip, scene);
+  bx('w-lsandal', new Vector3(0, -0.94, -0.20), new Vector3(0.19, 0.025, 0.37), leatherMat, lHip, scene);
+
+  // ── Walk loop ────────────────────────────────────────────────────────────
+  let dir = -1;   // -1 = walking north (decreasing z), +1 = south
+  let walkPhase = 0;
+
+  scene.onBeforeRenderObservable.add(() => {
+    const dt = Math.min(scene.getEngine().getDeltaTime() / 1000, 0.05);
+
+    // Move
+    root.position.z += dir * NPC_SPEED * dt;
+    root.position.y  = terrainH(root.position.x, root.position.z);
+
+    // Turnarounds
+    if (root.position.z <= NORTH_Z) { root.position.z = NORTH_Z; dir =  1; }
+    if (root.position.z >= SOUTH_Z) { root.position.z = SOUTH_Z; dir = -1; }
+
+    // Face direction: NPC front is -Z local; north travel (dir=-1) → rot.y=0
+    root.rotation.y = dir < 0 ? 0 : Math.PI;
+
+    // Walk phase accumulates with speed
+    walkPhase += dt * NPC_SPEED * 1.8;
+    const SWING = 0.38;
+
+    // Leg swing — alternating
+    rHip.rotation.x =  Math.sin(walkPhase) * SWING;
+    lHip.rotation.x = -Math.sin(walkPhase) * SWING;
+
+    // Arm swing — opposite to legs
+    rArm.rotation.x = -Math.sin(walkPhase) * 0.22;
+    lArm.rotation.x =  Math.sin(walkPhase) * 0.22;
+
+    // Body bob
+    const bobY = Math.abs(Math.sin(walkPhase)) * 0.06;
+    torso.position.y = 1.95 + bobY;
+    head.position.y  = 3.18 + bobY;
+  });
 }
