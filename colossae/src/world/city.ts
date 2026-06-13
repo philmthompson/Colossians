@@ -456,26 +456,22 @@ function buildRoads(scene: Scene): void {
   roadStrip(92,   0, 92,  -92, 7);   // acropolis south to decumanus
   roadStrip(92, -92, 92, -100, 7);   // cardo → bridge north approach
 
-  // ── Decumanus: west of cardo ──────────────────────────────────────────────
-  roadStrip(92, -92, 58, -92, 7);
-
-  // ── East approach: milestone → curve north around theatre east → decumanus ─
-  // Milestone at (292,-89). Theatre centre (224,-48), eastern outer edge ~x=255.
-  // Road arcs north from milestone, then swings west along the decumanus.
-  roadStrip(292, -89, 258, -89, 8);
-  junctionCap(258, -89, 9);
-  roadStrip(258, -89, 230, -92, 8);
-  junctionCap(230, -92, 9);
-  roadStrip(230, -92,  92, -92, 8);
+  // ── Decumanus: east-west cross street through the city grid ───────────────
+  roadStrip(224, -92, 92, -92, 8);   // theatre junction across to cardo
   junctionCap(92, -92, 9);
+  roadStrip(92, -92, 58, -92, 7);    // west of cardo (toward temple)
 
-  // ── Post-bridge: south abutment then turn EAST along chasm south bank ─────
-  // Player crosses bridge heading south (+z). After the south abutment they
-  // turn left = EAST (+x). Road follows the chasm south bank eastward.
+  // ── Theatre connector (GREEN): theatre south down to the decumanus ────────
+  roadStrip(224, -58, 224, -92, 7);
+  junctionCap(224, -92, 9);
+
+  // ── SE city-exit road (GREEN): from the theatre junction out to the SE ────
+  // Replaces the old NE milestone arc, which the annotation marks for removal.
+  roadStrip(224, -92, 258, -110, 8);
+  roadStrip(258, -110, 298, -132, 8);
+
+  // ── Post-bridge: short link off the south abutment (necropolis side) ──────
   roadStrip(92, -142, 92, -150, 7);
-  junctionCap(92, -150, 8);
-  roadStrip(92, -150, 200, -150, 7);
-  roadStrip(200, -150, 310, -150, 7);
 }
 
 function buildAgoraMarket(scene: Scene): void {
