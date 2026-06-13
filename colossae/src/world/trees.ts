@@ -223,22 +223,23 @@ export function buildForestTrees(scene: Scene): void {
   leafMat.specularColor = Color3.Black();
   leafMat.backFaceCulling = false;
 
-  // ~30 positions spread across city surrounds, necropolis, pastures, valley
+  // ~35 positions — clear of buildings and the necropolis itself
   const spots: [number, number][] = [
-    // City environs
+    // City environs (west of cardo, open ground)
     [55, -15], [75,  5], [108,  12], [50, -60], [160,  5], [48, -20],
-    // Near theatre
-    [240, -70], [210, -62], [252, -35],
-    // Necropolis belt
-    [-15,-155], [28,-158], [55,-153], [-22,-170], [60,-165], [5,-162],
     // Eastern pastures
-    [265, -15], [290,  12], [325, -28], [305,  22], [350, -5],
+    [265, -15], [290,  12], [325, -28], [305,  22], [350,  -5],
     // Acropolis western slopes
     [-38,  18], [-55,   5], [-22,  38], [12,  28],
-    // Valley / road flanks
+    // Valley / road flanks (west of river)
     [-88, -48], [-108, -28], [-65, -60],
     // Bridge/chasm periphery
-    [68, -95], [120, -96], [66,-148], [114,-148],
+    [68, -95], [120, -96], [66, -148], [114, -148],
+    // Large grove on the hill north of the bridge, south of the necropolis plateau.
+    // Necropolis starts at z≈-175; grove occupies z=-140 to -172 (the hillside approach).
+    [-32,-140], [-15,-145], [  5,-142], [ 22,-140], [ 42,-143], [ 58,-140],
+    [-38,-152], [-20,-155], [  8,-150], [ 30,-153], [ 52,-148], [ 68,-152],
+    [-28,-162], [ 12,-160], [ 38,-158], [ 62,-155], [ -8,-168],
   ];
 
   for (const [x, z] of spots) {
