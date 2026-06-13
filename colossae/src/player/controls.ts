@@ -69,8 +69,8 @@ function templeFloorY(x: number, z: number): number | null {
 // sinking through it.
 function buildingFloorY(x: number, z: number): number | null {
   // Agora plaza slab
-  if (Math.abs(x - 118) < 16 && Math.abs(z + 48) < 18) {
-    return terrainH(118, -48) + 0.3;
+  if (Math.abs(x - 112) < 12 && Math.abs(z + 29) < 11) {
+    return terrainH(112, -29) + 0.3;
   }
   // Baths roof — only when approaching from the hill side (terrain nearly as high)
   {

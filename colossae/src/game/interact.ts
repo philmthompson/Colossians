@@ -69,7 +69,7 @@ export function tryInteract(): void {
 
 export function registerAllSites(): void {
   const sites: [string, number, number, number][] = [
-    ['theatre',   224, -48, 32], ['agora',      120, -44, 18],
+    ['theatre',   224, -48, 32], ['agora',      112, -29, 14],
     ['dye-works',  53,-104, 14], ['cardo',       92, -44, 12],
     ['temple',     70, -10, 12], ['acropolis',    0,  -8, 52],
     ['silo',      -58,  -6,  7], ['chasm',      112,-120, 28],

@@ -155,119 +155,77 @@ function buildCardo(scene: Scene): void {
   }
 }
 
+function buildDecumanus(scene: Scene): void {
+  // East-west colonnaded street at z = -44 (west of the cardo only).
+  // East side opens directly into the agora entrance at x = 100.
+  const colM = mat('dec-col', 0xd4c8a8, scene);
+  for (let x = 64; x <= 84; x += 10) {
+    column(scene, x, -39, 0.42, 4.2, 0, colM);
+    column(scene, x, -49, 0.42, 4.2, 0, colM);
+  }
+}
+
 function buildAgora(scene: Scene): void {
-  // Hellenistic agora: paved court + west stoa (facing the cardo) + north/south
-  // colonnades + east back wall with tabernae (shops). Bema and altar in court.
-  const AX = 118, AZ = -48;
-  const COURT_W = 32, COURT_D = 36;   // east-west × north-south
+  // Single-story Hellenistic agora opening west directly onto the Cardo.
+  // West face is open (enter straight from the street).
+  // Three enclosed stoa sides: N, S, E — each a row of columns + entablature + back wall.
+  const WX = 100, EX = 124;          // west (open entry) / east back wall
+  const NZ = -40, SZ = -18;          // north / south walls
+  const AX = (WX + EX) * 0.5;       // 112
+  const AZ = (NZ + SZ) * 0.5;       // -29
 
-  const plazaM  = mat('plaza',   0xb0a080, scene);
-  const stoneM  = mat('ag-s',    0x9a8c78, scene);
-  const colM    = mat('ag-col',  0xd4c8a8, scene);
-  const woodM   = mat('ag-wood', 0x7a5a38, scene);
-  const darkM   = mat('ag-dark', 0x2a1e10, scene);
+  const plazaM = mat('plaza',  0xb8a880, scene);
+  const stoneM = mat('ag-s',   0x9a8c78, scene);
+  const colM   = mat('ag-col', 0xd4c8a8, scene);
 
-  // ── Paved court ──────────────────────────────────────────────────────────────
-  groundedBox(scene, plazaM, AX, AZ, COURT_W, 0.3, COURT_D);
+  // ── Paved limestone court ────────────────────────────────────────────────────
+  groundedBox(scene, plazaM, AX, AZ, EX - WX, 0.25, SZ - NZ);
 
-  // ── West stoa — 8 columns facing the cardo, spaced every 5 units ─────────────
-  const STOA_X = AX - COURT_W * 0.5 + 1;    // x ≈ 102
-  const stoaZ0 = AZ - COURT_D * 0.5 + 3;    // z ≈ -63
-  for (let i = 0; i < 8; i++) {
-    const cz = stoaZ0 + i * (COURT_D - 6) / 7;
-    column(scene, STOA_X, cz, 0.38, 4.2, 0, colM);
+  // ── Stoa columns ─────────────────────────────────────────────────────────────
+  const COL_SPACING = 5.5;
+  // North stoa
+  for (let cx = WX + 2; cx <= EX + 0.5; cx += COL_SPACING)
+    column(scene, cx, NZ, 0.38, 4.0, 0, colM);
+  // South stoa
+  for (let cx = WX + 2; cx <= EX + 0.5; cx += COL_SPACING)
+    column(scene, cx, SZ, 0.38, 4.0, 0, colM);
+  // East stoa
+  for (let cz = NZ + 2; cz <= SZ + 0.5; cz += COL_SPACING)
+    column(scene, EX, cz, 0.38, 4.0, 0, colM);
+
+  // West entry: two framing columns at the corners of the opening
+  column(scene, WX, NZ + 2, 0.44, 4.5, 0, colM);
+  column(scene, WX, SZ - 2, 0.44, 4.5, 0, colM);
+
+  // ── Entablature beams (cap column rows) ──────────────────────────────────────
+  const beamY = (x: number, z: number) => footprintMaxY(x, z, 2, 2) + 4.0 + 0.3;
+  function beam(name: string, w: number, d: number, bx: number, bz: number) {
+    const b = MeshBuilder.CreateBox(name, { width: w, height: 0.6, depth: d }, scene);
+    b.position.set(bx, beamY(bx, bz), bz);
+    b.material = stoneM;
   }
-  // Stoa entablature beam
-  const stEntab = MeshBuilder.CreateBox('st-ent', { width: 0.85, height: 0.65, depth: COURT_D - 4 }, scene);
-  stEntab.position.set(STOA_X, footprintMaxY(STOA_X, AZ, 1, COURT_D) + 4.2 + 0.32, AZ);
-  stEntab.material = stoneM;
-  // Stoa back wall (between columns and court)
-  const stBack = MeshBuilder.CreateBox('st-back', { width: 0.5, height: 4.5 + SINK, depth: COURT_D - 2 }, scene);
-  stBack.position.set(STOA_X + 3, footprintMaxY(STOA_X + 3, AZ, 1, COURT_D), AZ);
-  stBack.material = stoneM;
+  beam('n-beam', EX - WX + 2, 0.9, AX, NZ);
+  beam('s-beam', EX - WX + 2, 0.9, AX, SZ);
+  beam('e-beam', 0.9, SZ - NZ + 2, EX, AZ);
 
-  // ── North colonnade ───────────────────────────────────────────────────────────
-  const NORTH_Z = AZ - COURT_D * 0.5 + 1;   // z ≈ -65
-  for (let i = 0; i < 5; i++) {
-    const cx = STOA_X + 3 + i * (COURT_W - 6) / 4;
-    column(scene, cx, NORTH_Z, 0.38, 4.2, 0, colM);
-  }
-  const nEntab = MeshBuilder.CreateBox('n-ent', { width: COURT_W - 4, height: 0.65, depth: 0.8 }, scene);
-  nEntab.position.set(AX + 1, footprintMaxY(AX, NORTH_Z, COURT_W, 1) + 4.2 + 0.32, NORTH_Z);
-  nEntab.material = stoneM;
+  // ── Stoa back walls ───────────────────────────────────────────────────────────
+  groundedBox(scene, stoneM, AX,     NZ - 1.2, EX - WX,   4.2, 0.8);
+  groundedBox(scene, stoneM, AX,     SZ + 1.2, EX - WX,   4.2, 0.8);
+  groundedBox(scene, stoneM, EX + 1, AZ,       0.8,        4.2, SZ - NZ);
 
-  // ── South colonnade ───────────────────────────────────────────────────────────
-  const SOUTH_Z = AZ + COURT_D * 0.5 - 1;   // z ≈ -31
-  for (let i = 0; i < 5; i++) {
-    const cx = STOA_X + 3 + i * (COURT_W - 6) / 4;
-    column(scene, cx, SOUTH_Z, 0.38, 4.2, 0, colM);
-  }
-  const sEntab = MeshBuilder.CreateBox('s-ent', { width: COURT_W - 4, height: 0.65, depth: 0.8 }, scene);
-  sEntab.position.set(AX + 1, footprintMaxY(AX, SOUTH_Z, COURT_W, 1) + 4.2 + 0.32, SOUTH_Z);
-  sEntab.material = stoneM;
+  // Circle-chain colliders approximating the three closed walls
+  for (let cz = NZ; cz <= SZ; cz += 4) addCollider({ x: EX + 1,  z: cz, r: 1.2 });
+  for (let cx = WX; cx <= EX; cx += 4) addCollider({ x: cx, z: NZ - 1.5, r: 1.2 });
+  for (let cx = WX; cx <= EX; cx += 4) addCollider({ x: cx, z: SZ + 1.5, r: 1.2 });
 
-  // ── East back wall with 4 tabernae (shop recesses) ───────────────────────────
-  const EAST_X = AX + COURT_W * 0.5 - 1;    // x ≈ 133
-  groundedBox(scene, stoneM, EAST_X, AZ, 1.8, 5, COURT_D);
-  // Taberna doorways (dark insets)
-  for (let i = 0; i < 4; i++) {
-    const tz = stoaZ0 + 2 + i * (COURT_D - 8) / 3;
-    const doorH = 2.6, doorW = 2.5;
-    const door = MeshBuilder.CreateBox('tab-door', { width: doorW, height: doorH, depth: 0.3 }, scene);
-    door.position.set(EAST_X - 0.7, footprintMaxY(EAST_X, tz, 1, 1) + doorH * 0.5, tz);
-    door.material = darkM;
-    // Goods on display outside taberna
-    const bm = MeshBuilder.CreateCylinder('bale', { diameter: 1.4, height: 1.2, tessellation: 10 }, scene);
-    bm.position.set(EAST_X - 2, footprintMaxY(EAST_X - 2, tz, 1, 1) + 0.6, tz + 1);
-    bm.rotation.z = Math.PI / 2;
-    bm.material = mat('bale-' + i, i % 2 === 0 ? 0xa04030 : 0xe0d8c0, scene);
-  }
-
-  // ── Bema (speaker's platform / tribunal) ─────────────────────────────────────
-  const BX = AX + 4, BZ = AZ - 8;
-  groundedBox(scene, stoneM, BX, BZ, 7, 1.5, 4);
-  // Lectern
-  const lect = MeshBuilder.CreateBox('lect', { width: 0.8, height: 1.1, depth: 0.6 }, scene);
-  lect.position.set(BX, footprintMaxY(BX, BZ, 7, 4) + 1.5 + 0.55, BZ - 1.5);
-  lect.material = stoneM;
-
-  // ── Central altar / statue base ───────────────────────────────────────────────
-  const ALX = AX - 2, ALZ = AZ + 6;
-  groundedBox(scene, stoneM, ALX, ALZ, 3, 1.0, 3);
-  const pedM = mat('ped', 0xc8b898, scene);
-  const statBase = MeshBuilder.CreateBox('stat-base', { width: 1.6, height: 0.6, depth: 1.6 }, scene);
-  statBase.position.set(ALX, footprintMaxY(ALX, ALZ, 3, 3) + 1.0 + 0.3, ALZ);
-  statBase.material = stoneM;
-  const statBody2 = MeshBuilder.CreateCylinder('ag-stat-b', { diameterTop: 0.55, diameterBottom: 0.7, height: 2.2, tessellation: 8 }, scene);
-  statBody2.position.set(ALX, footprintMaxY(ALX, ALZ, 3, 3) + 1.6 + 1.1, ALZ);
-  statBody2.material = pedM;
-  const statHead2 = MeshBuilder.CreateSphere('ag-stat-h', { diameter: 0.5, segments: 8 }, scene);
-  statHead2.position.set(ALX, footprintMaxY(ALX, ALZ, 3, 3) + 1.6 + 2.2 + 0.25, ALZ);
-  statHead2.material = pedM;
-
-  // ── Fountain basin ────────────────────────────────────────────────────────────
-  const FX = AX - 2, FZ = AZ - 2;
-  const basin = MeshBuilder.CreateCylinder('fountain', { diameter: 3.4, height: 0.7 + SINK, tessellation: 14 }, scene);
-  basin.position.set(FX, terrainH(FX, FZ) - SINK * 0.5 + 0.35, FZ);
-  basin.material = stoneM;
-  const water = MeshBuilder.CreateCylinder('fw', { diameter: 2.8, height: 0.22, tessellation: 14 }, scene);
-  water.position.set(FX, terrainH(FX, FZ) + 0.7 + 0.05, FZ);
-  water.material = mat('fw-m', 0x3a6080, scene);
-  addCollider({ x: FX, z: FZ, r: 2.4 });
-
-  // ── Market stalls along west stoa back wall ───────────────────────────────────
-  const stallColors = [0xaa3322, 0x886633, 0x446688, 0xaa7722];
-  for (let i = 0; i < 4; i++) {
-    const sz = stoaZ0 + 4 + i * 12;
-    groundedBox(scene, woodM, STOA_X + 4.5, sz, 4, 2.4, 3);
-    const awM = mat('aw-' + i, stallColors[i % stallColors.length], scene);
-    awM.backFaceCulling = false;
-    const awn = MeshBuilder.CreatePlane('awn', { width: 4.5, height: 2.5 }, scene);
-    awn.rotation.x = -Math.PI / 2;
-    awn.position.set(STOA_X + 4.5, footprintMaxY(STOA_X + 4.5, sz, 4, 3) + 2.4, sz);
-    awn.material = awM;
-    addCollider({ x: STOA_X + 4.5, z: sz, r: 2.5 });
-  }
+  // ── Central altar ─────────────────────────────────────────────────────────────
+  const altY = footprintMaxY(AX, AZ, 3, 3) + 0.25;
+  const altBase = MeshBuilder.CreateBox('alt-base', { width: 3.2, height: 0.9, depth: 3.2 }, scene);
+  altBase.position.set(AX, altY + 0.45, AZ);
+  altBase.material = stoneM;
+  const altTop = MeshBuilder.CreateBox('alt-top', { width: 2.3, height: 0.4, depth: 2.3 }, scene);
+  altTop.position.set(AX, altY + 0.9 + 0.2, AZ);
+  altTop.material = mat('alt-top', 0xd8caa8, scene);
 }
 
 function buildBaths(scene: Scene): void {
@@ -350,19 +308,20 @@ function buildTemple(scene: Scene): void {
 }
 
 function buildLowerCity(scene: Scene): void {
-  // Houses kept clear of the cardo corridor (roughly x = 82–104).
-  const defs: [number, number, number, number, number][] = [
-    [60,-80,8,7,0.1],  [75,-70,9,8,-0.1], [72,-60,7,7,0.2],   // was 88,-60 → moved west
-    [70,-55,8,6,0],    [112,-80,9,8,0.15],[115,-70,7,7,-0.2],  // was 100,-80 → moved east
-    [108,-55,8,7,0.1], [130,-78,9,8,0],   [145,-65,7,7,0.3],   // was 105,-55 → moved east
-    [160,-72,8,7,-0.1],[170,-58,7,6,0.2], [175,-80,8,8,0],
-    [185,-68,7,7,-0.15],[65,-35,8,7,0.1], [76,-25,7,6,-0.1],   // was 80,-25 → moved west
-    [108,-40,8,7,0.2], [110,-30,9,8,0],   [125,-20,7,7,-0.2],  // was 95,-40 → moved east
-    [140,-35,8,7,0.15],[155,-25,7,6,0.1], [165,-40,8,7,-0.1],
-    [180,-28,7,7,0.2], [188,-18,8,6,0],   [62,-15,7,7,-0.15],
-    [73,-8,8,7,0.1],                                            // was 78,-8 → moved west
+  // Roman grid: N-S streets at x≈62, 92(cardo), 126, 158, 190
+  //             E-W streets at z≈-72, -44(decumanus), -16, 6
+  // Insulae: 4 houses (2×2) per block. Skip temple, agora, Philemon, baths zones.
+  const insulae: [number, number][] = [
+    [77, -86],  [77, -58],  [77, -30],          // west of cardo
+    [111, -86], [111, -58], [111, -5],           // east block 1 (agora at z≈-29, skip)
+    [142, -58], [142, -30],                      // east block 2 (Philemon at -86; baths near -18)
+    [174, -86], [174, -58], [174, -30],          // east block 3
   ];
-  for (const [hx, hz, hw, hd, rot] of defs) house(scene, hx, hz, hw, hd, 3.5, rot, true);
+  for (const [ix, iz] of insulae) {
+    for (const [dx, dz] of [[-5, -5], [5, -5], [-5, 5], [5, 5]] as [number, number][]) {
+      house(scene, ix + dx, iz + dz, 9, 7.5, 3.5, 0);
+    }
+  }
 }
 
 function buildPhilemonHouse(scene: Scene): void {
@@ -437,6 +396,7 @@ export function buildCity(scene: Scene): void {
   buildAcropolisWall(scene);
   buildSilo(scene);
   buildCardo(scene);
+  buildDecumanus(scene);
   buildAgora(scene);
   buildBaths(scene);
   buildTemple(scene);
