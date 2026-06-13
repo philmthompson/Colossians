@@ -63,8 +63,8 @@ function makeCloudSpriteMat(scene: Scene): StandardMaterial {
   m.diffuseTexture  = tex;
   m.opacityTexture  = tex;
   m.useAlphaFromDiffuseTexture = true;
-  m.diffuseColor  = new Color3(1.0, 0.97, 0.90);
-  m.emissiveColor = new Color3(0.50, 0.48, 0.42);
+  m.diffuseColor  = new Color3(1.0, 1.0, 1.0);
+  m.emissiveColor = new Color3(0.62, 0.63, 0.66);
   m.alpha = 0.82;
   m.backFaceCulling = false;
   m.disableLighting = true;
@@ -213,4 +213,14 @@ export function buildNature(scene: Scene): void {
   buildOliveGroves(scene);
   buildCypresses(scene);
   buildReeds(scene);
+
+  // Snow cap on Mount Cadmus peak
+  const snowMat = new StandardMaterial('snow', scene);
+  snowMat.diffuseColor  = new Color3(0.95, 0.97, 1.0);
+  snowMat.specularColor = new Color3(0.3, 0.3, 0.3);
+  const snow = MeshBuilder.CreateSphere('cadmus-snow', { diameter: 140, segments: 12 }, scene);
+  snow.scaling.y = 0.22;
+  snow.position.set(0, 152, -520);
+  snow.material = snowMat;
+  snow.isPickable = false;
 }

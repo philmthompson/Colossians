@@ -34,8 +34,8 @@ const scene = new Scene(engine);
 
 const FOG_COLOR = new Color3(0.784, 0.659, 0.478); // 0xc8a87a
 scene.fogMode    = Scene.FOGMODE_LINEAR;
-scene.fogStart   = 480;
-scene.fogEnd     = 980;
+scene.fogStart   = 600;
+scene.fogEnd     = 1500;
 scene.fogColor   = FOG_COLOR;
 scene.clearColor = new Color4(0.38, 0.62, 0.88, 1);
 

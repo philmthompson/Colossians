@@ -3,7 +3,7 @@ import { terrainH } from './terrain';
 import { addCollider } from '../player/controls';
 import {
   makeStuccoMat, makeTerracottaMat, makeLimestoneMat,
-  makeColumnMat, makeSandstoneMat, makePavingMat,
+  makeColumnMat, makeSandstoneMat, makePavingMat, makeCobbleMat,
 } from './materials';
 
 function c3(hex: number): Color3 {
@@ -99,24 +99,37 @@ function house(
 }
 
 function buildAcropolisWall(scene: Scene): void {
-  const R = 46, CX = 0, CZ = -8, WALL_H = 3.2, WALL_W = 1.8, SEGS = 28, GAP = 0.22;
+  const R = 46, CX = 0, CZ = -8, WALL_H = 3.2, WALL_W = 1.8, SEGS = 40, GAP = 0.22;
   const stoneM = makeSandstoneMat(scene, 'awall');
+
+  // Find uniform top height across all wall positions so the top is level
+  let wallMaxTerrain = -Infinity;
+  for (let i = 0; i < SEGS; i++) {
+    const aMid = ((i + 0.5) / SEGS) * Math.PI * 2;
+    const wx = CX + R * Math.cos(aMid), wz = CZ + R * Math.sin(aMid);
+    wallMaxTerrain = Math.max(wallMaxTerrain,
+      terrainH(wx, wz),
+      terrainH(CX + (R - WALL_W) * Math.cos(aMid), CZ + (R - WALL_W) * Math.sin(aMid)),
+      terrainH(CX + (R + WALL_W) * Math.cos(aMid), CZ + (R + WALL_W) * Math.sin(aMid)),
+    );
+  }
+  const uniformTop = wallMaxTerrain + WALL_H;
 
   for (let i = 0; i < SEGS; i++) {
     const a0 = (i / SEGS) * Math.PI * 2, a1 = ((i + 1) / SEGS) * Math.PI * 2;
     const aMid = (a0 + a1) * 0.5;
     if (Math.abs(aMid) < GAP || Math.abs(aMid - Math.PI * 2) < GAP) continue;
     const wx = CX + R * Math.cos(aMid), wz = CZ + R * Math.sin(aMid);
+
+    // Sample bottom from terrain (sink below lowest point)
     const pts = [
       terrainH(CX + R * Math.cos(a0), CZ + R * Math.sin(a0)),
       terrainH(CX + R * Math.cos(a1), CZ + R * Math.sin(a1)),
       terrainH(wx, wz),
-      terrainH(CX + (R - WALL_W) * Math.cos(aMid), CZ + (R - WALL_W) * Math.sin(aMid)),
-      terrainH(CX + (R + WALL_W) * Math.cos(aMid), CZ + (R + WALL_W) * Math.sin(aMid)),
     ];
-    const minY = Math.min(...pts) - SINK, maxY = Math.max(...pts);
-    const top = maxY + WALL_H, totalH = top - minY;
-    const segLen = R * (Math.PI * 2 / SEGS) + 0.5;
+    const minY = Math.min(...pts) - SINK;
+    const totalH = uniformTop - minY;
+    const segLen = R * (Math.PI * 2 / SEGS) + 0.3;
     const seg = MeshBuilder.CreateBox('aw', { width: segLen, height: totalH, depth: WALL_W }, scene);
     seg.position.set(wx, minY + totalH * 0.5, wz);
     seg.rotation.y = -(aMid + Math.PI / 2);
@@ -397,15 +410,180 @@ function buildDyeWorks(scene: Scene): void {
   }
 }
 
+function buildRoads(scene: Scene): void {
+  const cobM = makeCobbleMat(scene, 'road-cob');
+
+  function roadStrip(x1: number, z1: number, x2: number, z2: number, width: number, segs: number) {
+    const dx = (x2 - x1) / segs, dz = (z2 - z1) / segs;
+    const len = Math.sqrt(dx * dx + dz * dz);
+    const angle = Math.atan2(dx, dz);  // rotation around Y
+    for (let i = 0; i < segs; i++) {
+      const mx = x1 + (i + 0.5) * dx, mz = z1 + (i + 0.5) * dz;
+      const ty = terrainH(mx, mz) + 0.08;
+      const slab = MeshBuilder.CreateBox(`road-${i}-${x1}`, { width: len + 0.1, height: 0.18, depth: width }, scene);
+      slab.position.set(mx, ty, mz);
+      slab.rotation.y = angle;
+      slab.material = cobM;
+    }
+  }
+
+  // East approach (milestone to decumanus junction)
+  roadStrip(225, -88, 292, -89, 8, 8);
+  // Decumanus (cardo to theatre hill junction)
+  roadStrip(92, -92, 225, -92, 8, 16);
+  // Cardo (north: decumanus to agora/baths zone)
+  roadStrip(92, -44, 92, -92, 7, 6);
+  // Cardo south (bridge exit to beyond chasm)
+  roadStrip(92, -130, 92, -175, 7, 6);
+}
+
+function buildAgoraMarket(scene: Scene): void {
+  const AX = 112, AZ = -29;
+  const woolM = mat('wool', 0xe8dcc0, scene);        // cream/white wool
+  const ampM  = mat('amp',  0x8a5830, scene);        // terracotta amphora
+  const clothM = mat('cloth', 0xc03820, scene);      // red cloth
+  const woodM = mat('wood', 0x6a4020, scene);
+
+  // Wool bundles (torus-stacked spheres at two stall positions)
+  const woolStalls: [number, number][] = [[103, -36], [108, -36], [103, -22], [108, -22]];
+  for (const [wx, wz] of woolStalls) {
+    const ty = terrainH(wx, wz);
+    // Stall table
+    const table = MeshBuilder.CreateBox(`stall-${wx}`, { width: 2.2, height: 0.7, depth: 1.0 }, scene);
+    table.position.set(wx, ty + 0.35, wz);
+    table.material = woodM;
+    // Wool bundle on table
+    for (let b = 0; b < 3; b++) {
+      const bundle = MeshBuilder.CreateSphere(`wool-${wx}-${b}`, { diameter: 0.55, segments: 7 }, scene);
+      bundle.scaling.y = 0.7;
+      bundle.position.set(wx - 0.6 + b * 0.6, ty + 0.7 + 0.2, wz);
+      bundle.material = woolM;
+    }
+  }
+
+  // Amphorae leaning against east stoa (at EX=124 side, against the columns)
+  const ampPositions: [number, number][] = [[121, -26], [121, -30], [121, -34], [119, -24], [119, -32]];
+  for (const [ax, az] of ampPositions) {
+    const ty = terrainH(ax, az);
+    const body = MeshBuilder.CreateCylinder(`amp-${ax}-${az}`, {
+      diameterTop: 0.1, diameterBottom: 0.56, height: 1.4, tessellation: 10,
+    }, scene);
+    body.position.set(ax, ty + 0.7, az);
+    body.material = ampM;
+    const neck = MeshBuilder.CreateCylinder(`amp-n-${ax}`, { diameterTop: 0.28, diameterBottom: 0.14, height: 0.5, tessellation: 10 }, scene);
+    neck.position.set(ax, ty + 1.4 + 0.25, az);
+    neck.material = ampM;
+  }
+
+  // Cloth bolts / fabric draped over a central stand
+  const clothStand = MeshBuilder.CreateBox('cloth-stand', { width: 0.15, height: 2.0, depth: 0.15 }, scene);
+  clothStand.position.set(AX + 4, terrainH(AX + 4, AZ) + 1.0, AZ);
+  clothStand.material = woodM;
+  const clothDrape = MeshBuilder.CreateBox('cloth-drape', { width: 2.5, height: 0.04, depth: 1.2 }, scene);
+  clothDrape.position.set(AX + 4, terrainH(AX + 4, AZ) + 2.0, AZ);
+  clothDrape.material = clothM;
+}
+
+function buildChurch(scene: Scene): void {
+  const CX = 158, CZ = -86;
+  const baseY = footprintMaxY(CX, CZ, 24, 20);
+  const BOTTOM = footprintMinY(CX, CZ, 24, 20) - SINK;
+  const stuccoM = makeStuccoMat(scene, 'church-s');
+  const roofM   = makeTerracottaMat(scene, 'church-r');
+  const courtM  = makePavingMat(scene, 'church-ct');
+  const WALL_H  = 3.8;
+  const top     = baseY + WALL_H;
+
+  function wallSeg(wx: number, wz: number, w: number, d: number) {
+    const totalH = top - BOTTOM;
+    const seg = MeshBuilder.CreateBox('cw', { width: w, height: totalH, depth: d }, scene);
+    seg.position.set(wx, BOTTOM + totalH * 0.5, wz);
+    seg.material = stuccoM;
+    seg.checkCollisions = true;
+  }
+
+  // ── Outer perimeter walls (24×20, door gap on south face) ─────────────────
+  // North wall (full)
+  wallSeg(CX, CZ - 10, 24, 1.0);
+  // South wall with central entrance gap (3 units wide)
+  wallSeg(CX - 6.5, CZ + 10, 11, 1.0);
+  wallSeg(CX + 6.5, CZ + 10, 11, 1.0);
+  // West wall (full)
+  wallSeg(CX - 12, CZ, 1.0, 20);
+  // East wall (full)
+  wallSeg(CX + 12, CZ, 1.0, 20);
+
+  // ── Interior partition: courtyard / assembly hall divider ──────────────────
+  // Runs E-W at CZ+2. Door gap on west side (2.5 wide) and east side
+  wallSeg(CX + 3,  CZ + 2, 16, 0.8);   // right segment (leaves gap at west)
+  wallSeg(CX - 10, CZ + 2,  1, 0.8);   // left stub
+
+  // ── Assembly hall roof ────────────────────────────────────────────────────
+  const hallRoof = MeshBuilder.CreateBox('hall-roof', { width: 23, height: 0.4, depth: 11.5 }, scene);
+  hallRoof.position.set(CX, top + 0.2, CZ - 4);
+  hallRoof.material = roofM;
+
+  // ── Teaching area partition (east side of assembly hall) ──────────────────
+  // N-S wall at CX+6, from CZ-10 to CZ+2
+  wallSeg(CX + 6, CZ - 4, 0.8, 12);
+  // Teaching area roof
+  const teachRoof = MeshBuilder.CreateBox('teach-roof', { width: 12, height: 0.4, depth: 6 }, scene);
+  teachRoof.position.set(CX - 4, top + 0.2, CZ - 6.5);
+  teachRoof.material = roofM;
+
+  // ── Baptistery (small room, NW of courtyard) ──────────────────────────────
+  // Partition at CX-5, from CZ+2 to CZ+10
+  wallSeg(CX - 5, CZ + 6, 0.8, 8);
+  // Baptistry roof
+  const baptRoof = MeshBuilder.CreateBox('bapt-roof', { width: 6, height: 0.4, depth: 7.5 }, scene);
+  baptRoof.position.set(CX - 8.5, top + 0.2, CZ + 6);
+  baptRoof.material = roofM;
+
+  // ── Baptismal font (small circular basin) ─────────────────────────────────
+  const fontRim = MeshBuilder.CreateCylinder('font-rim', { diameter: 2.0, height: 0.5, tessellation: 14 }, scene);
+  fontRim.position.set(CX - 9, baseY + 0.25, CZ + 7);
+  fontRim.material = stuccoM;
+  const fontWater = MeshBuilder.CreateCylinder('font-water', { diameter: 1.6, height: 0.12, tessellation: 14 }, scene);
+  fontWater.position.set(CX - 9, baseY + 0.4, CZ + 7);
+  const waterM = mat('font-w', 0x3060a0, scene);
+  fontWater.material = waterM;
+
+  // ── Courtyard floor paving ────────────────────────────────────────────────
+  const court = MeshBuilder.CreateBox('church-court', { width: 13, height: 0.18, depth: 7.5 }, scene);
+  court.position.set(CX + 2.5, baseY + 0.09, CZ + 6.5);
+  court.material = courtM;
+
+  // ── Simple wooden benches in assembly hall ────────────────────────────────
+  const benchM = mat('bench', 0x6a4020, scene);
+  for (let row = 0; row < 4; row++) {
+    const bz = CZ - 8 + row * 2.5;
+    const bench = MeshBuilder.CreateBox(`bench-${row}`, { width: 8, height: 0.22, depth: 0.5 }, scene);
+    bench.position.set(CX - 3, baseY + 0.22, bz);
+    bench.material = benchM;
+  }
+
+  // ── Stairs to upper floor (SE corner of courtyard) ───────────────────────
+  for (let s = 0; s < 5; s++) {
+    const step = MeshBuilder.CreateBox(`church-step-${s}`, { width: 1.6, height: 0.28, depth: 0.5 }, scene);
+    step.position.set(CX + 10, baseY + 0.14 + s * 0.28, CZ + 9 - s * 0.5);
+    step.material = stuccoM;
+  }
+
+  addCollider({ x: CX, z: CZ, r: 14 });
+}
+
 export function buildCity(scene: Scene): void {
   buildAcropolisWall(scene);
   buildSilo(scene);
   buildCardo(scene);
   buildDecumanus(scene);
   buildAgora(scene);
+  buildAgoraMarket(scene);
   buildBaths(scene);
   buildTemple(scene);
   buildLowerCity(scene);
   buildPhilemonHouse(scene);
   buildDyeWorks(scene);
+  buildRoads(scene);
+  buildChurch(scene);
 }

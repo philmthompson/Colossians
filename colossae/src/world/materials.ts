@@ -282,6 +282,34 @@ export function makePavingMat(scene: Scene, name = 'paving'): PBRMaterial {
 }
 
 /**
+ * Roman cobblestone road — rounded stones in mortar, darker and rougher than paving slabs.
+ * Use for road mesh surfaces.
+ */
+export function makeCobbleMat(scene: Scene, name = 'cobble'): PBRMaterial {
+  const STONE = 20;  // px per cobble
+  const albedo = bakeTexture(scene, SIZE, (px, py) => {
+    const tx = ((px % STONE) + STONE) % STONE;
+    const ty = ((py % STONE) + STONE) % STONE;
+    // Mortar joints: 2px border
+    const isJoint = tx < 2 || ty < 2 || tx > STONE - 3 || ty > STONE - 3;
+    const n = fbm(px / SIZE * 20 + 7, py / SIZE * 20 + 3, 4);
+    if (isJoint) return [clamp(100), clamp(90), clamp(75)];
+    const base = 128 + n * 40;
+    // Warm grey-brown cobblestone
+    return [clamp(base + 6), clamp(base - 4), clamp(base - 18)];
+  });
+  const normal = bakeNormal(scene, SIZE, (px, py) => {
+    const tx = ((px % STONE) + STONE) % STONE;
+    const ty = ((py % STONE) + STONE) % STONE;
+    const cx = tx / STONE - 0.5, cy = ty / STONE - 0.5;
+    const isJoint = tx < 2 || ty < 2 || tx > STONE - 3 || ty > STONE - 3;
+    const dome = isJoint ? -0.06 : (1 - (cx * cx + cy * cy) * 4) * 0.12;
+    return dome + fbm(px / SIZE * 30, py / SIZE * 30, 3) * 0.03;
+  }, 2.0);
+  return buildPBR(scene, name, { albedo, normal, roughness: 0.93, metallic: 0.0, uScale: 12, vScale: 12 });
+}
+
+/**
  * Varied earthy ground — sandy soil with subtle fbm grain variation.
  * Used on the terrain mesh. Large uScale/vScale so it tiles across 2000 units.
  */

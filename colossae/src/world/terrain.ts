@@ -18,9 +18,11 @@ export function terrainH(x: number, z: number): number {
   h += gauss(x, z,   0, 750, 320, 250);
   h += gauss(x, z, 200, 720, 280, 220);
   h += gauss(x, z,-200, 780, 260, 200);
-  h += gauss(x, z,   0, -580, 220, 95);
-  h += gauss(x, z, 300, -620, 180, 90);
-  h += gauss(x, z,-300, -560, 200, 88);
+  h += gauss(x, z,   0, -520, 200, 160);   // main peak (Cadmus/Honaz)
+  h += gauss(x, z, 180, -560, 160, 130);
+  h += gauss(x, z,-180, -500, 170, 120);
+  h += gauss(x, z, 380, -600, 140,  90);
+  h += gauss(x, z,-360, -580, 150,  85);
   if (z > 140) { const t = (z - 140) / 200; h += t * t * 18; }
   const dg = z - (-120);
   h -= 13 * Math.exp(-(dg * dg) / (2 * 8 * 8));
@@ -103,9 +105,25 @@ export function buildTerrain(scene: Scene): Mesh {
       if (y > 180)      { r = 0.92; g = 0.93; b = 0.95; }
       else if (y > 140) { const t = (y-140)/40; r = 0.62+0.3*t; g = 0.58+0.35*t; b = 0.50+0.45*t; }
       else if (y > 30)  { r = 0.58; g = 0.52; b = 0.44; }
-      else if (y > 12)  { r = 0.70; g = 0.62; b = 0.40; }
-      else if (y > 3)   { r = 0.46; g = 0.52; b = 0.30; }
-      else if (y < -6)  { r = 0.22; g = 0.26; b = 0.28; }
+      else if (y > 12) {
+        const isPasture = x > 180 && z > -90 && z < 50;
+        r = isPasture ? 0.52 : 0.70;
+        g = isPasture ? 0.65 : 0.62;
+        b = isPasture ? 0.32 : 0.40;
+      }
+      else if (y > 3) {
+        const isPasture = x > 180 && z > -90 && z < 50;
+        r = isPasture ? 0.36 : 0.46;
+        g = isPasture ? 0.58 : 0.52;
+        b = isPasture ? 0.28 : 0.30;
+      }
+      else if (y < -6) {
+        const inChasmRiver = (x > 50 && x < 175) && (z > -132 && z < -108);
+        const riverBlend = inChasmRiver ? Math.min(1, (-6 - y) / 6) : 0;
+        r = 0.22 - riverBlend * 0.08;
+        g = 0.26 + riverBlend * 0.04;
+        b = 0.28 + riverBlend * 0.22;
+      }
       else               { r = 0.42; g = 0.48; b = 0.28; }
     }
 

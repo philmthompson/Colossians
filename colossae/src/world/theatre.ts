@@ -78,21 +78,6 @@ export function buildTheatre(scene: Scene): void {
   fill.material   = fillMat;
   fill.checkCollisions = true;
 
-  // Close the open north and south flat sides of the half-cylinder
-  const fillH = fillTopY - bottom;
-  const northFill = MeshBuilder.CreateBox('seat-fill-north', {
-    width: fillR, height: fillH, depth: 0.5,
-  }, scene);
-  northFill.position.set(TX + fillR / 2, bottom + fillH / 2, TZ - fillR);
-  northFill.material = fillMat;
-  northFill.checkCollisions = true;
-
-  const southFill = MeshBuilder.CreateBox('seat-fill-south', {
-    width: fillR, height: fillH, depth: 0.5,
-  }, scene);
-  southFill.position.set(TX + fillR / 2, bottom + fillH / 2, TZ + fillR);
-  southFill.material = fillMat;
-  southFill.checkCollisions = true;
 
   // ── Stadium-style stepped seating (custom VertexData) ────────────────────
   // Each row produces a tread (horizontal top surface) and a riser (vertical
@@ -162,7 +147,7 @@ export function buildTheatre(scene: Scene): void {
       const rOuter  = R_ORCH + (t + 1) * ROW_RUN;
       const treadY  = baseY + t * ROW_RISE;
       // Lowest row's riser is sunk well into the ground so nothing hovers.
-      const riserBY = t > 0 ? baseY + (t - 1) * ROW_RISE : baseY - 3.0;
+      const riserBY = bottom;
 
       for (let s = 0; s < nSegs; s++) {
         const a0 = aStart + (s / nSegs) * (aEnd - aStart);
