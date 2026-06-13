@@ -39,7 +39,7 @@ scene.fogColor   = FOG_COLOR;
 scene.clearColor = new Color4(FOG_COLOR.r, FOG_COLOR.g, FOG_COLOR.b, 1);
 
 // ─── Camera ──────────────────────────────────────────────────────────────────
-const camera = new UniversalCamera('cam', new Vector3(100, 0, -50), scene);
+const camera = new UniversalCamera('cam', new Vector3(18, 0, -28), scene);
 camera.minZ = 0.3;
 camera.maxZ = 1200;
 camera.fov  = 72 * Math.PI / 180;
@@ -95,7 +95,7 @@ initWind();
 
 // ─── Controls ────────────────────────────────────────────────────────────────
 initControls(camera, canvas);
-setYaw(-Math.PI / 2); // face west toward acropolis
+setYaw(Math.PI / 2); // face east over the city from the acropolis hill
 
 // ─── Intro screen ────────────────────────────────────────────────────────────
 const intro    = document.getElementById('intro')!;

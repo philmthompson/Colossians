@@ -208,15 +208,24 @@ function buildAgora(scene: Scene): void {
   beam('s-beam', EX - WX + 2, 0.9, AX, SZ);
   beam('e-beam', 0.9, SZ - NZ + 2, EX, AZ);
 
-  // ── Stoa back walls ───────────────────────────────────────────────────────────
-  groundedBox(scene, stoneM, AX,     NZ - 1.2, EX - WX,   4.2, 0.8);
-  groundedBox(scene, stoneM, AX,     SZ + 1.2, EX - WX,   4.2, 0.8);
-  groundedBox(scene, stoneM, EX + 1, AZ,       0.8,        4.2, SZ - NZ);
+  // ── Shallow roof slabs over each stoa (columns + 0.6 beam → top ≈ beamY) ─────
+  const roofMat = mat('ag-roof', 0x8a7a5c, scene);
+  const roofY_N = beamY(AX, NZ) + 0.3;
+  const roofY_S = beamY(AX, SZ) + 0.3;
+  const roofY_E = beamY(EX, AZ) + 0.3;
+  const roofD   = 4.0;   // depth of stoa roof (inward from column line)
 
-  // Circle-chain colliders approximating the three closed walls
-  for (let cz = NZ; cz <= SZ; cz += 4) addCollider({ x: EX + 1,  z: cz, r: 1.2 });
-  for (let cx = WX; cx <= EX; cx += 4) addCollider({ x: cx, z: NZ - 1.5, r: 1.2 });
-  for (let cx = WX; cx <= EX; cx += 4) addCollider({ x: cx, z: SZ + 1.5, r: 1.2 });
+  const sN = MeshBuilder.CreateBox('stoa-roof-n', { width: EX - WX + 2, height: 0.5, depth: roofD }, scene);
+  sN.position.set(AX, roofY_N, NZ - roofD * 0.5 + 0.5);
+  sN.material = roofMat;
+
+  const sS = MeshBuilder.CreateBox('stoa-roof-s', { width: EX - WX + 2, height: 0.5, depth: roofD }, scene);
+  sS.position.set(AX, roofY_S, SZ + roofD * 0.5 - 0.5);
+  sS.material = roofMat;
+
+  const sE = MeshBuilder.CreateBox('stoa-roof-e', { width: roofD, height: 0.5, depth: SZ - NZ + 2 }, scene);
+  sE.position.set(EX - roofD * 0.5 + 0.5, roofY_E, AZ);
+  sE.material = roofMat;
 
   // ── Central altar ─────────────────────────────────────────────────────────────
   const altY = footprintMaxY(AX, AZ, 3, 3) + 0.25;
