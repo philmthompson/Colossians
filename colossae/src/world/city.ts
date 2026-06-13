@@ -503,10 +503,11 @@ function buildChurch(scene: Scene): void {
 
   // ── Helpers ───────────────────────────────────────────────────────────────
   // Full-height wall segment (centred at cx,cz, width w, depth d)
-  function wall(cx: number, cz: number, w: number, d: number) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  function wall(cx: number, cz: number, w: number, d: number, m: any = stuccoM) {
     const b = MeshBuilder.CreateBox('cw', { width: w, height: totH, depth: d }, scene);
     b.position.set(cx, BOTTOM + totH * 0.5, cz);
-    b.material = stuccoM;
+    b.material = m;
     b.checkCollisions = true;
   }
   // Roof slab flush on top of walls
@@ -528,34 +529,36 @@ function buildChurch(scene: Scene): void {
     found.material = stoneM;
   }
 
-  // ── OUTER PERIMETER ───────────────────────────────────────────────────────
-  wall(bCX, zN, bW, T);    // north (full)
-  wall(bCX, zS, bW, T);    // south (full)
-  wall(xW,  bCZ, T, bD);   // west  (full)
+  // ── OUTER PERIMETER (stone) ───────────────────────────────────────────────
+  wall(bCX, zN, bW, T, stoneM);    // north (full)
+  wall(bCX, zS, bW, T, stoneM);    // south (full)
+  wall(xW,  bCZ, T, bD, stoneM);   // west  (full)
 
   // East wall: entrance gap of 3 m in the vestibule face (zPort → zS = 7 m, gap centred at z=-79.5)
   const eDoorC = mid(zPort, zS);   // -79.5
   const eDoorW = 3.0;
   const ARCH_H = 2.8;   // clear opening height
-  wall(xE, mid(zN, eDoorC - eDoorW / 2), T, eDoorC - eDoorW / 2 - zN);   // north section
-  wall(xE, mid(eDoorC + eDoorW / 2, zS), T, zS - (eDoorC + eDoorW / 2)); // south section
+  wall(xE, mid(zN, eDoorC - eDoorW / 2), T, eDoorC - eDoorW / 2 - zN, stoneM);   // north section
+  wall(xE, mid(eDoorC + eDoorW / 2, zS), T, zS - (eDoorC + eDoorW / 2), stoneM); // south section
 
-  // Archway: lintel header + pilaster jambs that protrude outward from the wall face
+  // Archway: lintel + pilasters protruding OUTWARD (east) from the wall face.
+  // Wall outer face = xE + T/2 = 170.5. Frame centred at xE + T/2 + PROJ/2.
   {
-    const lintH   = WH - ARCH_H;    // height of header block (~1.4 m)
-    const PROJ    = 0.6;             // how far the frame protrudes beyond the wall face
-    const frameW  = T + PROJ;        // total depth of frame elements
+    const lintH  = WH - ARCH_H;   // header height ~1.4 m
+    const PROJ   = 0.7;            // protrusion beyond wall outer face
+    const frameW = T * 0.5 + PROJ; // frame depth: half inside + PROJ outside
+    const fcx = xE + T / 2 + PROJ / 2;   // centre of frame, straddles wall outer face
 
-    // Lintel spans the full gap width, sits on top of ARCH_H
-    const lintel = MeshBuilder.CreateBox('ch-lintel', { width: frameW, height: lintH, depth: eDoorW + 1.2 }, scene);
-    lintel.position.set(xE + PROJ * 0.5 - T * 0.5, baseY + ARCH_H + lintH * 0.5, eDoorC);
+    // Lintel
+    const lintel = MeshBuilder.CreateBox('ch-lintel', { width: frameW, height: lintH, depth: eDoorW + 1.4 }, scene);
+    lintel.position.set(fcx, baseY + ARCH_H + lintH * 0.5, eDoorC);
     lintel.material = stoneM;
 
-    // Pilaster jambs run the full opening height, flanking the gap
+    // Pilasters flanking the gap
     for (const side of [-1, 1]) {
-      const jz   = eDoorC + side * (eDoorW / 2 + 0.45);
-      const jamb = MeshBuilder.CreateBox('ch-jamb', { width: frameW, height: ARCH_H, depth: 0.9 }, scene);
-      jamb.position.set(xE + PROJ * 0.5 - T * 0.5, baseY + ARCH_H * 0.5, jz);
+      const jz   = eDoorC + side * (eDoorW / 2 + 0.5);
+      const jamb = MeshBuilder.CreateBox('ch-jamb', { width: frameW, height: ARCH_H, depth: 1.0 }, scene);
+      jamb.position.set(fcx, baseY + ARCH_H * 0.5, jz);
       jamb.material = stoneM;
     }
   }
