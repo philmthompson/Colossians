@@ -1,6 +1,10 @@
-import { Scene, Mesh, MeshBuilder, StandardMaterial, Color3 } from '@babylonjs/core';
+import { Scene, Mesh, MeshBuilder, StandardMaterial, Color3, Material } from '@babylonjs/core';
 import { terrainH } from './terrain';
 import { addCollider } from '../player/controls';
+import {
+  makeStuccoMat, makeTerracottaMat, makeLimestoneMat,
+  makeColumnMat, makeSandstoneMat, makePavingMat,
+} from './materials';
 
 function c3(hex: number): Color3 {
   return new Color3(((hex >> 16) & 255) / 255, ((hex >> 8) & 255) / 255, (hex & 255) / 255);
@@ -13,12 +17,6 @@ function mat(name: string, hex: number, _scene: Scene): StandardMaterial {
   return m;
 }
 
-function jitterMat(base: StandardMaterial, _scene: Scene): StandardMaterial {
-  const m = base.clone(base.name + '_j' + Math.random().toFixed(4));
-  const f = 1 + (Math.random() - 0.5) * 0.16;
-  m.diffuseColor.scaleInPlace(f);
-  return m;
-}
 
 function sampleFootprint(cx: number, cz: number, w: number, d: number): number[] {
   const hw = w * 0.5, hd = d * 0.5;
@@ -40,7 +38,7 @@ const SINK = 5.0;
 
 function groundedBox(
   scene: Scene,
-  m: StandardMaterial,
+  m: Material,
   cx: number, cz: number,
   w: number, h: number, d: number,
   yOff = 0, rot = 0,
@@ -58,7 +56,7 @@ function groundedBox(
   return mesh;
 }
 
-function column(scene: Scene, x: number, z: number, r = 0.45, h = 4.5, yOff = 0, m?: StandardMaterial): void {
+function column(scene: Scene, x: number, z: number, r = 0.45, h = 4.5, yOff = 0, m?: Material): void {
   if (!m) m = mat('col-m', 0xd4c8a8, scene);
   const minY = footprintMinY(x, z, r * 3, r * 3);
   const maxY = footprintMaxY(x, z, r * 3, r * 3);
@@ -69,14 +67,18 @@ function column(scene: Scene, x: number, z: number, r = 0.45, h = 4.5, yOff = 0,
   addCollider({ x, z, r: r + 0.3 });
 }
 
+interface HouseMats { wall: Material; roof: Material; }
+let _houseMats: HouseMats | null = null;
+
 function house(
   scene: Scene,
   x: number, z: number,
   w = 8, d = 8, wallH = 3.5,
   rot = 0, collide = true,
 ): void {
-  const stucco = mat('stucco', 0xc8b898, scene);
-  const roofM  = mat('roof', 0xa04830, scene);
+  if (!_houseMats) {
+    _houseMats = { wall: makeStuccoMat(scene), roof: makeTerracottaMat(scene) };
+  }
 
   const minY   = footprintMinY(x, z, w, d);
   const maxY   = footprintMaxY(x, z, w, d);
@@ -85,20 +87,20 @@ function house(
   const walls = MeshBuilder.CreateBox('hwall', { width: w, height: totalH, depth: d }, scene);
   walls.position.set(x, bottom + totalH * 0.5, z);
   walls.rotation.y = rot;
-  walls.material = jitterMat(stucco, scene);
+  walls.material = _houseMats.wall;
 
   const roofSize = Math.max(w, d) * 0.72;
   const roof = MeshBuilder.CreateCylinder('hroof', { diameterTop: 0, diameterBottom: roofSize * 2, height: wallH * 0.55, tessellation: 4 }, scene);
   roof.position.set(x, top + wallH * 0.18, z);
   roof.rotation.y = Math.PI / 4 + rot;
-  roof.material = jitterMat(roofM, scene);
+  roof.material = _houseMats.roof;
 
   if (collide) addCollider({ x, z, r: Math.max(w, d) * 0.6 });
 }
 
 function buildAcropolisWall(scene: Scene): void {
   const R = 46, CX = 0, CZ = -8, WALL_H = 3.2, WALL_W = 1.8, SEGS = 28, GAP = 0.22;
-  const stoneM = mat('awall', 0x9a8c78, scene);
+  const stoneM = makeSandstoneMat(scene, 'awall');
 
   for (let i = 0; i < SEGS; i++) {
     const a0 = (i / SEGS) * Math.PI * 2, a1 = ((i + 1) / SEGS) * Math.PI * 2;
@@ -148,7 +150,7 @@ function buildSilo(scene: Scene): void {
 }
 
 function buildCardo(scene: Scene): void {
-  const colM = mat('cardo-col', 0xd4c8a8, scene);
+  const colM = makeColumnMat(scene, 'cardo-col');
   for (let z = -88; z <= 4; z += 12) {
     column(scene, 86, z, 0.45, 4.5, 0, colM);
     column(scene, 98, z, 0.45, 4.5, 0, colM);
@@ -156,9 +158,7 @@ function buildCardo(scene: Scene): void {
 }
 
 function buildDecumanus(scene: Scene): void {
-  // East-west colonnaded street at z = -44 (west of the cardo only).
-  // East side opens directly into the agora entrance at x = 100.
-  const colM = mat('dec-col', 0xd4c8a8, scene);
+  const colM = makeColumnMat(scene, 'dec-col');
   for (let x = 64; x <= 84; x += 10) {
     column(scene, x, -39, 0.42, 4.2, 0, colM);
     column(scene, x, -49, 0.42, 4.2, 0, colM);
@@ -174,9 +174,9 @@ function buildAgora(scene: Scene): void {
   const AX = (WX + EX) * 0.5;       // 112
   const AZ = (NZ + SZ) * 0.5;       // -29
 
-  const plazaM = mat('plaza',  0xb8a880, scene);
-  const stoneM = mat('ag-s',   0x9a8c78, scene);
-  const colM   = mat('ag-col', 0xd4c8a8, scene);
+  const plazaM = makePavingMat(scene, 'plaza');
+  const stoneM = makeLimestoneMat(scene, 'ag-s');
+  const colM   = makeColumnMat(scene, 'ag-col');
 
   // ── Paved limestone court ────────────────────────────────────────────────────
   groundedBox(scene, plazaM, AX, AZ, EX - WX, 0.25, SZ - NZ);
@@ -209,7 +209,7 @@ function buildAgora(scene: Scene): void {
   beam('e-beam', 0.9, SZ - NZ + 2, EX, AZ);
 
   // ── Shallow roof slabs over each stoa (columns + 0.6 beam → top ≈ beamY) ─────
-  const roofMat = mat('ag-roof', 0x8a7a5c, scene);
+  const roofMat = makeTerracottaMat(scene, 'ag-roof');
   const roofY_N = beamY(AX, NZ) + 0.3;
   const roofY_S = beamY(AX, SZ) + 0.3;
   const roofY_E = beamY(EX, AZ) + 0.3;
@@ -239,7 +239,7 @@ function buildAgora(scene: Scene): void {
 
 function buildBaths(scene: Scene): void {
   const BX = 156, BZ = -18;
-  const stoneM = mat('bath-s', 0x9a8c78, scene);
+  const stoneM = makeLimestoneMat(scene, 'bath-s');
   const BH = 7;
   groundedBox(scene, stoneM, BX, BZ, 22, BH, 15);
   const roofY = footprintMaxY(BX, BZ, 22, 15) + BH;
@@ -259,9 +259,9 @@ function buildBaths(scene: Scene): void {
 
 function buildTemple(scene: Scene): void {
   const TX2 = 70, TZ2 = -10;
-  const stoneM  = mat('temple-s', 0x9a8c78, scene);
-  const colM    = mat('temple-c', 0xd4c8a8, scene);
-  const statM   = mat('stat', 0xd0c8a8, scene);
+  const stoneM  = makeLimestoneMat(scene, 'temple-s');
+  const colM    = makeColumnMat(scene, 'temple-c');
+  const statM   = makeColumnMat(scene, 'stat');
 
   groundedBox(scene, stoneM, TX2, TZ2, 18, 1.2, 12);
   const podiumTop = footprintMaxY(TX2, TZ2, 18, 12) + 1.2;
@@ -335,10 +335,10 @@ function buildLowerCity(scene: Scene): void {
 
 function buildPhilemonHouse(scene: Scene): void {
   const PX = 141, PZ = -86;
-  const stuccoM = mat('phil-s', 0xc8b898, scene);
-  const roofM   = mat('phil-r', 0xa04830, scene);
-  const courtM  = mat('phil-c', 0x9a8068, scene);
-  const colM    = mat('phil-col', 0xd4c8a8, scene);
+  const stuccoM = makeStuccoMat(scene, 'phil-s');
+  const roofM   = makeTerracottaMat(scene, 'phil-r');
+  const courtM  = makePavingMat(scene, 'phil-c');
+  const colM    = makeColumnMat(scene, 'phil-col');
 
   const minY = footprintMinY(PX, PZ, 18, 16);
   const maxY = footprintMaxY(PX, PZ, 18, 16);
