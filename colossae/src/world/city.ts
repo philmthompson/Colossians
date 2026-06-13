@@ -1,9 +1,9 @@
-import { Scene, Mesh, MeshBuilder, StandardMaterial, Color3, Material, Quaternion } from '@babylonjs/core';
+import { Scene, Mesh, MeshBuilder, StandardMaterial, Color3, Material } from '@babylonjs/core';
 import { terrainH } from './terrain';
 import { addCollider } from '../player/controls';
 import {
   makeStuccoMat, makeTerracottaMat, makeLimestoneMat,
-  makeColumnMat, makeSandstoneMat, makePavingMat, makeCobbleMat,
+  makeColumnMat, makeSandstoneMat, makePavingMat,
 } from './materials';
 
 function c3(hex: number): Color3 {
@@ -410,69 +410,6 @@ function buildDyeWorks(scene: Scene): void {
   }
 }
 
-function buildRoads(scene: Scene): void {
-  const cobM = makeCobbleMat(scene, 'road-cob');
-  const EPS = 0.8;
-
-  // Terrain-conforming road strip: ~1.8 unit segments each pitched and rolled
-  // to match the local terrain slope, eliminating floating slabs on hillsides.
-  function roadStrip(x1: number, z1: number, x2: number, z2: number, width: number) {
-    const totalLen = Math.sqrt((x2 - x1) ** 2 + (z2 - z1) ** 2);
-    const segs = Math.max(1, Math.ceil(totalLen / 1.8));
-    const dx = (x2 - x1) / segs, dz = (z2 - z1) / segs;
-    const segLen = Math.sqrt(dx * dx + dz * dz);
-    const yAngle = Math.atan2(dx, dz);
-    // Local forward and right vectors for slope sampling
-    const fwdX = dx / segLen, fwdZ = dz / segLen;
-    const rgtX = fwdZ, rgtZ = -fwdX;
-
-    for (let i = 0; i < segs; i++) {
-      const mx = x1 + (i + 0.5) * dx, mz = z1 + (i + 0.5) * dz;
-      const hMid = terrainH(mx, mz);
-      const hFwd = terrainH(mx + fwdX * EPS, mz + fwdZ * EPS);
-      const hBck = terrainH(mx - fwdX * EPS, mz - fwdZ * EPS);
-      const hRgt = terrainH(mx + rgtX * EPS, mz + rgtZ * EPS);
-      const hLft = terrainH(mx - rgtX * EPS, mz - rgtZ * EPS);
-
-      // Negative pitch: positive Y-pitch in Babylon tilts the front face down
-      const pitch = -Math.atan2(hFwd - hBck, 2 * EPS);
-      const roll  =  Math.atan2(hRgt - hLft, 2 * EPS);
-
-      const slab = MeshBuilder.CreateBox('rd', { width: segLen + 0.30, height: 0.22, depth: width + 0.10 }, scene);
-      slab.position.set(mx, hMid + 0.09, mz);
-      slab.rotationQuaternion = Quaternion.RotationYawPitchRoll(yAngle, pitch, roll);
-      slab.material = cobM;
-    }
-  }
-
-  function junctionCap(x: number, z: number, size: number) {
-    const ty = terrainH(x, z) + 0.09;
-    const cap = MeshBuilder.CreateBox('rjcap', { width: size, height: 0.22, depth: size }, scene);
-    cap.position.set(x, ty, z);
-    cap.material = cobM;
-  }
-
-  // ── Cardo: N–S spine from spawn through city to bridge north approach ────
-  roadStrip(92, 0, 92, -92, 7);
-  roadStrip(92, -92, 92, -100, 7);
-
-  // ── Western exit road from spawn latitude ────────────────────────────────
-  roadStrip(91, -8, -300, -4, 7);
-
-  // ── East-side connector: N–S then back west to cardo ─────────────────────
-  roadStrip(195, -14, 195, -24, 7);
-  junctionCap(195, -14, 8);
-  roadStrip(195, -24, 91, -22, 7);
-  junctionCap(91, -22, 8);
-
-  // ── Eastern road: from theatre area heading far east ─────────────────────
-  roadStrip(226, -15, 289, -10, 8);
-  junctionCap(226, -15, 9);
-  roadStrip(289, -10, 800, -9, 8);
-
-  // ── Post-bridge stub (necropolis side) ───────────────────────────────────
-  roadStrip(92, -142, 92, -150, 7);
-}
 
 function buildAgoraMarket(scene: Scene): void {
   const AX = 112, AZ = -29;
@@ -620,6 +557,5 @@ export function buildCity(scene: Scene): void {
   buildLowerCity(scene);
   buildPhilemonHouse(scene);
   buildDyeWorks(scene);
-  buildRoads(scene);
   buildChurch(scene);
 }
