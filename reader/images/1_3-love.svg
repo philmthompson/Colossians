@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <defs>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f6d365"/>
+      <stop offset="30%" stop-color="#e8b730"/>
+      <stop offset="50%" stop-color="#fde68a"/>
+      <stop offset="70%" stop-color="#e8b730"/>
+      <stop offset="100%" stop-color="#f6d365"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <!-- Heart — love -->
+  <g filter="url(#glow)">
+    <path d="M100 170 C60 130 20 100 20 65 C20 40 40 25 65 25 C80 25 92 35 100 48 C108 35 120 25 135 25 C160 25 180 40 180 65 C180 100 140 130 100 170Z"
+          stroke="url(#gold)" stroke-width="2.5" fill="none" stroke-linejoin="round"/>
+    <!-- Inner wireframe heart -->
+    <path d="M100 150 C70 120 40 98 40 72 C40 52 55 42 72 42 C84 42 94 50 100 60 C106 50 116 42 128 42 C145 42 160 52 160 72 C160 98 130 120 100 150Z"
+          stroke="url(#gold)" stroke-width="1" fill="none" opacity="0.4" stroke-linejoin="round"/>
+    <!-- Center line -->
+    <line x1="100" y1="48" x2="100" y2="170" stroke="url(#gold)" stroke-width="0.8" opacity="0.35"/>
+  </g>
+</svg>
